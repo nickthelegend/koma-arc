@@ -102,7 +102,7 @@ the server alone.
 | Service | What | Required |
 |---|---|---|
 | The KOMA server (above) | x402 facilitator, AI pipeline, trade relayer, canon keeper (finalizes votes after each window, graduates complete curves), event index | yes |
-| Relayer gas float | the server key pays gas for every settlement, relayed trade, launch (~5M gas ≈ 0.1 USDC) and mint. A $1 relayed buy costs ≈ 0.005 USDC of gas against 0.015 USDC of fee. Keep 5–10 USDC on it and alert under 2 (`/api/status` → `relayerUsdc`) | yes |
+| Relayer gas float | the server key pays gas for every settlement, relayed trade, launch (~5M gas ≈ 0.1 USDC) and mint. A $1 relayed buy costs ≈ 0.008 USDC of gas against 0.015 USDC of fee. Keep 5–10 USDC on it and alert under 2 (`/api/status` → `relayerUsdc`) | yes |
 | Envio indexer (`indexer/`) | leaderboard aggregates; `npm run config:mainnet` then deploy to Envio's hosted service | optional |
 
 ## 6. Smoke test (smallest amounts, ~2.5 USDC)

@@ -107,7 +107,7 @@ export function BuiltOnArc({
     },
     {
       title: "Canon",
-      text: <>Holders vote with free EIP-712 signatures. The winning episode and a Merkle root of every vote are written to the canon registry.</>,
+      text: <>Holders vote with free EIP-712 signatures. The winning episode and a hash committing to every published vote are written to the canon registry.</>,
       chips: [{ label: "Canon registry", address: lp?.canonRegistry }],
     },
   ];

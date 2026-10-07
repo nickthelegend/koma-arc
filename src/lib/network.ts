@@ -116,7 +116,7 @@ export const FEE_SPLIT = { character: 40, remix: 20, treasury: 40 } as const;
 /** Share of the USDC raised that goes to KOMA's treasury when a curve graduates. */
 export const GRADUATION_FEE_PCT = 5;
 /**
- * Smallest trade KOMA's relayer submits for free. A relayed buy costs about 0.005 USDC of gas on Arc (≈250k gas at
+ * Smallest trade KOMA's relayer submits for free. A relayed buy costs about 0.008 USDC of gas on Arc (≈390k gas at
  * the 20 gwei floor); a $1 trade's fee is 0.015 USDC, so the relayer stays ahead from $1.
  */
 export const GASLESS_MIN_USDC = 1;

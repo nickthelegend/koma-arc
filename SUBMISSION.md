@@ -23,7 +23,7 @@ Arbitrum, OP or Avalanche over Circle's CCTP in one Arc transaction. USDC is the
 - **x402 on Arc's USDC.** EIP-3009 `transferWithAuthorization` on `0x3600…0000` (domain `USDC`/`2`), settled by
   KOMA's own facilitator, which other apps can call too. AI agents buy comics from a script the same way.
 - **Gasless trading that pays its way.** `receiveWithAuthorization` buys and permit + intent sells, relayed for
-  ~0.005 USDC of gas each, so the relayer breaks even from $1 trades.
+  ~0.008 USDC of gas each, so the relayer breaks even from $1 trades.
 - **Sub-second deterministic finality.** Drawing starts the moment the payment's block lands; no confirmation
   waits anywhere.
 - **CCTP V2 + Forwarding Service.** A character's ERC-6551 wallet burns its USDC on Arc in one `executeBatch` and
