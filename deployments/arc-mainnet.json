@@ -1,0 +1,5 @@
+{
+  "network": "arc",
+  "chainId": 5042,
+  "status": "not deployed yet: NETWORK=mainnet sh scripts/deploy.sh (see MAINNET.md) replaces this file with the addresses"
+}

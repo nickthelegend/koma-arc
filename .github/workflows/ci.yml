@@ -53,6 +53,10 @@ jobs:
         with:
           node-version: 22
       - run: npm install --no-audit --no-fund
-      - run: node gen-config.mjs testnet
-      - run: npx envio codegen
-      - run: npx tsc --noEmit
+      # Needs a deployment to generate config.yaml from; skipped until deployments/arc-testnet.json exists.
+      - run: |
+          if [ -f ../deployments/arc-testnet.json ]; then
+            node gen-config.mjs testnet && npx envio codegen && npx tsc --noEmit
+          else
+            echo "no deployments/arc-testnet.json yet: skipping indexer codegen"
+          fi
