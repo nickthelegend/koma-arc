@@ -1,24 +1,54 @@
-# KOMA launchpad: pre-mainnet security audit
+# KOMA launchpad: security review
 
-Date: 2026-10-01. Target: Arbitrum One (42161). Auditor: Claude (Claude Code), at the owner's request.
-Binding spec: `contracts/LAUNCHPAD_SPEC.md` (its change log records every change made here).
+Two passes, both by Claude (Claude Code) at the owner's request:
 
-## Scope
+1. **Pre-mainnet audit, 2026-10-01** (below, from "Findings" on). Written when the launchpad targeted Arbitrum One;
+   the findings and fixes are in the contracts this repo deploys. Two parts don't apply here: the Stylus (Rust) copies
+   of the curve math and royalty router were never ported (Arc runs the Solidity `CurveMathReference` and
+   `RoyaltyRouterReference`, checked against the Stylus build's 4,500+ differential vectors in `test/vectors/`), so
+   M-3 is moot; and the Arbitrum gas-cap numbers in H-1 are history (the fix holds on any chain).
+2. **Arc port review, 2026-10-07** (next section).
 
-| Area | Files |
-|---|---|
-| Solidity (solc 0.8.28, OZ 5.6.1, Uniswap v4) | `src/BondingCurve.sol`, `Graduator.sol`, `KomaSwapper.sol`, `SeriesFactory.sol`, `SeriesCoin.sol`, `CharacterNFT.sol`, `CanonRegistry.sol`, `KomaIssues.sol`, `RoyaltyRouterReference.sol`, `CurveMathReference.sol`, `deployers/*`, `interfaces/*`, `libraries/LaunchpadConstants.sol` |
-| Stylus (stylus-sdk 0.10.9) | `stylus/curve-math`, `stylus/royalty-router` |
-| Deploy | `script/DeployLaunchpad.s.sol`, `script/Deploy.s.sol`, `scripts/stylus-deploy.sh` |
+Binding spec: `contracts/LAUNCHPAD_SPEC.md`.
 
-Method: line-by-line review of every contract, proofs of concept for every High or Medium finding, and a fix with
-regression tests for every Critical, High and Medium finding (plus the cheap Lows). The unit tests now run the real
-Circle FiatToken v2.2 and the real Tokenbound ERC-6551 code (see "Test doubles"). Fork tests run against real Arbitrum
-Sepolia contracts. The Stylus router was re-checked on a local Nitro devnode (differential vectors plus access control).
+## Arc port review (2026-10-07)
 
-**Economics are unchanged.** `FEE_BPS` = 150, split 40/20/40, 5% graduation fee, the curve constants and
-`MIN_POOL_COINS` all stay as they were. The one new policy knob is the per-chain launch floor (L-2). It only
-rejects launch parameters the server never sends on mainnet.
+Scope: every contract in `src/` against Arc's documented EVM differences (docs.arc.io, "EVM differences" and
+"Port an AMM or liquidity pool to Arc"), plus `script/DeployLaunchpad.s.sol` for Arc mainnet. No contract logic
+changed in the port; only the deploy script, the tests' USDC setup and comments.
+
+| Arc behavior | What KOMA does | Result |
+|---|---|---|
+| USDC is the native gas token: 18-decimal native balance, 6-decimal ERC-20 at `0x3600…0000`, one balance | Every contract uses the ERC-20 interface only (`transferFrom`, `balanceOf`, EIP-3009, EIP-2612). No function is `payable` except Tokenbound's `execute`; no contract reads `msg.value` or `address.balance` | OK: no 10^12 mixing possible |
+| `address(0)` value transfers revert; burning is forbidden | No native value is ever sent. Liquidity is "burned" by minting the v4 position to `0x…dEaD`, not `address(0)` | OK |
+| `SELFDESTRUCT` moves native USDC | Not used anywhere | OK |
+| `PREVRANDAO` is always 0 | Not used; nothing needs randomness | OK |
+| Block timestamps are non-decreasing (sub-second blocks can share one) | The snipe window, sell deadlines, vesting and canon windows compare `block.timestamp` with `<`/`<=` against durations of seconds to days; equal timestamps only extend a window by under a second | OK |
+| USDC blocklist enforced at runtime | Fee routing already isolates a blocklisted recipient (M-1 fix: a failed push is credited, not reverted). A blocklisted trader's own buy/sell reverts, which is the intended behavior | OK |
+| 20 gwei minimum `maxFeePerGas` | Server transactions use viem's fee estimation (base fee × 1.2 + tip, ≥ 20 gwei); the deploy script runs through forge | OK (observed on testnet) |
+| No Uniswap v4, no ERC-6551 / Tokenbound on mainnet | The deploy script deploys v4's PoolManager, PositionManager and V4Quoter from Uniswap's published artifacts (PoolManager owner = ADMIN, protocol fee off) and replays the canonical ERC-6551 registry and Tokenbound v0.3 through the deterministic deployer at their usual addresses (`script/erc6551/`, init code taken from the Ethereum deployment; `DeployGuards.t.sol` checks the replayed runtime code byte for byte) | OK |
+
+**Funds that can pool, and the caps on them.** A curve holds the USDC its buyers paid until graduation. The
+graduation target caps it: the server launches with the default 5,000 USDC (mainnet floor 1,000 USDC,
+`minGraduationTarget`), and the curve math can never raise more than about 15,700 USDC because the target must leave
+10M coins unsold (`MIN_POOL_COINS`). At graduation the USDC goes to the treasury (5%) and a locked v4 position. The
+character's ERC-6551 wallet holds its fee share; only the Character NFT's holder can move it (`execute` /
+`executeBatch`, including the CCTP withdrawal). KOMA's server never custodies user funds: payments are EIP-3009
+authorizations that move USDC straight from the payer to `payTo`, and relayed trades move USDC straight from the
+trader to the curve.
+
+**Admin powers (mainnet).** `ADMIN` (a Safe) holds `DEFAULT_ADMIN_ROLE` on CharacterNFT, CanonRegistry, Graduator,
+SeriesFactory and KomaIssues, owns the royalty router and the v4 PoolManager. It can change base URIs, grant or revoke
+roles, and point the router at a new factory; it cannot move curve funds, change fees or curve math (immutable per
+curve), or upgrade anything (no proxies). `RELAYER` (the server key) can launch series, mint issues against settled
+payments, propose and finalize canon slots; a compromised relayer can launch junk series or finalize a slot with a
+wrong tally (the votes root it publishes makes that detectable), but it cannot touch any funds. The deployer renounces
+every role in the same script run (`_handOver`, checked in `_postCheck`).
+
+**Residual risks.** (1) The canon tally is computed by the server keeper; the published votes root lets anyone
+re-check it, but the chain does not enforce it. (2) USDC itself is centralized: Circle can blocklist or pause it,
+which would stop that address (or all trading) on every curve. (3) The v4 contracts are deployed by KOMA rather than
+Uniswap Labs; the bytecode is Uniswap's, unmodified.
 
 ## Findings
 
@@ -27,7 +57,7 @@ rejects launch parameters the server never sends on mainnet.
 | H-1 | High | Graduation can be blocked permanently by squatting the predictable v4 pool key | Fixed |
 | M-1 | Medium | A USDC-blacklisted fee recipient freezes trading (and graduation) | Fixed |
 | M-2 | Medium | Mainnet deploy could use Sepolia defaults, the Solidity engine and a raw key; the deployer kept every admin role | Fixed |
-| M-3 | Medium | Stylus program expiry or ArbOS re-activation halts every curve (math is immutable per curve) | Mitigated (ops runbook; router side covered by the M-1 fix) |
+| M-3 | Medium | Stylus program expiry or ArbOS re-activation halts every curve (math is immutable per curve) | N/A on Arc (no Stylus; Solidity math) |
 | L-1 | Low | Router ownership could not be handed to the admin Safe | Fixed (`transferOwnership`) |
 | L-2 | Low | Launch parameters from the relayer are unbounded (canon `endsAt` overflow, demo values reachable on mainnet) | Fixed (bounds) |
 | L-3 | Low | A signed sell intent cannot be cancelled before its deadline | Fixed (`invalidateSellNonce`) |

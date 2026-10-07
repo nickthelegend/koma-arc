@@ -45,6 +45,5 @@ next-env.d.ts
 /.data.*
 !.env.example
 
-# stylus (Rust -> WASM) build output and local nitro devnode checkout
-stylus/.devnode/
-stylus/**/target/
+# local tooling
+/.claude/

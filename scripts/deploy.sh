@@ -67,6 +67,19 @@ trap 'rmdir "$LOCK" 2>/dev/null' EXIT
 run --broadcast
 rmdir "$LOCK"; trap - EXIT
 cd "$ROOT"
+# Record what the deploy cost and its transactions next to the addresses (receipts from forge's broadcast log).
+node -e '
+const fs = require("fs");
+const [out, log] = process.argv.slice(1);
+const d = JSON.parse(fs.readFileSync(out, "utf8"));
+const b = JSON.parse(fs.readFileSync(log, "utf8"));
+let gas = 0n, wei = 0n;
+for (const r of b.receipts) { gas += BigInt(r.gasUsed); wei += BigInt(r.gasUsed) * BigInt(r.effectiveGasPrice); }
+d.deployGas = { transactions: b.receipts.length, gasUsed: gas.toString(), usdc: (Number(wei) / 1e18).toFixed(6) };
+d.deployTxs = b.receipts.map((r) => r.transactionHash);
+fs.writeFileSync(out, JSON.stringify(d, null, 2) + "\n");
+console.log(`deploy: ${b.receipts.length} txs, ${gas} gas, ${d.deployGas.usdc} USDC`);
+' "$OUT" "contracts/broadcast/DeployLaunchpad.s.sol/$CHAIN/run-latest.json"
 echo "addresses: $OUT"
 
 if [ -n "$VERIFY" ]; then sh scripts/verify.sh "$NETWORK"; fi

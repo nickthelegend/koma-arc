@@ -1,6 +1,6 @@
 # KOMA Launchpad — interface spec
 
-Single source of truth shared by the Solidity, Stylus, server and frontend lanes.
+Single source of truth shared by the Solidity, server and frontend lanes. Deployed on Arc (USDC = Arc's USDC ERC-20 interface, `0x3600…0000`, 6 decimals).
 If you need to change a signature here, change this file first and say so in your report.
 
 Units: USDC has 6 decimals. Series coins have 18 decimals. Basis points (bps) out of 10_000.
@@ -34,7 +34,7 @@ Real USDC held = `vU - VIRTUAL_USDC_0`. Coins sold = `VIRTUAL_COIN_0 - vC`.
 - Spot price (USDC per coin, 1e18-scaled, 6-dec USDC per 18-dec coin): `vU * 1e18 / vC` — this is "raw USDC units per 1e18 coin units" scaled by 1e18.
 - A buy that would push `raised` past `graduationTarget` is clipped to exactly the target; the unused USDC (and its fee) is not taken. When `raised == graduationTarget` the curve is `complete` and trading stops.
 
-### `ICurveMath` (implemented by Stylus `curve-math`; Solidity reference `CurveMathReference.sol` for tests and localnet)
+### `ICurveMath` (`CurveMathReference.sol`)
 
 ```solidity
 interface ICurveMath {
@@ -44,9 +44,9 @@ interface ICurveMath {
     function spotPrice(uint256 vU, uint256 vC) external pure returns (uint256 priceX18);
 }
 ```
-`quoteBuy`/`quoteSell` are fee-free; the curve applies fees. Must revert on `vC == 0` or `vU == 0`. Rounding exactly as above. Stylus and the Solidity reference must return identical results (differential tested).
+`quoteBuy`/`quoteSell` are fee-free; the curve applies fees. Must revert on `vC == 0` or `vU == 0`. Rounding exactly as above. The Solidity implementation must return identical results (differential tested).
 
-### `IRoyaltyRouter` (implemented by Stylus `royalty-router`; Solidity reference `RoyaltyRouterReference.sol`)
+### `IRoyaltyRouter` (`RoyaltyRouterReference.sol`)
 
 ```solidity
 interface IRoyaltyRouter {
@@ -77,7 +77,7 @@ All use OpenZeppelin 5.x, solc 0.8.28, `evm_version = cancun`.
 
 ### `SeriesCoin` — ERC20 + ERC20Permit + ERC20Votes
 - Constructor `(string name, string symbol, address curve, address vesting)`: mints `CURVE_SUPPLY` to `curve`, `CREATOR_SUPPLY` to `vesting`.
-- **Clock is timestamp** (`clock()` returns `uint48(block.timestamp)`, `CLOCK_MODE()` = `"mode=timestamp"`). On Arbitrum, `block.number` is the L1 block number and moves in jumps; do not use it.
+- **Clock is timestamp** (`clock()` returns `uint48(block.timestamp)`, `CLOCK_MODE()` = `"mode=timestamp"`). Timestamps rather than block numbers: Arc produces sub-second blocks (and their timestamps are non-decreasing at one-second granularity), so windows are defined in seconds.
 - Auto self-delegation: in `_update`, if `to != address(0)` and `delegates(to) == address(0)`, delegate `to` to itself, so holding = voting power with no extra tx.
 - `nonces` shared between Permit and Votes as OZ requires.
 
@@ -106,7 +106,7 @@ One per series. Holds USDC reserves and the curve coins.
 ### `Graduator`
 - `graduate(uint256 seriesId, address coin, uint256 usdcAmount, uint256 coinAmount, uint256 vU, uint256 vC)` — only registered curves (factory registers). **Graduation fee first:** `fee = usdcAmount * GRADUATION_FEE_BPS / 10_000` (5%, floor) → `usdc.safeTransfer(treasury, fee)`, event `GraduationFee(seriesId, fee)`. The LP is then sized from `usdc' = usdcAmount - fee`. Final price `P = vU/vC` (the pool still opens exactly at the curve's final price). Uses as much as possible of both sides at price `P`: if `usdc' > coinAmount*P`, LP gets all coins plus `coinAmount*P` USDC and the extra USDC goes to the treasury; otherwise LP gets all of `usdc'` plus `usdc'/P` coins and the extra coins are burned (sent to `0x…dEaD`).
 - Creates a Uniswap v4 pool: `PoolKey{currency0, currency1 (sorted), fee: 3000, tickSpacing: 60, hooks: Graduator}` (see deviation 5: the Graduator is an initialize-only hook), `PoolManager.initialize(key, sqrtPriceX96)` with the price from `P` (mind token ordering and decimals). Adds full-range liquidity through `PositionManager.modifyLiquidities` (MINT_POSITION + SETTLE_PAIR, Permit2 approvals) and sends the position NFT to `0x000000000000000000000000000000000000dEaD`.
-- Arbitrum Sepolia: PoolManager `0xFB3e0C6F74eB1a21CC1Da29aeC80D2Dfe6C9a317`, PositionManager `0xAc631556d3d4019C95769033B5E719dD77124BAc`, Permit2 `0x000000000022D473030F116dDEE9F6B43aC78BA3`; Arbitrum One: PoolManager `0x360e68faccca8ca495c1b759fd9eee466db9fb32`, PositionManager `0xd88f38f930b7952f2db2432cb002e7abbf3dd869`, same Permit2 — constructor args.
+- Arc (mainnet and testnet): no Uniswap v4 deployment, so the deploy script deploys PoolManager, PositionManager and V4Quoter from Uniswap's published artifacts; Permit2 `0x000000000022D473030F116dDEE9F6B43aC78BA3` (canonical) — constructor args.
 - Events `GraduationFee(uint256 indexed seriesId, uint256 usdcFee)` (emitted before `PoolCreated`, in the same tx) and `PoolCreated(uint256 indexed seriesId, bytes32 poolId, uint160 sqrtPriceX96, uint256 usdcToPool, uint256 coinToPool, uint256 liquidity)` (unchanged). Views `poolKeyOf(uint256 seriesId)`, `GRADUATION_FEE_BPS()`.
 
 ### `KomaSwapper` (post-graduation trading)
@@ -142,9 +142,8 @@ One per series. Holds USDC reserves and the curve coins.
 
 ## Deployment
 
-- Arbitrum Sepolia: Stylus `curve-math` + `royalty-router` (`cargo stylus deploy`), then `forge script script/DeployLaunchpad.s.sol` with env `MATH`, `ROUTER` (Stylus addresses), `USDC`, `TREASURY`, `RELAYER`, and v4/6551 addresses; then `router.initialize(...)`/`setFactory`.
-- KOMA localnet (anvil fork, no Stylus support): same script with `MATH`/`ROUTER` unset → deploys `CurveMathReference` and `RoyaltyRouterReference`. `/api/status` reports `engine: "stylus" | "solidity-reference"`.
-- Output: `deploy/addresses.<network>.json` `{ chainId, usdc, komaIssues, seriesFactory, characterNft, canonRegistry, graduator, swapper, curveMath, royaltyRouter, engine, poolManager, positionManager, permit2, erc6551Registry, accountProxy, accountImpl, treasury, relayer, deployBlock }`.
+- Arc testnet / mainnet: `sh scripts/deploy.sh testnet|mainnet` runs `forge script script/DeployLaunchpad.s.sol`: ERC-6551 registry + Tokenbound replayed if missing, Uniswap v4 deployed, then `CurveMathReference`, `RoyaltyRouterReference` (initialized + wired), KomaIssues and the launchpad. `/api/status` reports `engine: "solidity"`.
+- Output: `deployments/arc-<testnet|mainnet>.json` `{ chainId, network, usdc, komaIssues, seriesFactory, characterNft, canonRegistry, graduator, swapper, curveMath, royaltyRouter, engine, poolManager, positionManager, permit2, erc6551Registry, accountProxy, accountImpl, treasury, relayer, deployBlock }`.
 
 ## Server API (Next.js, `src/app/api/`)
 
@@ -186,8 +185,8 @@ type SeriesDetail = SeriesSummary & {
 7. **`ICurveMath`**: all four functions revert on `vU == 0 || vC == 0`. `spotPrice` is the literal `vU * 1e18 / vC`, which is **1** at launch (≈36 at a $5k raise) — too coarse for a UI; the frontend should compute price from `state()`. If "scaled by 1e18" was meant (`vU * 1e36 / vC`), both engines must change together.
 8. **`RoyaltyRouterReference`**: `initialize` is callable only by the deployer (prevents front-running); zero-amount legs are skipped (no transfer, no `Routed` event); `registerSeries` rejects id 0, zero addresses and duplicates; `setFactory` can be re-pointed by the owner.
 9. **`CanonRegistry`**: `propose` allowed while `block.timestamp < endsAt`, `finalize` when `>= endsAt`; `issueId == 0` rejected; `winnerVotes <= totalVotes` enforced; extra view `seriesConfig(seriesId)` and event `SeriesRegistered`.
-10. **Constructors**: `CharacterNFT(admin, registry, accountProxy, accountImpl, baseURI)` (uses `_mint`, `initialize` wrapped in try/catch so a pre-created account is tolerated; on Arbitrum One and Sepolia the Tokenbound guardian trusts no implementation, so `initialize` always reverts and accounts run the proxy's immutable initial implementation, AccountV3); `SeriesFactory(admin, usdc, math, router, characterNft, canon, graduator, treasury, curveDeployer, coinDeployer, minGraduationTarget, minVotingWindow)`; `CanonRegistry(admin)`; `KomaSwapper(poolManager, graduator, usdc)`.
-11. **Deploy output** is `deploy/addresses.<chainId>.json` (override with `ADDRESSES_OUT`, `none` to skip). `deployBlock` is the L2 block number from the RPC (EVM `block.number` is L1 on Arbitrum). When `KOMA_ISSUES` is unset a fresh `KomaIssues(ADMIN, RELAYER, KOMA_BASE_URI)` is deployed. `MATH`/`ROUTER` must be both set or both unset (and are mandatory Stylus programs on 42161). Added fields: `v4Quoter` (every chain), `admin`, `routerWired`, `minGraduationTarget`, `minVotingWindow`. Runbook: `docs/base-arbitrum/MAINNET.md` (Arbitrum base).
+10. **Constructors**: `CharacterNFT(admin, registry, accountProxy, accountImpl, baseURI)` (uses `_mint`, `initialize` wrapped in try/catch so a pre-created account is tolerated); `SeriesFactory(admin, usdc, math, router, characterNft, canon, graduator, treasury, curveDeployer, coinDeployer, minGraduationTarget, minVotingWindow)`; `CanonRegistry(admin)`; `KomaSwapper(poolManager, graduator, usdc)`.
+11. **Deploy output** is `deployments/arc-<testnet|mainnet>.json` (override with `ADDRESSES_OUT`, `none` to skip). `deployBlock` is the block number from the RPC.
 12. **Fee routing never blocks a trade (AUDIT.md M-1).** `BondingCurve._routeFee` pushes the fee through a self-call (`pushFee`, self-only) inside `try`; if routing fails (a recipient is USDC-blacklisted, the router program is inactive, ...) the fee stays in the curve as `unroutedFees` (event `FeeRoutingDeferred(fee)`), outside the reserves and never sent to the Graduator; anyone can retry with `flushFees()` (event `FeesFlushed(amount)`). An out-of-gas inside the self-call reverts the trade (`FeeRoutingOutOfGas`). The Graduator likewise parks failed treasury payments in `treasuryOwed` (event `TreasuryPaymentDeferred`) and `flushTreasury()` (anyone, event `TreasuryFlushed`) retries; owed USDC is never pooled.
 13. **`BondingCurve.invalidateSellNonce()`** (AUDIT.md L-3): the caller burns its next `Sell` intent nonce (event `SellNonceInvalidated(seller, nonce)`), cancelling a signed intent before its deadline.
 14. **Launch bounds (AUDIT.md L-2).** `SeriesFactory` reverts `TargetTooLow` below the immutable `minGraduationTarget` and `InvalidVotingWindow` outside `[minVotingWindow, MAX_VOTING_WINDOW = 30 days]` (applied after the 0 → default substitution; floors above the defaults are rejected at construction). The deploy sets 1,000 USDC / 1 h on Arbitrum One and 1 USDC / 60 s elsewhere, so the testnet demo values (25 USDC / 300 s) cannot launch on mainnet.

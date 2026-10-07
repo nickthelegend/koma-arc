@@ -41,7 +41,8 @@ export function BuiltOnArc({
       text: (
         <>
           Each Character NFT owns a Tokenbound account, a wallet controlled by whoever holds the NFT. Its share of trading fees lands
-          there in USDC, and the owner can move it out.
+          there in USDC. The owner moves it out to their wallet on Arc, or to Base, Ethereum, Arbitrum, OP or Avalanche over Circle&rsquo;s
+          CCTP: one transaction here, and Circle&rsquo;s Forwarding Service mints on the other side.
         </>
       ),
       chips: character
@@ -55,11 +56,24 @@ export function BuiltOnArc({
           ],
     },
     {
+      title: "One token: USDC",
+      text: (
+        <>
+          On Arc, USDC is the gas token, so it is the only thing a reader, backer or creator ever holds. Payments, trades and votes are
+          signatures KOMA relays; the rare transaction you send yourself pays a fraction of a cent of gas, in the same USDC.
+        </>
+      ),
+      chips: [
+        { label: "USDC", address: KOMA.usdc },
+        { label: "CCTP TokenMessenger", address: KOMA.cctp.tokenMessenger as Addr },
+      ],
+    },
+    {
       title: "Payments: USDC over x402",
       text: (
         <>
-          Launching (${LAUNCH_PRICE}) and drawing pages are paid in USDC with x402. You sign a transfer authorization (EIP-3009); KOMA&rsquo;s
-          facilitator settles it on-chain and pays that gas.
+          Launching (${LAUNCH_PRICE}) and drawing pages are paid in USDC with x402. You sign a transfer authorization (EIP-3009) on Arc&rsquo;s
+          USDC; KOMA&rsquo;s facilitator settles it on-chain, pays that gas, and drawing starts the moment the block is final.
         </>
       ),
       chips: [
@@ -82,7 +96,8 @@ export function BuiltOnArc({
       text: (
         <>
           When a curve reaches its target, {GRADUATION_FEE_PCT}% of the USDC raised goes to KOMA and the rest, with the unsold coins, seeds a
-          full-range Uniswap v4 pool. The liquidity position goes to a dead address, so it can&rsquo;t be pulled.
+          full-range Uniswap v4 pool. Arc has no Uniswap deployment, so KOMA deploys v4&rsquo;s own PoolManager from Uniswap&rsquo;s published
+          bytecode. The liquidity position goes to a dead address, so it can&rsquo;t be pulled.
         </>
       ),
       chips: [
