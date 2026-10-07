@@ -17,11 +17,12 @@ evm_version = "cancun"
 optimizer = true
 optimizer_runs = 500
 # Prebuilt Uniswap v4 artifacts (PoolManager is pinned to solc 0.8.26) are loaded with vm.deployCode in
-# unit tests; the deploy script writes deploy/addresses.<chainId>.json in the koma root.
+# unit tests and by the deploy script, which writes deployments/arc-<testnet|mainnet>.json in the repo root.
 fs_permissions = [
   { access = "read", path = "../node_modules/@uniswap" },
-  { access = "read-write", path = "../deploy" },
-  { access = "read-write", path = "../.data" },
+  { access = "read-write", path = "../deployments" },
+  # canonical ERC-6551 / Tokenbound init code, replayed on Arc by the deploy script
+  { access = "read", path = "./script/erc6551" },
   { access = "read", path = "test/vectors" },
   # real Tokenbound + Circle USDC runtime code etched by the unit-test fixture
   { access = "read", path = "./test/utils/bytecode" },
@@ -36,7 +37,5 @@ ignore = ["test/**/*.sol", "script/**/*.sol"]
 runs = 512
 
 [rpc_endpoints]
-# Public Monad RPCs (the testnet one caps eth_getLogs at 100 blocks).
-monad_testnet = "https://testnet-rpc.monad.xyz"
-monad = "https://rpc.monad.xyz"
-koma_local = "http://127.0.0.1:18643"
+arc_testnet = "https://rpc.testnet.arc.io"
+arc = "https://rpc.mainnet.arc.io"

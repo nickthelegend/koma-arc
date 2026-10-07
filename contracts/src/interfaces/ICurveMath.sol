@@ -2,7 +2,7 @@
 pragma solidity ^0.8.28;
 
 /// @title Bonding-curve math (virtual constant product)
-/// @notice Implemented by the Stylus `curve-math` contract and by `CurveMathReference`.
+/// @notice Implemented by `CurveMathReference`.
 ///         Fee-free; the curve applies fees. Every function reverts when `vU == 0` or `vC == 0`.
 interface ICurveMath {
     /// @return coinOut `vC - ceil(vU*vC / (vU + usdcIn))` (rounds against the buyer)

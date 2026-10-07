@@ -7,7 +7,7 @@ import {Strings} from "@openzeppelin/contracts/utils/Strings.sol";
 
 /// @title KOMA issues
 /// @notice One token per comic issue. Each token records the hash of the issue's
-///         pages and the x402 payment (an AUSD transfer on Monad) that bought it,
+///         pages and the x402 payment (a USDC transfer on Arc) that bought it,
 ///         so a reader can check the comic they see is the one that was paid for.
 contract KomaIssues is ERC721, AccessControl {
     bytes32 public constant MINTER_ROLE = keccak256("MINTER_ROLE");

@@ -1,7 +1,6 @@
 import { readFileSync } from "node:fs";
-import path from "node:path";
 import type { LaunchpadAddresses } from "@/lib/launchpad/types";
-import { config } from "../config";
+import { config, deploymentFile } from "../config";
 
 /**
  * Launchpad contract addresses written by contracts/script/DeployLaunchpad.s.sol
@@ -13,7 +12,7 @@ let cached: LaunchpadAddresses | null | undefined;
 
 export function launchpad(): LaunchpadAddresses | null {
   if (cached !== undefined) return cached;
-  const file = process.env.KOMA_LAUNCHPAD_ADDRESSES || path.join(process.cwd(), "deployments", `${config.network.testnet ? "arc-testnet" : "arc-mainnet"}.json`);
+  const file = deploymentFile();
   try {
     const a = JSON.parse(readFileSync(file, "utf8")) as LaunchpadAddresses;
     cached = a.chainId === config.network.chain.id && a.seriesFactory ? a : null;

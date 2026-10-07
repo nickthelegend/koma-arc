@@ -16,34 +16,38 @@ import {KomaSwapper} from "../src/KomaSwapper.sol";
 import {CurveDeployer} from "../src/deployers/CurveDeployer.sol";
 import {CoinDeployer} from "../src/deployers/CoinDeployer.sol";
 
-/// @title Deploy the KOMA launchpad on Monad
-/// @notice Runbook: docs/DEPLOY-LATER.md. Summary:
+/// @title Deploy the KOMA launchpad on Arc
+/// @notice Runbook: MAINNET.md. One script for both networks; `scripts/deploy.sh testnet|mainnet` wraps it.
 ///
-///   Monad testnet (10143):
-///     DEPLOYER_KEY=0x.. ALLOW_EOA_ADMIN=true BASE_URI=https://<app>/api/characters/ KOMA_BASE_URI=https://<app>/api/tokens/ \
-///     forge script script/DeployLaunchpad.s.sol --rpc-url monad_testnet --broadcast
-///     Uniswap v4 isn't deployed on Monad testnet, so this script deploys the canonical v4 PoolManager,
-///     PositionManager and V4Quoter from Uniswap's published artifacts (unless POOL_MANAGER etc. are given).
-///   Monad mainnet (143): canonical Uniswap v4 and AUSD from the book; keystore signer only, ADMIN a Safe:
-///     ADMIN=<Safe> TREASURY=<Safe> RELAYER=<server key> BASE_URI=.. KOMA_BASE_URI=.. \
-///     forge script script/DeployLaunchpad.s.sol --rpc-url monad --account <keystore> --sender <addr> --broadcast
+///   Arc testnet (5042002):
+///     DEPLOYER_KEY=0x.. RELAYER=<server key address> BASE_URI=https://<app>/api/characters/ KOMA_BASE_URI=https://<app>/api/tokens/ \
+///     forge script script/DeployLaunchpad.s.sol --rpc-url arc_testnet --broadcast
+///   Arc mainnet (5042): ADMIN (a Safe), TREASURY and RELAYER are required and the deployer renounces every role:
+///     DEPLOYER_KEY=0x.. ADMIN=<Safe> TREASURY=<Safe> RELAYER=<server key> BASE_URI=.. KOMA_BASE_URI=.. \
+///     forge script script/DeployLaunchpad.s.sol --rpc-url arc --broadcast
 ///
-///   The curve math and the royalty router are the Solidity contracts (CurveMathReference, RoyaltyRouterReference).
-///   The stablecoin everywhere ("usdc" in the code) is Agora's AUSD.
+///   Arc-specific: USDC is the ERC-20 interface of the native gas token (0x3600…0000, 6 decimals) on both networks.
+///   Uniswap v4 is not deployed on Arc, so this script deploys the canonical PoolManager, PositionManager and V4Quoter
+///   from Uniswap's published artifacts (unless POOL_MANAGER etc. are given). The ERC-6551 registry and Tokenbound
+///   v0.3 (guardian, ERC-2771 multicall forwarder, AccountV3, AccountProxy) are replayed at their canonical addresses
+///   through the deterministic deployer when missing (testnet has only the registry; mainnet has none of them), from
+///   the exact init code of the Ethereum mainnet deployments in script/erc6551/.
 ///
-///   Env: ADMIN (default: deployer, off-mainnet only), TREASURY, RELAYER, KOMA_ISSUES (existing issues contract;
+///   Env: ADMIN (default: deployer, testnet only), TREASURY, RELAYER, KOMA_ISSUES (existing issues contract;
 ///   else a fresh one), BASE_URI, KOMA_BASE_URI, MIN_GRADUATION_TARGET / MIN_VOTING_WINDOW (launch floors;
-///   default 1,000 AUSD / 1 h on 143, 1 AUSD / 60 s elsewhere), ALLOW_EOA_ADMIN (143: accept an ADMIN without
-///   code), USDC, POOL_MANAGER, POSITION_MANAGER, PERMIT2, V4_QUOTER, ERC6551_REGISTRY, ACCOUNT_PROXY,
-///   ACCOUNT_IMPL, ADDRESSES_OUT (default ../deploy/addresses.<chainId>.json; "none" skips writing).
+///   default 1,000 USDC / 1 h on mainnet, 1 USDC / 60 s on testnet), ALLOW_EOA_ADMIN (mainnet: accept an ADMIN
+///   without code), USDC, POOL_MANAGER, POSITION_MANAGER, PERMIT2, V4_QUOTER, ERC6551_REGISTRY, ACCOUNT_PROXY,
+///   ACCOUNT_IMPL, ADDRESSES_OUT (default ../deployments/arc-<testnet|mainnet>.json; "none" skips writing).
 ///
 ///   At the end the deployer holds no role anywhere (when ADMIN != deployer): ADMIN gets DEFAULT_ADMIN_ROLE on
 ///   every AccessControl contract and the router's ownership, RELAYER only the operational roles.
 contract DeployLaunchpad is Script {
-    uint256 internal constant MONAD = 143;
-    uint256 internal constant MONAD_TESTNET = 10143; // also the local anvil fork of Monad testnet
-    // CREATE2_FACTORY (forge-std CommonBase): the Arachnid deterministic-deployment proxy, present on Monad,
-    // Monad testnet and anvil.
+    uint256 internal constant ARC = 5042;
+    uint256 internal constant ARC_TESTNET = 5042002;
+    /// The USDC ERC-20 interface of Arc's native gas token (same address on mainnet and testnet).
+    address internal constant ARC_USDC = 0x3600000000000000000000000000000000000000;
+    // CREATE2_FACTORY (forge-std CommonBase): the Arachnid deterministic-deployment proxy, present on Arc mainnet,
+    // Arc testnet and anvil.
     string internal constant POOL_MANAGER_ARTIFACT = "../node_modules/@uniswap/v4-core/out/PoolManager.sol/PoolManager.json";
     string internal constant POSITION_MANAGER_ARTIFACT =
         "../node_modules/@uniswap/v4-periphery/foundry-out/PositionManager.sol/PositionManager.json";
@@ -69,7 +73,7 @@ contract DeployLaunchpad is Script {
         address treasury;
         address relayer;
         address komaIssues;
-        /// Uniswap v4 isn't on this chain (Monad testnet): deploy PoolManager, PositionManager and V4Quoter here.
+        /// Uniswap v4 isn't on Arc: deploy PoolManager, PositionManager and V4Quoter here.
         bool deployV4;
         address poolManager;
         address positionManager;
@@ -111,12 +115,11 @@ contract DeployLaunchpad is Script {
     error RouterMisconfigured(string what);
     error RouterOwnedByStranger(address owner);
     error GraduatorDeployFailed();
+    error Erc6551DeployFailed(string part);
     error PostCheck(string what);
 
     function run() public virtual returns (Deployment memory d) {
         uint256 pk = vm.envOr("DEPLOYER_KEY", uint256(0));
-        // Mainnet signs with a keystore / hardware wallet (`--account`, `--ledger`), never a raw env key.
-        if (pk != 0 && block.chainid == MONAD) revert MainnetRequires("--account keystore signer, not DEPLOYER_KEY");
         address deployer = pk == 0 ? msg.sender : vm.addr(pk);
         if (deployer == DEFAULT_SENDER) revert NoSigner(); // forgot --account/--sender: never deploy as forge's default
         Config memory cfg = _config(deployer);
@@ -124,6 +127,7 @@ contract DeployLaunchpad is Script {
 
         if (pk == 0) vm.startBroadcast();
         else vm.startBroadcast(pk);
+        _ensureErc6551(cfg);
         d = _deploy(cfg);
         vm.stopBroadcast();
 
@@ -135,34 +139,25 @@ contract DeployLaunchpad is Script {
 
     // ------------------------------------------------------------------ configuration
 
-    /// @notice Canonical addresses per chain. Monad mainnet values are checked to have code in `_preflight`.
+    /// @notice Canonical addresses per chain. No Uniswap v4 on Arc: the pool contracts are deployed by this script.
     function book(uint256 chainId) public pure returns (Book memory b) {
-        if (chainId == MONAD) {
-            b.usdc = 0x00000000eFE302BEAA2b3e6e1b18d08D69a9012a; // AUSD
-            b.poolManager = 0x188d586Ddcf52439676Ca21A244753fA19F9Ea8e;
-            b.positionManager = 0x5b7eC4a94fF9beDb700fb82aB09d5846972F4016;
-            b.v4Quoter = 0xa222Dd357A9076d1091Ed6Aa2e16C9742dD26891;
-        } else if (chainId == MONAD_TESTNET) {
-            b.usdc = 0xa9012a055bd4e0eDfF8Ce09f960291C09D5322dC; // AUSD (Agora testnet)
-            // No Uniswap v4 on Monad testnet: left empty, deployed by this script.
-        } else {
-            return b; // unknown chain: everything must come from env
-        }
+        if (chainId != ARC && chainId != ARC_TESTNET) return b; // unknown chain: everything must come from env
+        b.usdc = ARC_USDC;
         b.permit2 = 0x000000000022D473030F116dDEE9F6B43aC78BA3;
-        // Tokenbound v0.3 (same addresses and code on both chains)
+        // ERC-6551 registry + Tokenbound v0.3 at their canonical addresses (replayed by _ensureErc6551 if missing)
         b.erc6551Registry = 0x000000006551c19487814612e58FE06813775758;
         b.accountProxy = 0x55266d75D1a14E4572138116aF39863Ed6596E7F;
         b.accountImpl = 0x41C8f39463A868d3A88af00cd0fe7102F30E44eC;
     }
 
     function _config(address deployer) internal view virtual returns (Config memory c) {
-        c.mainnet = block.chainid == MONAD;
+        c.mainnet = block.chainid == ARC;
         c.deployer = deployer;
         Book memory b = book(block.chainid);
         c.usdc = _addr("USDC", b.usdc, c.mainnet);
         c.permit2 = _addr("PERMIT2", b.permit2, c.mainnet);
         c.poolManager = vm.envOr("POOL_MANAGER", b.poolManager);
-        c.deployV4 = !c.mainnet && c.poolManager == address(0);
+        c.deployV4 = c.poolManager == address(0);
         if (!c.deployV4) {
             c.poolManager = _addr("POOL_MANAGER", b.poolManager, c.mainnet);
             c.positionManager = _addr("POSITION_MANAGER", b.positionManager, c.mainnet);
@@ -201,14 +196,17 @@ contract DeployLaunchpad is Script {
             _requireCode("POSITION_MANAGER", c.positionManager);
         }
         _requireCode("PERMIT2", c.permit2);
-        _requireCode("ERC6551_REGISTRY", c.erc6551Registry);
-        _requireCode("ACCOUNT_PROXY", c.accountProxy);
-        _requireCode("ACCOUNT_IMPL", c.accountImpl);
+        // The ERC-6551 contracts may be missing: _ensureErc6551 replays them at their canonical addresses.
+        if (!_canonical6551(c)) {
+            _requireCode("ERC6551_REGISTRY", c.erc6551Registry);
+            _requireCode("ACCOUNT_PROXY", c.accountProxy);
+            _requireCode("ACCOUNT_IMPL", c.accountImpl);
+        }
         _requireCode("CREATE2_FACTORY", CREATE2_FACTORY);
         if (c.komaIssues != address(0)) _requireCode("KOMA_ISSUES", c.komaIssues);
         if (!c.mainnet) return;
 
-        _requireCode("V4_QUOTER", c.v4Quoter);
+        if (!c.deployV4) _requireCode("V4_QUOTER", c.v4Quoter);
         if (c.relayer == c.admin) revert RelayerIsAdmin();
         if (c.admin == c.deployer) revert MainnetRequires("ADMIN != deployer (the deployer renounces every role)");
         if (c.admin.code.length == 0 && !vm.envOr("ALLOW_EOA_ADMIN", false)) {
@@ -216,6 +214,34 @@ contract DeployLaunchpad is Script {
         }
         _noLocalhost(c.baseURI);
         _noLocalhost(c.issuesBaseURI);
+    }
+
+    // ------------------------------------------------------------------ ERC-6551 / Tokenbound on Arc
+
+    /// Names of the files in script/erc6551/, in deployment order.
+    string[5] internal ERC6551_PARTS = ["registry", "guardian", "multicall", "impl", "proxy"];
+
+    function _canonical6551(Config memory c) internal view returns (bool) {
+        Book memory b = book(block.chainid);
+        return b.erc6551Registry != address(0) && c.erc6551Registry == b.erc6551Registry && c.accountProxy == b.accountProxy
+            && c.accountImpl == b.accountImpl;
+    }
+
+    /// @dev Replays the canonical CREATE2 deployments (same salt and init code as on Ethereum) for whichever of the
+    ///      registry, guardian, forwarder, AccountV3 and AccountProxy have no code yet. Permissionless and
+    ///      deterministic: the result is byte-identical to every other chain's Tokenbound.
+    function _ensureErc6551(Config memory c) internal {
+        if (!_canonical6551(c)) return;
+        for (uint256 i; i < ERC6551_PARTS.length; i++) {
+            string memory json = vm.readFile(string.concat(vm.projectRoot(), "/script/erc6551/", ERC6551_PARTS[i], ".json"));
+            address at = vm.parseJsonAddress(json, ".address");
+            if (at.code.length != 0) continue;
+            bytes32 salt = vm.parseJsonBytes32(json, ".salt");
+            bytes memory init = vm.parseJsonBytes(json, ".initCode");
+            (bool ok, bytes memory ret) = CREATE2_FACTORY.call(abi.encodePacked(salt, init));
+            if (!ok || ret.length != 20 || address(bytes20(ret)) != at) revert Erc6551DeployFailed(ERC6551_PARTS[i]);
+            console.log("deployed ERC-6551", ERC6551_PARTS[i], at);
+        }
     }
 
     // ------------------------------------------------------------------ deployment
@@ -430,25 +456,27 @@ contract DeployLaunchpad is Script {
         if (c.relayer == c.deployer) console.log("WARNING: the relayer is the deployer key");
 
         console.log("");
-        console.log("POST-DEPLOY CHECKLIST (deploy/DEPLOY.md has the full runbook)");
+        console.log("POST-DEPLOY CHECKLIST (MAINNET.md has the full runbook)");
         if (!d.routerWired) {
             console.log("[ ] ADMIN (Safe) must send on the router - launches revert until it does:");
             console.log(string.concat("    ", vm.toString(d.royaltyRouter), " setFactory(address) ", vm.toString(d.seriesFactory)));
         } else {
             console.log("[x] router: factory set, ownership transferred to ADMIN");
         }
-        console.log("[ ] verify sources on Sourcify (forge verify-contract --verifier sourcify --chain <id>)");
+        console.log("[ ] verify sources on the Arc explorer (scripts/verify.sh)");
         console.log("[ ] check roles with cast call hasRole (deployer must hold none)");
         console.log("[ ] smoke test with the smallest amounts (MAINNET.md section 6)");
     }
 
     function _write(Config memory c, Deployment memory d) internal {
         string memory out = vm.envOr(
-            "ADDRESSES_OUT", string.concat(vm.projectRoot(), "/../deploy/addresses.", vm.toString(block.chainid), ".json")
+            "ADDRESSES_OUT",
+            string.concat(vm.projectRoot(), "/../deployments/", block.chainid == ARC ? "arc-mainnet" : "arc-testnet", ".json")
         );
         if (keccak256(bytes(out)) == keccak256("none")) return;
         string memory k = "launchpad";
         vm.serializeUint(k, "chainId", block.chainid);
+        vm.serializeString(k, "network", block.chainid == ARC ? "arc" : "arc-testnet");
         vm.serializeAddress(k, "usdc", c.usdc);
         vm.serializeAddress(k, "komaIssues", d.komaIssues);
         vm.serializeAddress(k, "seriesFactory", d.seriesFactory);

@@ -19,8 +19,8 @@ import {CoinDeployer} from "../../src/deployers/CoinDeployer.sol";
 import {CircleUSDC, IFiatToken} from "./CircleUSDC.sol";
 import {Tokenbound} from "./Tokenbound.sol";
 
-/// @notice Full launchpad on a local chain with no test doubles: Circle's FiatToken v2.2 (Arbitrum One USDC
-///         runtime code, etched), the real Tokenbound ERC-6551 registry / AccountProxy / AccountV3 (etched), and
+/// @notice Full launchpad on a local chain with no test doubles: Circle's FiatToken v2.2 (etched at Arc's USDC
+///         address with Arc's EIP-712 name, see CircleUSDC), the real Tokenbound ERC-6551 registry / AccountProxy / AccountV3 (etched), and
 ///         the real Uniswap v4 PoolManager / PositionManager / Permit2 deployed from their published artifacts.
 abstract contract LaunchpadFixture is Test, DeployPermit2 {
     string internal constant POOL_MANAGER_ARTIFACT =

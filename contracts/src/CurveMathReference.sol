@@ -3,9 +3,9 @@ pragma solidity ^0.8.28;
 
 import {ICurveMath} from "./interfaces/ICurveMath.sol";
 
-/// @title Solidity reference for the Stylus curve-math contract
-/// @notice Used by the unit tests, by the localnet deploy (anvil cannot run Stylus) and as the
-///         differential oracle and gas baseline for the Stylus build. Rounding follows the spec:
+/// @title KOMA bonding-curve math (virtual constant product)
+/// @notice The curve math every BondingCurve prices through. Checked against 2,500+ differential vectors from the
+///         original Rust implementation (test/vectors/curve.json). Rounding follows the spec:
 ///         the virtual product `k = vU * vC` is divided with a ceiling, so the trader always gets the floor.
 contract CurveMathReference is ICurveMath {
     error ZeroReserve();

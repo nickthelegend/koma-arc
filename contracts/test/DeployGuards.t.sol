@@ -12,75 +12,85 @@ contract GuardHarness is DeployLaunchpad {
     function config(address deployer) external view returns (Config memory) {
         return _config(deployer);
     }
+
+    function ensureErc6551(Config memory c) external {
+        _ensureErc6551(c);
+    }
 }
 
-/// The Monad mainnet guards of script/DeployLaunchpad.s.sol (AUDIT.md M-3), exercised offline: the chain id is
-/// set to 143 and the book addresses get placeholder code.
+/// The Arc mainnet guards of script/DeployLaunchpad.s.sol (AUDIT.md), exercised offline: the chain id is set to
+/// 5042 and the book addresses get placeholder code. (vm.setEnv is process-wide and tests run in parallel, so only
+/// one test sets env and none asserts on env-dependent defaults.)
 contract DeployGuardsTest is Test {
+    uint256 constant ARC = 5042;
+    uint256 constant ARC_TESTNET = 5042002;
+    address constant USDC = 0x3600000000000000000000000000000000000000;
+    address constant REGISTRY = 0x000000006551c19487814612e58FE06813775758;
+    address constant ACCOUNT_PROXY = 0x55266d75D1a14E4572138116aF39863Ed6596E7F;
+    address constant ACCOUNT_IMPL = 0x41C8f39463A868d3A88af00cd0fe7102F30E44eC;
+    address constant GUARDIAN = 0x2FE5ccb0d7Ea195FEb87987d3573F9fcCE2b5D57;
+    address constant FORWARDER = 0xcA1167915584462449EE5b4Ea51c37fE81eCDCCD;
+
     GuardHarness h;
     DeployLaunchpad.Config c;
 
     function setUp() public {
         h = new GuardHarness();
-        vm.chainId(143);
-        DeployLaunchpad.Book memory b = h.book(143);
+        vm.chainId(ARC);
+        DeployLaunchpad.Book memory b = h.book(ARC);
         c.mainnet = true;
+        c.deployV4 = true;
         c.deployer = makeAddr("deployer");
         c.admin = makeAddr("safe");
         c.treasury = makeAddr("treasury");
         c.relayer = makeAddr("relayer");
         c.usdc = b.usdc;
-        c.poolManager = b.poolManager;
-        c.positionManager = b.positionManager;
         c.permit2 = b.permit2;
-        c.v4Quoter = b.v4Quoter;
         c.erc6551Registry = b.erc6551Registry;
         c.accountProxy = b.accountProxy;
         c.accountImpl = b.accountImpl;
         c.baseURI = "https://koma.example/api/characters/";
         c.issuesBaseURI = "https://koma.example/api/tokens/";
-        address[9] memory withCode = [
-            b.usdc, b.poolManager, b.positionManager, b.permit2, b.v4Quoter, b.erc6551Registry, b.accountProxy,
-            b.accountImpl, c.admin
-        ];
+        address[3] memory withCode = [b.usdc, b.permit2, c.admin];
         for (uint256 i; i < withCode.length; i++) {
             vm.etch(withCode[i], hex"00");
         }
         vm.etch(CREATE2_FACTORY, hex"00");
     }
 
-    function test_MainnetBook() public view {
-        DeployLaunchpad.Book memory b = h.book(143);
-        assertEq(b.usdc, 0x00000000eFE302BEAA2b3e6e1b18d08D69a9012a, "AUSD");
-        assertEq(b.poolManager, 0x188d586Ddcf52439676Ca21A244753fA19F9Ea8e);
-        assertEq(b.positionManager, 0x5b7eC4a94fF9beDb700fb82aB09d5846972F4016);
-        assertEq(b.v4Quoter, 0xa222Dd357A9076d1091Ed6Aa2e16C9742dD26891);
-        assertEq(b.permit2, 0x000000000022D473030F116dDEE9F6B43aC78BA3);
-        assertEq(b.erc6551Registry, 0x000000006551c19487814612e58FE06813775758);
-        DeployLaunchpad.Book memory t = h.book(10143);
-        assertEq(t.usdc, 0xa9012a055bd4e0eDfF8Ce09f960291C09D5322dC, "testnet AUSD");
-        assertEq(t.poolManager, address(0), "no Uniswap v4 on Monad testnet: the script deploys it");
+    function test_ArcBook() public view {
+        for (uint256 i; i < 2; i++) {
+            DeployLaunchpad.Book memory b = h.book(i == 0 ? ARC : ARC_TESTNET);
+            assertEq(b.usdc, USDC, "USDC is the native gas token's ERC-20 interface");
+            assertEq(b.poolManager, address(0), "no Uniswap v4 on Arc: the script deploys it");
+            assertEq(b.permit2, 0x000000000022D473030F116dDEE9F6B43aC78BA3);
+            assertEq(b.erc6551Registry, REGISTRY);
+            assertEq(b.accountProxy, ACCOUNT_PROXY);
+            assertEq(b.accountImpl, ACCOUNT_IMPL);
+        }
         assertEq(h.book(1).usdc, address(0), "unknown chains get no defaults");
     }
 
     function test_TestnetDeploysItsOwnUniswapV4() public {
-        vm.chainId(10143);
-        vm.etch(0xa9012a055bd4e0eDfF8Ce09f960291C09D5322dC, hex"00");
+        vm.chainId(ARC_TESTNET);
         DeployLaunchpad.Config memory t = h.config(makeAddr("deployer"));
         assertTrue(t.deployV4);
         assertFalse(t.mainnet);
-        h.preflight(t); // passes without a PoolManager: the deploy creates one
+        h.preflight(t); // passes without a PoolManager or Tokenbound: the deploy creates them
     }
 
-    function test_MainnetNeverDeploysUniswapV4() public {
+    function test_MainnetDeploysUniswapV4AndNeedsExplicitRoles() public {
         vm.setEnv("ADMIN", vm.toString(c.admin));
         vm.setEnv("TREASURY", vm.toString(c.treasury));
         vm.setEnv("RELAYER", vm.toString(c.relayer));
         vm.setEnv("BASE_URI", c.baseURI);
         vm.setEnv("KOMA_BASE_URI", c.issuesBaseURI);
         DeployLaunchpad.Config memory m = h.config(makeAddr("deployer"));
-        assertFalse(m.deployV4);
-        assertEq(m.poolManager, 0x188d586Ddcf52439676Ca21A244753fA19F9Ea8e);
+        assertTrue(m.mainnet);
+        assertTrue(m.deployV4);
+        assertEq(m.usdc, USDC);
+        assertEq(m.minGraduationTarget, 1_000e6, "mainnet launch floor: 1,000 USDC");
+        assertEq(m.minVotingWindow, 3_600);
     }
 
     function test_ValidMainnetConfigPasses() public view {
@@ -121,9 +131,42 @@ contract DeployGuardsTest is Test {
         h.preflight(c);
     }
 
-    function test_RevertWhen_BookAddressHasNoCode() public {
-        vm.etch(c.poolManager, "");
+    function test_RevertWhen_GivenPoolManagerHasNoCode() public {
+        c.deployV4 = false;
+        c.poolManager = makeAddr("pool-manager");
+        c.positionManager = makeAddr("position-manager");
         vm.expectRevert(abi.encodeWithSelector(DeployLaunchpad.NoCode.selector, "POOL_MANAGER", c.poolManager));
         h.preflight(c);
+    }
+
+    function test_RevertWhen_NonCanonical6551HasNoCode() public {
+        c.accountImpl = makeAddr("custom-impl");
+        vm.etch(REGISTRY, hex"00");
+        vm.etch(ACCOUNT_PROXY, hex"00");
+        vm.expectRevert(abi.encodeWithSelector(DeployLaunchpad.NoCode.selector, "ACCOUNT_IMPL", c.accountImpl));
+        h.preflight(c);
+    }
+
+    /// The stored init code replays the canonical ERC-6551 registry and Tokenbound v0.3 at their exact addresses,
+    /// with the same runtime code as everywhere else (checked against the test fixture's etched Arbitrum One code).
+    function test_ReplaysCanonicalErc6551() public {
+        // the real Arachnid deterministic-deployment proxy runtime
+        vm.etch(
+            CREATE2_FACTORY,
+            hex"7fffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffe03601600081602082378035828234f58015156039578182fd5b8082525050506014600cf3"
+        );
+        address[5] memory parts = [REGISTRY, GUARDIAN, FORWARDER, ACCOUNT_IMPL, ACCOUNT_PROXY];
+        for (uint256 i; i < parts.length; i++) {
+            assertEq(parts[i].code.length, 0);
+        }
+        h.ensureErc6551(c);
+        for (uint256 i; i < parts.length; i++) {
+            assertGt(parts[i].code.length, 0, "deployed at the canonical address");
+        }
+        assertEq(keccak256(REGISTRY.code), keccak256(vm.parseBytes(vm.readFile("test/utils/bytecode/ERC6551Registry.hex"))));
+        assertEq(keccak256(ACCOUNT_PROXY.code), keccak256(vm.parseBytes(vm.readFile("test/utils/bytecode/AccountProxy.hex"))));
+        assertEq(keccak256(GUARDIAN.code), keccak256(vm.parseBytes(vm.readFile("test/utils/bytecode/AccountGuardian.hex"))));
+        // a second run is a no-op
+        h.ensureErc6551(c);
     }
 }

@@ -71,8 +71,11 @@ interface IFiatToken {
     function paused() external view returns (bool);
 }
 
-/// @title Real Circle USDC for unit tests
-/// @notice Etches the runtime code of Arbitrum One native USDC — the FiatTokenProxy at
+/// @title Real Circle USDC for unit tests, set up like Arc's
+/// @notice Arc's USDC ERC-20 interface (0x3600…0000) is a FiatTokenProxy over a FiatToken v2.2-compatible
+///         implementation (EIP-712 domain "USDC" / "2", EIP-3009, EIP-2612, blocklist). Arc's own implementation
+///         talks to the native-coin precompile, which a local EVM doesn't have, so the tests run Circle's audited
+///         FiatToken v2.2 bytecode at Arc's address with Arc's name. Provenance: the runtime code of Arbitrum One native USDC — the FiatTokenProxy at
 ///         0xaf88d065e77c8cC2239327C5EDb3A432268e5831 and its FiatTokenV2_2 implementation at
 ///         0x86E721b43d4ECFa71119Dd38c0f938A75Fdb57B3 (from the proxy's implementation slot) plus the
 ///         SignatureChecker library it is linked against (0x4e7D093EE4d74a01905Cf5CA92eB0bf154a53247), fetched with
@@ -82,7 +85,8 @@ interface IFiatToken {
 library CircleUSDC {
     Vm private constant vm = Vm(address(uint160(uint256(keccak256("hevm cheat code")))));
 
-    address internal constant USDC = 0xaf88d065e77c8cC2239327C5EDb3A432268e5831;
+    /// Arc's USDC address (mainnet and testnet)
+    address internal constant USDC = 0x3600000000000000000000000000000000000000;
     address internal constant IMPLEMENTATION = 0x86E721b43d4ECFa71119Dd38c0f938A75Fdb57B3;
     address internal constant SIGNATURE_CHECKER_LIB = 0x4e7D093EE4d74a01905Cf5CA92eB0bf154a53247;
     /// zeppelinos AdminUpgradeabilityProxy slots used by FiatTokenProxy
@@ -108,8 +112,9 @@ library CircleUSDC {
         vm.store(USDC, ADMIN_SLOT, bytes32(uint256(uint160(PROXY_ADMIN))));
         vm.label(USDC, "USDC");
 
-        usdc.initialize("USD Coin", "USDC", "USD", 6, MASTER_MINTER, PAUSER, BLACKLISTER, OWNER);
-        usdc.initializeV2("USD Coin");
+        // Arc's USDC: name() "USDC", version() "2"
+        usdc.initialize("USDC", "USDC", "USD", 6, MASTER_MINTER, PAUSER, BLACKLISTER, OWNER);
+        usdc.initializeV2("USDC");
         usdc.initializeV2_1(LOST_AND_FOUND);
         usdc.initializeV2_2(new address[](0), "USDC");
         vm.prank(MASTER_MINTER);

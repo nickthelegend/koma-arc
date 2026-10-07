@@ -1,15 +1,32 @@
+import { readFileSync } from "node:fs";
 import path from "node:path";
 import { createPublicClient, createWalletClient, http, nonceManager, publicActions } from "viem";
 import { privateKeyToAccount } from "viem/accounts";
 import { KOMA, RPC_URL } from "@/lib/network";
 
+/** The deploy script's output for this network (contracts/script/DeployLaunchpad.s.sol). */
+export const deploymentFile = () =>
+  process.env.KOMA_LAUNCHPAD_ADDRESSES || path.join(process.cwd(), "deployments", `${KOMA.testnet ? "arc-testnet" : "arc-mainnet"}.json`);
+
+/** KomaIssues from KOMA_CONTRACT, else from the deployment file. */
+function issuesContract(): string | undefined {
+  if (process.env.KOMA_CONTRACT) return process.env.KOMA_CONTRACT;
+  try {
+    const d = JSON.parse(readFileSync(deploymentFile(), "utf8")) as { chainId?: number; komaIssues?: string };
+    return d.chainId === KOMA.chain.id ? d.komaIssues : undefined;
+  } catch {
+    return undefined;
+  }
+}
+
 /** Everything the server needs from the environment, checked in one place. */
 function read() {
   const key = process.env.SERVER_PRIVATE_KEY as `0x${string}` | undefined;
   const account = key ? privateKeyToAccount(key, { nonceManager }) : null;
+  const contract = issuesContract();
   const missing = [
     !key && "SERVER_PRIVATE_KEY",
-    !process.env.KOMA_CONTRACT && "KOMA_CONTRACT",
+    !contract && "KOMA_CONTRACT (or a deployments/ file)",
   ].filter(Boolean) as string[];
 
   return {
@@ -18,7 +35,7 @@ function read() {
     rpcUrl: process.env.KOMA_SERVER_RPC_URL || RPC_URL,
     account,
     payTo: (process.env.KOMA_PAY_TO || account?.address) as `0x${string}` | undefined,
-    contract: (process.env.KOMA_CONTRACT || undefined) as `0x${string}` | undefined,
+    contract: contract as `0x${string}` | undefined,
     falKey: process.env.FAL_KEY,
     dataDir: process.env.KOMA_DATA_DIR || path.join(process.cwd(), ".data"),
     publicUrl: process.env.KOMA_PUBLIC_URL || "http://localhost:4310",

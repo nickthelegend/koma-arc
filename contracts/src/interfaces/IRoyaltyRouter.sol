@@ -2,7 +2,7 @@
 pragma solidity ^0.8.28;
 
 /// @title Royalty router
-/// @notice Implemented by the Stylus `royalty-router` contract and by `RoyaltyRouterReference`.
+/// @notice Implemented by `RoyaltyRouterReference`.
 ///         Splits every trading fee: 40% character TBA, 20% remix pool (ancestors), 40% treasury.
 interface IRoyaltyRouter {
     event Routed(uint256 indexed seriesId, address indexed recipient, uint256 amount, uint8 kind); // kind: 0 character, 1 ancestor, 2 treasury

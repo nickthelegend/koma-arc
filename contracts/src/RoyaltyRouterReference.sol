@@ -5,7 +5,7 @@ import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import {IRoyaltyRouter} from "./interfaces/IRoyaltyRouter.sol";
 
-/// @title Solidity reference for the Stylus royalty-router contract
+/// @title KOMA royalty router
 /// @notice Pushes every curve fee straight out: 40% to the series' character TBA, 40% to the treasury and a
 ///         20% remix pool that pays ancestor i (1 = parent) `pool >> i`, up to 8 generations. Whatever the
 ///         ancestors don't take (and all rounding dust) goes to the character, so exactly `amount` leaves.
