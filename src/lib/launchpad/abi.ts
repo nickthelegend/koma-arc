@@ -168,15 +168,6 @@ export const quoterAbi = parseAbi([
   "struct QuoteExactSingleParams { PoolKey poolKey; bool zeroForOne; uint128 exactAmount; bytes hookData; }",
   "function quoteExactInputSingle(QuoteExactSingleParams params) returns (uint256 amountOut, uint256 gasEstimate)",
 ]);
-/**
- * Uniswap v4 Quoter per chain (developers.uniswap.org deployments), used when an
- * addresses file predates its `v4Quoter` field. Forks use their parent chain's.
- */
-export const V4_QUOTERS: Record<number, `0x${string}`> = {
-  42161: "0x3972c00f7ed4885e145823eb7c655375d275a1c5",
-  421614: "0x7de51022d70a725b508085468052e25e22b5c4c9",
-  4216141: "0x7de51022d70a725b508085468052e25e22b5c4c9",
-};
 
 /** EIP-712 vote a holder signs for free; the relayer tallies and finalizes. */
 export const voteTypes = {
@@ -227,12 +218,13 @@ export const CANON_THRESHOLD = 1_000_000;
 /** Graduation targets the factory uses (LaunchpadConstants): a normal series, and a testnet demo series. */
 export const GRADUATION_TARGET_USDC = 5_000;
 export const DEMO_TARGET_USDC = 25;
-/** The curve opens with 1,000 virtual AUSD against 1B virtual coins. */
+/** The curve opens with 1,000 virtual USDC against 1B virtual coins. */
 export const START_PRICE_USDC = 1_000 / TOTAL_SUPPLY;
 
 /** Tokenbound AccountV3 (ERC-6551): the character's wallet. Only the Character NFT's owner can call execute. */
 export const tokenboundAbi = parseAbi([
   "function execute(address to, uint256 value, bytes data, uint8 operation) payable returns (bytes)",
+  "function executeBatch((address to, uint256 value, bytes data, uint8 operation)[] operations) payable returns (bytes[])",
   "function owner() view returns (address)",
   "function token() view returns (uint256 chainId, address tokenContract, uint256 tokenId)",
   "error NotAuthorized()",
@@ -242,9 +234,11 @@ export const tokenboundAbi = parseAbi([
 /** ERC-20 transfer, encoded as the call the character's wallet makes. */
 export const erc20TransferAbi = parseAbi(["function transfer(address to, uint256 amount) returns (bool)"]);
 
-/** Chainlink CRE receiver that finalizes canon slots from DON reports (contracts/src/cre/CanonSettler.sol). */
-export const settlerAbi = parseAbi([
-  "event Settled(uint256 indexed seriesId, uint256 indexed episode, uint256 winnerIssueId, bytes32 votesRoot)",
-  "event SettlementSkipped(uint256 indexed seriesId, uint256 indexed episode, bytes reason)",
-  "function settledCount() view returns (uint256)",
+/** ERC-20 approve, encoded as a call the character's wallet makes. */
+export const erc20ApproveAbi = parseAbi(["function approve(address spender, uint256 amount) returns (bool)"]);
+
+/** Circle CCTP V2 TokenMessengerV2 (burn side). */
+export const tokenMessengerAbi = parseAbi([
+  "function depositForBurnWithHook(uint256 amount, uint32 destinationDomain, bytes32 mintRecipient, address burnToken, bytes32 destinationCaller, uint256 maxFee, uint32 minFinalityThreshold, bytes hookData)",
+  "event DepositForBurn(address indexed burnToken, uint256 amount, address indexed depositor, bytes32 mintRecipient, uint32 destinationDomain, bytes32 destinationTokenMessenger, bytes32 destinationCaller, uint256 maxFee, uint32 indexed minFinalityThreshold, bytes hookData)",
 ]);

@@ -17,7 +17,7 @@ import { KOMA, LAUNCH_PRICE } from "@/lib/network";
 
 export const metadata: Metadata = {
   title: "Series",
-  description: "Back a character and steer its story. Each KOMA series has a Character NFT with its own wallet and a coin on an AUSD curve whose holders vote on canon.",
+  description: "Back a character and steer its story. Each KOMA series has a Character NFT with its own wallet and a coin on a USDC curve whose holders vote on canon.",
 };
 
 export const dynamic = "force-dynamic";
@@ -93,7 +93,7 @@ export default async function SeriesBoard({ searchParams }: PageProps<"/series">
           <h1 className="masthead text-[24vw] text-kapow sm:text-[clamp(88px,9vw,128px)]">Series</h1>
           <div className="max-w-[460px] md:pb-2">
             <p className="text-[14.5px] leading-relaxed text-soft">
-              Back a character and steer its story. Each series mints a Character NFT with its own wallet and opens a coin on an AUSD
+              Back a character and steer its story. Each series mints a Character NFT with its own wallet and opens a coin on a USDC
               curve. Holders vote on which episode becomes canon.
             </p>
             <div className="mt-4 flex flex-wrap items-center gap-x-5 gap-y-3">
@@ -312,7 +312,7 @@ function FirstSeries() {
         <p className="masthead text-[18vw] text-kapow md:text-[clamp(96px,10vw,150px)]">Series #1 is yours</p>
         <div className="md:max-w-[380px]">
           <p className="text-[15px] leading-relaxed text-soft">
-            Nothing has launched on {KOMA.label} yet. Describe a character and pitch the story: for ${LAUNCH_PRICE} in AUSD KOMA draws the
+            Nothing has launched on {KOMA.label} yet. Describe a character and pitch the story: for ${LAUNCH_PRICE} in USDC KOMA draws the
             character sheet, mints the Character NFT to you and opens its coin on the curve.
           </p>
           <span className="slant mt-5 h-11 px-6 text-[17px]">

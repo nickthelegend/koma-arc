@@ -10,7 +10,7 @@ export function ShareButton({ title, path, variant = "ghost" }: { title: string;
   const dialog = useRef<HTMLDialogElement>(null);
   // The sheet only renders its URL after a click, so reading location here never runs on the server.
   const url = open ? new URL(path, window.location.origin).toString() : path;
-  const text = `I'm reading “${title}” on KOMA, an AI comic minted on Monad.`;
+  const text = `I'm reading “${title}” on KOMA, an AI comic minted on Arc.`;
 
   useEffect(() => {
     const d = dialog.current;

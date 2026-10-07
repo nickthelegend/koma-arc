@@ -4,12 +4,12 @@ import Link from "next/link";
 import type { GenState, Stage } from "./use-generation";
 import { ComicPage } from "../comic-page";
 import { ShareButton } from "../share-button";
-import { MonadMark, IconBook, IconCheck, IconPen } from "../icons";
+import { ArcMark, IconBook, IconCheck, IconPen } from "../icons";
 import { short } from "@/lib/format";
 import { txUrl } from "@/lib/explorer";
 
 const STEPS: { key: Stage; label: string }[] = [
-  { key: "settling", label: "Payment settled on Monad" },
+  { key: "settling", label: "Payment settled on Arc" },
   { key: "writing", label: "Script written" },
   { key: "drawing", label: "Panels drawn" },
   { key: "lettering", label: "Balloons lettered" },
@@ -34,7 +34,7 @@ const txLink = (hash: string, label: string) => (
 function detail(step: Stage, s: GenState) {
   switch (step) {
     case "settling":
-      return s.paymentTx ? txLink(s.paymentTx, short(s.paymentTx, 8, 6)) : "Facilitator submitting the AUSD transfer…";
+      return s.paymentTx ? txLink(s.paymentTx, short(s.paymentTx, 8, 6)) : "Facilitator submitting the USDC transfer…";
     case "writing":
       return s.script ? `“${s.script.title}”` : "Planning beats and dialogue…";
     case "drawing":
@@ -119,7 +119,7 @@ export function Progress({ state, onReset, onRetry }: { state: GenState; onReset
           </div>
         ) : (
           <p className="mt-8 flex items-center gap-2 text-[12.5px] text-mute">
-            <MonadMark width={14} height={14} /> You can leave this page. The issue finishes and lands on your shelf.
+            <ArcMark width={14} height={14} /> You can leave this page. The issue finishes and lands on your shelf.
           </p>
         )}
       </aside>

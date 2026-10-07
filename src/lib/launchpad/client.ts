@@ -1,6 +1,6 @@
 import { createPublicClient, encodeFunctionData, http, toFunctionSelector, toHex, type Account, type Address, type Chain, type Hex, type Transport, type WalletClient } from "viem";
-import { KOMA, RPC_URL, USDC_DOMAIN } from "@/lib/network";
-import { coinAbi, curveAbi, erc20TransferAbi, graduatorAbi, permitTypes, quoterAbi, receiveAuthTypes, sellTypes, swapperAbi, tokenboundAbi, usdcAbi, voteTypes } from "./abi";
+import { KOMA, RPC_URL, USDC_DOMAIN, CCTP } from "@/lib/network";
+import { coinAbi, curveAbi, erc20ApproveAbi, erc20TransferAbi, tokenMessengerAbi, graduatorAbi, permitTypes, quoterAbi, receiveAuthTypes, sellTypes, swapperAbi, tokenboundAbi, usdcAbi, voteTypes } from "./abi";
 import { buyNonce } from "./intents";
 
 // Browser-side launchpad helpers: reads through KOMA's RPC, and the typed-data
@@ -29,7 +29,7 @@ export type SellRelay = {
 };
 
 /**
- * One AUSD signature (EIP-3009 ReceiveWithAuthorization) whose nonce commits
+ * One USDC signature (EIP-3009 ReceiveWithAuthorization) whose nonce commits
  * to the curve, amount, minimum out and deadline. Only the curve can redeem it.
  */
 export async function signGaslessBuy(
@@ -63,7 +63,7 @@ export async function signGaslessBuy(
 
 /**
  * Two signatures: an ERC-2612 permit letting the curve take the coins, and a
- * Sell intent binding the minimum AUSD out, deadline and the seller's nonce.
+ * Sell intent binding the minimum USDC out, deadline and the seller's nonce.
  */
 export async function signGaslessSell(
   wallet: Signer,
@@ -122,10 +122,10 @@ export type SwapBuyRelay = {
   salt: Hex; validAfter: string; validBefore: string; signature: Hex;
 };
 
-/** Exact-input quote from the v4 Quoter. `buyCoin`: AUSD in, coins out. */
+/** Exact-input quote from the v4 Quoter. `buyCoin`: USDC in, coins out. */
 export async function quotePool(o: { quoter: Address; graduator: Address; seriesId: number; buyCoin: boolean; amountIn: bigint }) {
   const key = await lpClient.readContract({ address: o.graduator, abi: graduatorAbi, functionName: "poolKeyOf", args: [BigInt(o.seriesId)] });
-  // AUSD → coin is zeroForOne exactly when AUSD is currency0.
+  // USDC → coin is zeroForOne exactly when USDC is currency0.
   const usdcIs0 = key.currency0.toLowerCase() === KOMA.usdc.toLowerCase();
   const { result } = await lpClient.simulateContract({
     address: o.quoter,
@@ -136,7 +136,7 @@ export async function quotePool(o: { quoter: Address; graduator: Address; series
   return result[0];
 }
 
-/** One AUSD signature, redeemable only by KomaSwapper for this series, amount, minimum and deadline. */
+/** One USDC signature, redeemable only by KomaSwapper for this series, amount, minimum and deadline. */
 export async function signGaslessSwapBuy(
   wallet: Signer,
   o: { swapper: Address; seriesId: number; buyer: Address; usdcIn: bigint; minCoinOut: bigint },
@@ -170,7 +170,7 @@ export async function signGaslessSwapBuy(
   };
 }
 
-/** Wallet-sent swap through the pool (needs MON for gas, or a Privy-sponsored wallet); the only way to sell after graduation. */
+/** Wallet-sent swap through the pool (gas is paid in USDC, like everything else on Arc); the only way to sell after graduation. */
 export async function directSwap(wallet: Signer, o: { swapper: Address; seriesId: number; coin: Address; buyCoin: boolean; amountIn: bigint; minOut: bigint }): Promise<Hex> {
   if (o.buyCoin) await ensureAllowance(wallet, KOMA.usdc, usdcAbi, o.swapper, o.amountIn);
   else await ensureAllowance(wallet, o.coin, coinAbi, o.swapper, o.amountIn);
@@ -199,7 +199,7 @@ const ERRORS: [string, string][] = [
   ["Slippage(uint256,uint256)", "The price moved more than 1% before your trade landed. Nothing was spent; try again."],
   ["Expired(uint256)", "The signature expired before it was sent. Nothing was spent; try again."],
   ["CurveComplete()", "The curve just reached its target, so trading on it has stopped."],
-  ["InsufficientReserve(uint256,uint256)", "The curve doesn't hold enough AUSD for that sale. Try a smaller amount."],
+  ["InsufficientReserve(uint256,uint256)", "The curve doesn't hold enough USDC for that sale. Try a smaller amount."],
   ["InvalidIntentSignature()", "The sell signature didn't check out. Try again."],
   ["ZeroAmount()", "Enter an amount above zero."],
   ["NotGraduated(uint256)", "This series still trades on its curve."],
@@ -262,9 +262,9 @@ export async function landed(hash: Hex) {
 // ——— The character's wallet (ERC-6551, Tokenbound AccountV3).
 
 /**
- * Moves AUSD out of a character's wallet to the Character NFT's owner. The
+ * Moves USDC out of a character's wallet to the Character NFT's owner. The
  * owner's wallet calls execute() on the account, which makes the account call
- * AUSD.transfer. A normal wallet transaction: the owner pays the gas.
+ * USDC.transfer. A normal wallet transaction: the owner pays the gas.
  */
 export async function withdrawCharacterUsdc(wallet: Signer, o: { account: Address; amount: bigint }): Promise<Hex> {
   const data = encodeFunctionData({ abi: erc20TransferAbi, functionName: "transfer", args: [wallet.account.address, o.amount] });
@@ -276,4 +276,71 @@ export async function withdrawCharacterUsdc(wallet: Signer, o: { account: Addres
     functionName: "execute",
     args: [KOMA.usdc, BigInt(0), data, 0],
   });
+}
+
+// ——— Cross-chain withdrawal (Circle CCTP V2 + Forwarding Service).
+
+/** CCTP's Forwarding Service hook: magic "cctp-forward", version 0, no extra data. Circle mints on the destination. */
+export const FORWARD_HOOK: Hex = "0x636374702d666f72776172640000000000000000000000000000000000000000";
+/** Standard finality: Arc blocks are final on inclusion, so a standard attestation is already quick and fee-free. */
+const STANDARD_FINALITY = 2000;
+
+export type CctpQuote = { forwardFee: bigint; protocolFeeBps: number; maxFee: bigint };
+
+/** Fee for burning on Arc and having Circle mint on `destDomain` (the Forwarding Service's gas, plus CCTP's rate). */
+export async function cctpQuote(destDomain: number, amount: bigint): Promise<CctpQuote> {
+  const res = await fetch(`${KOMA.cctp.iris}/v2/burn/USDC/fees/${CCTP.arcDomain}/${destDomain}?forward=true`);
+  if (!res.ok) throw new Error(`Circle's fee API answered ${res.status}.`);
+  const rows = (await res.json()) as { finalityThreshold: number; minimumFee: number; forwardFee?: { med: number } }[];
+  const row = rows.find((r) => r.finalityThreshold === STANDARD_FINALITY) ?? rows[0];
+  if (!row?.forwardFee) throw new Error("Circle doesn't forward to that chain right now.");
+  const forwardFee = BigInt(row.forwardFee.med);
+  const protocolFee = (amount * BigInt(Math.round(row.minimumFee * 100))) / BigInt(1_000_000);
+  // A little headroom over the median: forward fees move with destination gas prices between quote and burn.
+  const maxFee = ((forwardFee + protocolFee) * BigInt(110)) / BigInt(100);
+  return { forwardFee, protocolFeeBps: row.minimumFee, maxFee };
+}
+
+/**
+ * Sends a character's USDC to another chain. One transaction from the Character NFT's owner: the ERC-6551
+ * account runs a batch that approves TokenMessengerV2 and burns with the forwarding hook. Circle attests the burn
+ * and its Forwarding Service mints `amount - fees` to `recipient` on the destination, so the owner never needs
+ * gas there.
+ */
+export async function bridgeCharacterUsdc(
+  wallet: Signer,
+  o: { account: Address; amount: bigint; destDomain: number; recipient: Address; maxFee: bigint },
+): Promise<Hex> {
+  if (o.amount <= o.maxFee) throw new Error("That's less than Circle's forwarding fee.");
+  const messenger = KOMA.cctp.tokenMessenger as Address;
+  const mintRecipient = `0x${o.recipient.slice(2).toLowerCase().padStart(64, "0")}` as Hex;
+  const zero32 = `0x${"0".repeat(64)}` as Hex;
+  const approve = encodeFunctionData({ abi: erc20ApproveAbi, functionName: "approve", args: [messenger, o.amount] });
+  const burn = encodeFunctionData({
+    abi: tokenMessengerAbi,
+    functionName: "depositForBurnWithHook",
+    args: [o.amount, o.destDomain, mintRecipient, KOMA.usdc, zero32, o.maxFee, STANDARD_FINALITY, FORWARD_HOOK],
+  });
+  return wallet.writeContract({
+    account: wallet.account,
+    chain: KOMA.chain,
+    address: o.account,
+    abi: tokenboundAbi,
+    functionName: "executeBatch",
+    args: [[
+      { to: KOMA.usdc, value: BigInt(0), data: approve, operation: 0 },
+      { to: messenger, value: BigInt(0), data: burn, operation: 0 },
+    ]],
+  });
+}
+
+export type CctpStatus = { status: string; forwardState?: string; forwardTxHash?: string; delayReason?: string | null };
+
+/** Where a burn is: Circle's attestation status and, with forwarding, the destination mint. */
+export async function cctpStatus(burnTx: Hex): Promise<CctpStatus | null> {
+  const res = await fetch(`${KOMA.cctp.iris}/v2/messages/${CCTP.arcDomain}?transactionHash=${burnTx}`);
+  if (res.status === 404) return null;
+  if (!res.ok) throw new Error(`Circle's attestation API answered ${res.status}.`);
+  const body = (await res.json()) as { messages?: CctpStatus[] };
+  return body.messages?.[0] ?? null;
 }

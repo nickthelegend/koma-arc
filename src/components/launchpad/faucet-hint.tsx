@@ -1,38 +1,30 @@
 "use client";
 
-import { useState } from "react";
 import { KOMA } from "@/lib/network";
 import { useWallet } from "../wallet";
 
-/** Not enough AUSD: on testnets, where free test AUSD comes from; on Monad, plainly how much more is needed. */
-export function FaucetHint({ need }: { need: number }) {
-  const { address, usdc, refreshBalance } = useWallet();
-  const [faucet, setFaucet] = useState<{ busy: boolean; error?: string }>({ busy: false });
-
-  async function claim() {
-    setFaucet({ busy: true });
-    const res = await fetch("/api/faucet", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ address }) }).catch(() => null);
-    const body = (await res?.json().catch(() => null)) as { error?: string } | null;
-    if (!res?.ok) {
-      setFaucet({ busy: false, error: body?.error ?? "The faucet didn't answer. Try again." });
-      return;
-    }
-    refreshBalance();
-    setFaucet({ busy: false });
-  }
-
+/**
+ * Not enough USDC. On Arc testnet, Circle's faucet hands out test USDC (which is also the gas token); on Arc
+ * mainnet, USDC arrives from an exchange or from any CCTP chain. Either way it is the only token a user needs.
+ */
+export function FaucetHint({ need, noun = "this" }: { need: number; noun?: string }) {
+  const { usdc, refreshBalance } = useWallet();
   return (
     <div className="border border-kapow/50 px-3 py-3 text-[13px] leading-relaxed text-soft">
-      Your wallet has {usdc.toFixed(2)} AUSD on {KOMA.label}. Add at least {Math.max(0.01, need - usdc).toFixed(2)} more for this.
-      {KOMA.faucet && (
+      Your wallet has {usdc.toFixed(2)} USDC on {KOMA.label}. Add at least {Math.max(0.01, need - usdc).toFixed(2)} more for {noun}.
+      {KOMA.faucetUrl ? (
         <>
-          <button onClick={claim} disabled={faucet.busy} className="mt-3 block h-10 w-full bg-arb font-display text-[16px] uppercase text-ink disabled:opacity-60">
-            {faucet.busy ? "Asking Agora's faucet…" : "Get 10,000 test AUSD"}
+          {" "}Pick <b>Arc Testnet</b> on Circle&apos;s faucet; it sends test USDC in seconds, and that USDC also pays any gas.
+          <a href={KOMA.faucetUrl} target="_blank" rel="noreferrer" className="mt-3 flex h-10 w-full items-center justify-center bg-arb font-display text-[16px] uppercase text-ink">
+            Get test USDC from Circle
+          </a>
+          <button onClick={refreshBalance} className="mt-2 block w-full text-center font-mono text-[11px] uppercase tracking-wide text-mute underline">
+            I&apos;ve got it, refresh my balance
           </button>
-          {faucet.error && <span role="alert" className="mt-2 block text-kapow">{faucet.error}</span>}
         </>
+      ) : (
+        <> Send USDC on Arc to this wallet from an exchange, or bridge it in from another chain with CCTP.</>
       )}
-      {KOMA.key === "monad" && <> Send AUSD on Monad to this wallet, from an exchange or a bridge.</>}
     </div>
   );
 }

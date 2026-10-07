@@ -1,6 +1,6 @@
 import { allComics } from "@/lib/catalog";
 import { short } from "@/lib/format";
-import { MonadMark } from "./icons";
+import { ArcMark } from "./icons";
 
 /** The one ambient motion on the site: settled payments rolling past like a stock tape. */
 export async function ReceiptsTicker() {
@@ -14,10 +14,10 @@ export async function ReceiptsTicker() {
     <ul className="flex shrink-0 items-center" aria-hidden={hidden || undefined}>
       {items.map((i) => (
         <li key={i.tx} className="flex items-center gap-2 whitespace-nowrap px-5 text-[12.5px]">
-          <MonadMark width={13} height={13} />
+          <ArcMark width={13} height={13} />
           <span className="text-paper">{i.who}</span>
           <span className="text-mute">paid</span>
-          <span className="font-mono text-arb">{i.usdc} AUSD</span>
+          <span className="font-mono text-arb">{i.usdc} USDC</span>
           <span className="text-mute">for</span>
           <span className="font-display uppercase tracking-wide text-paper">{i.title}</span>
           <span className="font-mono text-[11px] text-mute">{short(i.tx, 6, 4)}</span>
@@ -26,7 +26,7 @@ export async function ReceiptsTicker() {
     </ul>
   );
   return (
-    <div className="relative overflow-hidden border-y border-arb/25 bg-[#07131d] py-2.5" role="marquee" aria-label="Recent payments on Monad">
+    <div className="relative overflow-hidden border-y border-arb/25 bg-[#07131d] py-2.5" role="marquee" aria-label="Recent payments on Arc">
       <div className="flex w-max animate-ticker motion-reduce:animate-none">
         {row(false)}
         {row(true)}

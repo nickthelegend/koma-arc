@@ -1,7 +1,7 @@
 "use client";
 
 import { useWallet } from "./wallet";
-import { MonadMark } from "./icons";
+import { ArcMark } from "./icons";
 import { short } from "@/lib/format";
 
 export function WalletButton({ compact = false }: { compact?: boolean }) {
@@ -32,8 +32,8 @@ export function WalletButton({ compact = false }: { compact?: boolean }) {
       title="Disconnect"
       className="group flex h-9 items-center gap-2 border border-rule bg-stock pl-2 pr-3 text-[13px] hover:border-arb"
     >
-      <MonadMark />
-      {!compact && <span className="font-mono text-[12px] text-arb">{usdcLoaded ? usdc.toFixed(2) : "…"} AUSD</span>}
+      <ArcMark />
+      {!compact && <span className="font-mono text-[12px] text-arb">{usdcLoaded ? usdc.toFixed(2) : "…"} USDC</span>}
       <span className="font-mono text-[12px] text-soft group-hover:text-paper">{short(address, 5, 3)}</span>
     </button>
   );

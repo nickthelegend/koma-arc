@@ -11,7 +11,7 @@ import type { Addr } from "@/lib/launchpad/types";
 import { txUrl } from "@/lib/explorer";
 import { coinAmount, countdown, short, usdAmount } from "@/lib/format";
 import { GASLESS_MIN_USDC, KOMA, TRADE_FEE_PCT } from "@/lib/network";
-import { MonadMark } from "../icons";
+import { ArcMark } from "../icons";
 import { useWallet, walletErrorMessage } from "../wallet";
 import { FaucetHint } from "./faucet-hint";
 
@@ -130,12 +130,11 @@ export function TradeWidget({ s }: { s: TradeSeries }) {
   const shortCoins = side === "sell" && input !== null && (me ? coinBal.data !== undefined && input > coins : true);
   const overCap = sniping && side === "buy" && q !== null && coins + q.out > SNIPE_CAP;
   const minOut = q ? withSlippage(q.out, SLIPPAGE_BPS) : BigInt(0);
-  // A Privy embedded wallet's own transactions are gas-sponsored, so it never needs MON.
-  const sponsored = Boolean(wallet.privy?.sponsored);
-  const hasGas = sponsored || (eth.data?.value ?? BigInt(0)) > BigInt(0);
+  // On Arc gas is paid in USDC (the native balance is the same USDC), so any USDC covers a wallet transaction.
+  const hasGas = (eth.data?.value ?? BigInt(0)) > BigInt(0);
   // Selling into the pool is a wallet transaction (no gasless sell after graduation).
   const needsGas = pool && side === "sell";
-  // KOMA relays trades for free from $3; smaller ones would cost more gas than their fee.
+  // KOMA relays trades for free from $1; smaller ones would cost more gas than their fee.
   const gaslessOk = !q || (side === "buy" ? (pool ? q.input : q.used) >= MIN_GASLESS : q.out >= MIN_GASLESS);
   const tradeOk = Boolean(me && q && !busy && !shortUsdc && !shortCoins && !overCap);
   const canSend = tradeOk && (needsGas ? hasGas : gaslessOk);
@@ -153,7 +152,7 @@ export function TradeWidget({ s }: { s: TradeSeries }) {
   async function trade(direct: boolean) {
     if (!q || !input || !me) return;
     // A buy that would overshoot the curve's target only authorizes what the target needs,
-    // so the wallet never has to hold (or sign for) AUSD the curve would refund.
+    // so the wallet never has to hold (or sign for) USDC the curve would refund.
     const spend = !pool && side === "buy" && q.used < input ? q.used : input;
     setPhase({ step: "signing" });
     try {
@@ -232,10 +231,10 @@ export function TradeWidget({ s }: { s: TradeSeries }) {
 
       <div role="tabpanel" id={`${ids}-panel`} aria-labelledby={`${ids}-${side}`} className="p-4">
         <label htmlFor={`${ids}-amt`} className="flex items-baseline justify-between text-[12.5px] text-mute">
-          <span>{side === "buy" ? "You pay (AUSD)" : `You sell ($${s.symbol})`}</span>
+          <span>{side === "buy" ? "You pay (USDC)" : `You sell ($${s.symbol})`}</span>
           {me && (
             <span className="font-mono text-[11.5px]">
-              {side === "buy" ? `${wallet.usdcLoaded ? wallet.usdc.toFixed(2) : "…"} AUSD` : `${coinBal.data !== undefined ? coinsFmt(coins) : "…"} $${s.symbol}`}
+              {side === "buy" ? `${wallet.usdcLoaded ? wallet.usdc.toFixed(2) : "…"} USDC` : `${coinBal.data !== undefined ? coinsFmt(coins) : "…"} $${s.symbol}`}
             </span>
           )}
         </label>
@@ -279,7 +278,7 @@ export function TradeWidget({ s }: { s: TradeSeries }) {
           {!input ? (
             <p className="py-5 text-center text-mute">Enter an amount for a live quote from the {pool ? "Uniswap v4 pool" : "curve"}.</p>
           ) : shortCoins ? (
-            // A curve quote for coins you don't hold is meaningless (it can exceed the AUSD the curve holds).
+            // A curve quote for coins you don't hold is meaningless (it can exceed the USDC the curve holds).
             <p className="py-5 text-center text-soft">
               {me ? `You hold ${coinsFmt(coins)} $${s.symbol}. Tap Max to sell all of it.` : `Connect your wallet to sell $${s.symbol}.`}
             </p>
@@ -287,7 +286,7 @@ export function TradeWidget({ s }: { s: TradeSeries }) {
             <>
               <div className="flex justify-between gap-3 py-0.5">
                 <dt className="text-mute">You get</dt>
-                <dd className="font-mono text-paper">{side === "buy" ? `${coinsFmt(q.out)} $${s.symbol}` : `${usdcFmt(q.out)} AUSD`}</dd>
+                <dd className="font-mono text-paper">{side === "buy" ? `${coinsFmt(q.out)} $${s.symbol}` : `${usdcFmt(q.out)} USDC`}</dd>
               </div>
               <div className="flex justify-between gap-3 py-0.5">
                 <dt className="text-mute">{pool ? "Pool fee" : `Fee (${TRADE_FEE_PCT}%)`}</dt>
@@ -295,7 +294,7 @@ export function TradeWidget({ s }: { s: TradeSeries }) {
               </div>
               <div className="flex justify-between gap-3 py-0.5">
                 <dt className="text-mute">Minimum, 1% slippage</dt>
-                <dd className="font-mono text-soft">{side === "buy" ? `${coinsFmt(minOut)} $${s.symbol}` : `${usdcFmt(minOut)} AUSD`}</dd>
+                <dd className="font-mono text-soft">{side === "buy" ? `${coinsFmt(minOut)} $${s.symbol}` : `${usdcFmt(minOut)} USDC`}</dd>
               </div>
               {side === "buy" && q.used < q.input && (
                 <p className="mt-1 text-[12px] leading-snug text-bam">
@@ -333,13 +332,13 @@ export function TradeWidget({ s }: { s: TradeSeries }) {
                   : phase.step === "sending"
                     ? "Sending…"
                     : phase.step === "confirming"
-                      ? "Landing on Monad…"
+                      ? "Landing on Arc…"
                       : shortCoins
                         ? `Not enough $${s.symbol}`
                         : needsGas
                           ? hasGas
                             ? "Sell into the pool"
-                            : "Needs MON for gas"
+                            : "Needs a little USDC for gas"
                           : !gaslessOk
                             ? `Gasless from $${GASLESS_MIN_USDC}`
                             : side === "buy"
@@ -347,14 +346,12 @@ export function TradeWidget({ s }: { s: TradeSeries }) {
                             : "Sign & sell — no gas"}
               </button>
               <p className="mt-2.5 flex items-center justify-center gap-1.5 text-[12px] text-mute">
-                <MonadMark width={12} height={12} />{" "}
+                <ArcMark width={12} height={12} />{" "}
                 {needsGas
-                  ? sponsored
-                    ? "Selling into the v4 pool is a wallet transaction; Privy sponsors the gas"
-                    : "Selling into the v4 pool is a wallet transaction; your wallet pays the gas"
+                  ? "Selling into the v4 pool is a wallet transaction; your wallet pays a fraction of a cent of gas in USDC"
                   : !gaslessOk
                     ? `KOMA pays the gas on trades of $${GASLESS_MIN_USDC} or more. Smaller ones go through your own wallet.`
-                    : `${side === "buy" ? "One AUSD signature" : "Two signatures (permit + sell)"} · KOMA’s relayer pays the gas`}
+                    : `${side === "buy" ? "One USDC signature" : "Two signatures (permit + sell)"} · KOMA’s relayer pays the gas`}
               </p>
               {hasGas && !needsGas && (
                 <button
@@ -362,7 +359,7 @@ export function TradeWidget({ s }: { s: TradeSeries }) {
                   disabled={!canSendDirect}
                   className="mx-auto mt-2 block text-[12.5px] text-soft underline decoration-rule underline-offset-4 hover:text-paper disabled:opacity-40"
                 >
-                  {sponsored ? "Send it from your wallet (gas sponsored by Privy)" : "Send it yourself (your wallet pays the gas)"}
+                  Send it yourself (your wallet pays the gas, in USDC)
                 </button>
               )}
             </>
@@ -417,7 +414,7 @@ function Graduation({ s }: { s: TradeSeries }) {
   return (
     <section aria-label="Graduation" className="border border-arb/30 bg-[#06111a] p-4">
       <p className="flex items-center gap-2 font-display text-[20px] uppercase tracking-wide text-arb">
-        <MonadMark /> {s.graduated ? "Graduated to Uniswap v4" : "Curve complete"}
+        <ArcMark /> {s.graduated ? "Graduated to Uniswap v4" : "Curve complete"}
       </p>
       {s.graduated ? (
         <>
@@ -429,7 +426,7 @@ function Graduation({ s }: { s: TradeSeries }) {
             <dl className="mt-3 text-[12.5px]">
               {[
                 ["Pool id", short(s.pool.poolId, 10, 6)],
-                ["AUSD seeded at graduation", usdAmount(s.pool.usdc)],
+                ["USDC seeded at graduation", usdAmount(s.pool.usdc)],
                 [`$${s.symbol} seeded`, coinAmount(s.pool.coins)],
               ].map(([k, v]) => (
                 <div key={k} className="flex justify-between gap-3 border-t border-arb/15 py-2 first:border-t-0">
@@ -443,11 +440,11 @@ function Graduation({ s }: { s: TradeSeries }) {
       ) : (
         <>
           <p className="mt-2 text-[13.5px] leading-relaxed text-soft">
-            The curve hit its target, so trading on it has stopped. Graduation moves its AUSD and remaining coins into a Uniswap v4
+            The curve hit its target, so trading on it has stopped. Graduation moves its USDC and remaining coins into a Uniswap v4
             pool at the final curve price. KOMA does this on its own within a minute; anyone can trigger it now.
           </p>
           <button onClick={graduate} disabled={state.busy} className="slant slant-arb mt-4 w-full py-3 text-[18px]">
-            {state.busy ? (state.tx ? "Landing on Monad…" : "Graduating…") : "Graduate now"}
+            {state.busy ? (state.tx ? "Landing on Arc…" : "Graduating…") : "Graduate now"}
           </button>
         </>
       )}

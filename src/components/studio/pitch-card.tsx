@@ -4,7 +4,7 @@ import { cast as roster, styles } from "@/lib/studio-config";
 import { PAGE_OPTIONS } from "@/lib/network";
 import { priceFor } from "@/lib/order";
 import type { Pitch } from "@/lib/types";
-import { MonadMark } from "../icons";
+import { ArcMark } from "../icons";
 
 /** The deal on the table: what will be drawn and what it costs. */
 export function PitchCard({
@@ -72,10 +72,10 @@ export function PitchCard({
         {!locked && (
           <>
             <button onClick={onPay} disabled={busy} className="slant mt-5 w-full py-3.5 text-[20px]">
-              {busy ? "Getting quote…" : `Pay ${pitch.price} AUSD & draw`}
+              {busy ? "Getting quote…" : `Pay ${pitch.price} USDC & draw`}
             </button>
             <p className="mt-2.5 flex items-center justify-center gap-1.5 text-[12px] text-mute">
-              <MonadMark width={12} height={12} /> One signature in your wallet · no gas
+              <ArcMark width={12} height={12} /> One signature in your wallet · no gas
             </p>
           </>
         )}

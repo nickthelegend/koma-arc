@@ -23,8 +23,8 @@ export default function RoomPage() {
         <summary className="cursor-pointer font-display text-[15px] uppercase text-paper">How the room works</summary>
         <ul className="mt-3 list-disc space-y-1.5 pl-5">
           <li>
-            Your passkey evaluates WebAuthn PRF under KOMA&rsquo;s own salt (<code className="font-mono text-[12px]">koma.writers-room.v1</code>), using
-            Mera. That gives 32 secret bytes on your device, and the same bytes on any device with the same passkey.
+            Your passkey evaluates WebAuthn PRF under KOMA&rsquo;s own salt (<code className="font-mono text-[12px]">koma.writers-room.v1</code>), through
+            the browser&rsquo;s own WebAuthn API. That gives 32 secret bytes on your device, and the same bytes on any device with the same passkey.
           </li>
           <li>
             HKDF splits them into two keys that are not a wallet: an Ed25519 identity (its public key is your room id; it signs each request) and an

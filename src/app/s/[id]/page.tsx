@@ -8,7 +8,7 @@ import type { SeriesDetail } from "@/lib/launchpad/types";
 import { txUrl, isExternal } from "@/lib/explorer";
 import { agoSec, coinAmount, coinPrice, coinPricePlain, compact, progressLabel, short, usdAmount } from "@/lib/format";
 import { Sheet, RaisedBar, DemoBadge, GraduatedBadge } from "@/components/launchpad/sheet";
-import { BuiltOnMonad } from "@/components/launchpad/built-on-monad";
+import { BuiltOnArc } from "@/components/launchpad/built-on-arc";
 import { CharacterEarnings } from "@/components/launchpad/character-earnings";
 import { COIN_DISCLAIMER, MAINNET } from "@/components/launchpad/network-note";
 import { config } from "@/lib/server/config";
@@ -16,10 +16,9 @@ import { TOTAL_SUPPLY } from "@/lib/launchpad/abi";
 import { PriceChart } from "@/components/launchpad/price-chart";
 import { TradeWidget } from "@/components/launchpad/trade-widget";
 import { CanonBoard } from "@/components/launchpad/canon-board";
-import { AutopilotPanel } from "@/components/launchpad/autopilot-panel";
 import { AddressList } from "@/components/launchpad/address-list";
 import { AutoRefresh } from "@/components/launchpad/auto-refresh";
-import { MonadMark, IconBack, IconRemix } from "@/components/icons";
+import { ArcMark, IconBack, IconRemix } from "@/components/icons";
 import { FEE_SPLIT, GRADUATION_FEE_PCT, TRADE_FEE_PCT } from "@/lib/network";
 
 export const dynamic = "force-dynamic";
@@ -80,9 +79,9 @@ export default async function SeriesPage({ params }: PageProps<"/s/[id]">) {
             <div className="flex flex-wrap items-center gap-2">
               {s.graduated ? <GraduatedBadge /> : s.demo && !MAINNET && <DemoBadge target={s.targetUsdc} />}
               {s.genre && <span className="bg-paper px-1.5 py-1 font-display text-[11px] uppercase leading-none text-paper-ink">{s.genre}</span>}
-              <a href="#built-on-monad" className="flex items-center gap-1.5 border border-arb/40 px-1.5 py-0.5 text-[11.5px] text-arb hover:border-arb">
-                <MonadMark width={12} height={12} />
-                Built on Monad
+              <a href="#built-on-arc" className="flex items-center gap-1.5 border border-arb/40 px-1.5 py-0.5 text-[11.5px] text-arb hover:border-arb">
+                <ArcMark width={12} height={12} />
+                Built on Arc
               </a>
             </div>
             <h1 className="masthead mt-3 break-words text-[clamp(52px,16vw,84px)] text-paper md:text-[clamp(72px,7.2vw,112px)]">{s.name}</h1>
@@ -188,7 +187,6 @@ export default async function SeriesPage({ params }: PageProps<"/s/[id]">) {
             />
           </div>
 
-          {!s.graduated && <AutopilotPanel seriesId={s.id} symbol={symbol} />}
 
           <CharacterEarnings
             account={s.characterAccount}
@@ -213,7 +211,7 @@ export default async function SeriesPage({ params }: PageProps<"/s/[id]">) {
                   <thead className="bg-stock text-[11.5px] text-mute">
                     <tr>
                       <th scope="col" className="px-3 py-2 font-normal">Side</th>
-                      <th scope="col" className="px-3 py-2 text-right font-normal">AUSD</th>
+                      <th scope="col" className="px-3 py-2 text-right font-normal">USDC</th>
                       <th scope="col" className="px-3 py-2 text-right font-normal">${symbol}</th>
                       <th scope="col" className="hidden px-3 py-2 text-right font-normal sm:table-cell">Price</th>
                       <th scope="col" className="hidden px-3 py-2 font-normal md:table-cell">Trader</th>
@@ -247,7 +245,7 @@ export default async function SeriesPage({ params }: PageProps<"/s/[id]">) {
             <p className="mt-2 max-w-[62ch] text-[13px] leading-relaxed text-mute">
               The {TRADE_FEE_PCT}% fee is split on-chain as it&rsquo;s paid: {FEE_SPLIT.character}% to this character&rsquo;s wallet,{" "}
               {FEE_SPLIT.remix}% up the remix tree (half to the parent, a quarter to the grandparent, and so on), {FEE_SPLIT.treasury}% to
-              KOMA&rsquo;s treasury. With no parent, the character keeps the {FEE_SPLIT.remix}%. At graduation, {GRADUATION_FEE_PCT}% of the AUSD
+              KOMA&rsquo;s treasury. With no parent, the character keeps the {FEE_SPLIT.remix}%. At graduation, {GRADUATION_FEE_PCT}% of the USDC
               raised goes to KOMA and the rest seeds the pool.
             </p>
             {s.royalties.length === 0 ? (
@@ -320,7 +318,7 @@ export default async function SeriesPage({ params }: PageProps<"/s/[id]">) {
       </div>
 
       <div className="mx-auto mt-14 max-w-[1320px] px-4 md:px-8">
-        <BuiltOnMonad lp={lp} facilitator={config.account?.address ?? null} character={{ name: s.characterName, account: s.characterAccount }} />
+        <BuiltOnArc lp={lp} facilitator={config.account?.address ?? null} character={{ name: s.characterName, account: s.characterAccount }} />
       </div>
     </>
   );

@@ -6,8 +6,7 @@ contracts/out
 contracts/cache
 contracts/lib
 contracts/broadcast
+indexer/node_modules
+indexer/generated
 *.tsbuildinfo
 .git
-stylus/target
-stylus/**/target
-stylus/.devnode

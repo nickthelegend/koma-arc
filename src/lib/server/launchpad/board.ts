@@ -6,7 +6,7 @@ import { db } from "./db";
  * The board's leaderboard: global totals, the series with the most volume and the biggest backers.
  *
  * With ENVIO_GRAPHQL_URL set it comes from the Envio HyperIndex indexer (indexer/), which aggregates every
- * curve trade, pool swap, holder balance and canon round on Monad. Without it, or if the indexer is down or
+ * curve trade, pool swap, holder balance and canon round on Arc. Without it, or if the indexer is down or
  * behind, the same numbers are computed from KOMA's own SQLite event cache, so the board never goes blank.
  */
 export type Board = {

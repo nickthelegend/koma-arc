@@ -284,11 +284,6 @@ export function CanonBoard({ seriesId, symbol, characterName, coin, canonRegistr
                 <p className="mt-0.5 font-mono text-[11px] text-mute">
                   {c.totalVotes > 0 ? `${coinAmount(c.winnerVotes)} of ${coinAmount(c.totalVotes)} votes` : "No votes were cast, so the earliest proposal became canon"}{c.votesRoot && ` · votes root ${short(c.votesRoot, 8, 4)}`}
                 </p>
-                {c.settledBy === "cre" && (
-                  <p className="mt-1 inline-block border border-arb/40 px-1.5 py-0.5 font-mono text-[10.5px] uppercase tracking-wide text-arb" title="Tallied and settled on chain by a Chainlink CRE workflow: signatures and snapshot weights verified by the DON">
-                    Settled by Chainlink CRE
-                  </p>
-                )}
               </li>
             ))}
           </ol>

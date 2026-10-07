@@ -24,10 +24,10 @@ export const IconChevron = (p: P) => (<svg {...base} {...p}><path d="m9 6 6 6-6 
 export const IconEye = (p: P) => (<svg {...base} {...p}><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12z" /><circle cx="12" cy="12" r="3" /></svg>);
 export const IconX = (p: P) => (<svg width={18} height={18} viewBox="0 0 24 24" fill="currentColor" aria-hidden {...p}><path d="M17.8 3h3.1l-6.8 7.7L22 21h-6.2l-4.9-6.3L5.3 21H2.2l7.2-8.3L1.8 3h6.4l4.4 5.8zm-1.1 16.2h1.7L7.4 4.7H5.6z" /></svg>);
 
-/** Monad's mark, simplified: the only place the chain's own shape appears. */
-/** Monad's mark: a rounded diamond with a diamond cut-out. */
-export const MonadMark = (p: P) => (
+/** Arc's mark, simplified: a rising arc over a baseline. The only place the chain's own shape appears. */
+export const ArcMark = (p: P) => (
   <svg width={16} height={16} viewBox="0 0 24 24" aria-hidden {...p}>
-    <path d="M12 1.6c-2.9 0-10.4 7.5-10.4 10.4S9.1 22.4 12 22.4 22.4 14.9 22.4 12 14.9 1.6 12 1.6Zm-1.6 16.3c-1.2-.3-4.5-6.1-4.2-7.4.3-1.2 6.1-4.5 7.4-4.2 1.2.3 4.5 6.1 4.2 7.4-.4 1.2-6.2 4.5-7.4 4.2Z" fill="#836ef9" />
+    <path d="M3 19.5a9 9 0 0 1 18 0" fill="none" stroke="#5b8cff" strokeWidth={3} strokeLinecap="round" />
+    <circle cx="12" cy="19.5" r="2.2" fill="#5b8cff" />
   </svg>
 );

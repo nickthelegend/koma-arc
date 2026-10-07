@@ -22,8 +22,8 @@ async function create(req: NextRequest): Promise<NextResponse> {
   const header = req.headers.get("PAYMENT-SIGNATURE") ?? req.headers.get("X-PAYMENT");
   const payment = decodePaymentSignatureHeader(header!);
   const auth = (payment.payload as { authorization?: { from: `0x${string}`; value: string; nonce: string; validBefore: string } }).authorization;
-  if (!auth) return NextResponse.json({ error: "Only AUSD transfer authorizations (EIP-3009) are accepted." }, { status: 400 });
-  // Refusing here (before settlement) means no AUSD moves for a proposal the canon registry would reject.
+  if (!auth) return NextResponse.json({ error: "Only USDC transfer authorizations (EIP-3009) are accepted." }, { status: 400 });
+  // Refusing here (before settlement) means no USDC moves for a proposal the canon registry would reject.
   if (parsed.order.seriesId) {
     const ok = await canPropose(parsed.order.seriesId, auth.from);
     if (!ok.ok) return NextResponse.json({ error: ok.error }, { status: 403 });
@@ -64,8 +64,8 @@ const makePaid = () =>
         scheme: "exact",
         network,
         payTo: config.payTo ?? "0x0000000000000000000000000000000000000000",
-        // Priced in AUSD atomic units with the asset spelled out, so it works on any
-        // Monad network KOMA runs on, including the localnet.
+        // Priced in USDC atomic units with the asset spelled out, so it works on any
+        // Arc network KOMA runs on (testnet or mainnet).
         price: async (ctx) => {
           const parsed = parseOrder(await ctx.adapter.getBody?.());
           const pages = "order" in parsed ? parsed.order.pages : 1;
@@ -78,7 +78,7 @@ const makePaid = () =>
         },
         maxTimeoutSeconds: 300,
       },
-      description: "One AI-written, AI-drawn comic issue, lettered and minted to the payer on Monad. $0.10 per page; $0.30 per page for a series episode.",
+      description: "One AI-written, AI-drawn comic issue, lettered and minted to the payer on Arc. $0.10 per page; $0.30 per page for a series episode.",
       mimeType: "application/json",
     },
     resourceServer,
@@ -86,7 +86,7 @@ const makePaid = () =>
 
 /**
  * POST /api/comics  { prompt, pages: 1|2|4|6, style?, cast?, remixOf? }
- * → 402 with the AUSD quote, then 202 { jobId } once paid.
+ * → 402 with the USDC quote, then 202 { jobId } once paid.
  */
 export async function POST(req: NextRequest) {
   if (config.missing.length) {

@@ -21,10 +21,10 @@ export function Receipt({ pages, style, castCount, perPage = PRICE_PER_PAGE }: {
       {line("Lettering + mint", "incl.")}
       {line("Gas", "paid by KOMA")}
       <div className="my-3 border-t border-dashed border-paper-ink/40" />
-      {line("Total", `${total.toFixed(2)} AUSD`, true)}
+      {line("Total", `${total.toFixed(2)} USDC`, true)}
       <div className="my-3 border-t border-dashed border-paper-ink/40" />
       <p className="text-[11px] leading-5 text-paper-ink/70">
-        Paid over HTTP 402 on {KOMA.label}. You sign one AUSD authorization; the facilitator settles it and the issue is minted
+        Paid over HTTP 402 on {KOMA.label}. You sign one USDC authorization; the facilitator settles it and the issue is minted
         to your wallet.
       </p>
     </div>

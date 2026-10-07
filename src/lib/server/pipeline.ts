@@ -261,7 +261,7 @@ const usdcAbi = parseAbi([
 /**
  * After a restart: finish every job that took payment. A job the crash caught
  * between settlement and bookkeeping is matched to its on-chain settlement by
- * the AUSD authorization nonce.
+ * the USDC authorization nonce.
  */
 export async function recoverJobs() {
   if (config.missing.length) return;
@@ -278,7 +278,7 @@ export async function recoverJobs() {
           }
           job.stage = "error";
           job.failedAt = "settling";
-          job.error = "The payment never settled, so no AUSD moved. You can try again.";
+          job.error = "The payment never settled, so no USDC moved. You can try again.";
           await saveJob(job);
           continue;
         }

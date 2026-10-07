@@ -11,7 +11,7 @@ import { CANON_THRESHOLD, DEMO_TARGET_USDC, GRADUATION_TARGET_USDC, START_PRICE_
 import type { SeriesSummary } from "@/lib/launchpad/types";
 import type { Genre } from "@/lib/types";
 import { PaySheet } from "../studio/pay-sheet";
-import { MonadMark, IconCheck, IconPlus, IconRemix } from "../icons";
+import { ArcMark, IconCheck, IconPlus, IconRemix } from "../icons";
 import { SeriesCard } from "./series-card";
 import { COIN_DISCLAIMER, MAINNET } from "./network-note";
 import { useLaunch, type LaunchRequest, type LaunchState } from "./use-launch";
@@ -129,7 +129,7 @@ export function LaunchStudio({ deployed, parent, job, chainPanel }: { deployed: 
         <div className="min-w-0">
           <h1 className="masthead text-[23vw] text-kapow md:text-[clamp(120px,12vw,172px)]">Launch</h1>
           <p className="mt-4 max-w-[56ch] text-[15px] leading-relaxed text-soft">
-            Start a series: a character people can follow from episode to episode. For ${LAUNCH_PRICE} in AUSD, KOMA draws the character sheet
+            Start a series: a character people can follow from episode to episode. For ${LAUNCH_PRICE} in USDC, KOMA draws the character sheet
             and launches everything on {KOMA.label} in one transaction.
           </p>
 
@@ -235,10 +235,10 @@ export function LaunchStudio({ deployed, parent, job, chainPanel }: { deployed: 
               <label htmlFor={`${ids}-demo`} className="flex cursor-pointer items-start gap-3 border border-rule bg-stock p-3.5">
                 <input id={`${ids}-demo`} type="checkbox" checked={d.demo} onChange={(e) => set("demo", e.target.checked)} className="mt-0.5 h-5 w-5 shrink-0 accent-[var(--kapow)]" />
                 <span className="text-[13.5px] leading-snug">
-                  <span className="font-semibold text-paper">Demo series (graduates at {DEMO_TARGET_USDC} AUSD, 5-minute canon votes)</span>
+                  <span className="font-semibold text-paper">Demo series (graduates at {DEMO_TARGET_USDC} USDC, 5-minute canon votes)</span>
                   <span className="mt-1 block text-[12.5px] text-mute">
-                    So a whole run, from launch to canon to a Uniswap v4 pool, fits in an afternoon with test AUSD. A normal series graduates at{" "}
-                    {GRADUATION_TARGET_USDC.toLocaleString("en-US")} AUSD and votes run for 24 hours. Only on {KOMA.label}; Monad has no demo series.
+                    So a whole run, from launch to canon to a Uniswap v4 pool, fits in an afternoon with test USDC. A normal series graduates at{" "}
+                    {GRADUATION_TARGET_USDC.toLocaleString("en-US")} USDC and votes run for 24 hours. Only on {KOMA.label}; Arc has no demo series.
                   </span>
                 </span>
               </label>
@@ -247,15 +247,15 @@ export function LaunchStudio({ deployed, parent, job, chainPanel }: { deployed: 
             {/* ——— What gets minted ——— */}
             <section id={`${ids}-note`} aria-label="What gets launched" className="border border-arb/30 bg-[#06111a] p-4 text-[13.5px] leading-relaxed text-soft">
               <h2 className="flex items-center gap-2 font-display text-[18px] uppercase tracking-wide text-arb">
-                <MonadMark /> What you get, in one transaction
+                <ArcMark /> What you get, in one transaction
               </h2>
               <ul className="mt-3 flex flex-col gap-2">
                 {[
                   ["Character NFT, minted to you", `with its own wallet (ERC-6551). The character earns: ${FEE_SPLIT.character}% of every trading fee lands in that wallet.`],
-                  [`${TOTAL_SUPPLY.toLocaleString("en-US")} $${d.symbol || "COIN"}`, "95% on an AUSD bonding curve (the price rises as people buy), 5% to you, vesting over 30 days."],
+                  [`${TOTAL_SUPPLY.toLocaleString("en-US")} $${d.symbol || "COIN"}`, "95% on a USDC bonding curve (the price rises as people buy), 5% to you, vesting over 30 days."],
                   [`A ${TRADE_FEE_PCT}% fee on each trade`, `split ${FEE_SPLIT.character}% to the character's wallet, ${FEE_SPLIT.remix}% up the remix tree${parent ? ` (starting with ${parent.name})` : ""}, ${FEE_SPLIT.treasury}% to KOMA's treasury.`],
                   ["Canon by vote", `anyone holding ${CANON_THRESHOLD.toLocaleString("en-US")} coins (or you, as the character's owner) can propose episodes; holders vote for free.`],
-                  ["Graduation", `at ${target.toLocaleString("en-US")} AUSD raised the curve closes; KOMA takes ${GRADUATION_FEE_PCT}% of the AUSD and the rest becomes a Uniswap v4 pool.`],
+                  ["Graduation", `at ${target.toLocaleString("en-US")} USDC raised the curve closes; KOMA takes ${GRADUATION_FEE_PCT}% of the USDC and the rest becomes a Uniswap v4 pool.`],
                 ].map(([t, x]) => (
                   <li key={t} className="flex gap-2.5">
                     <IconCheck width={14} height={14} className="mt-1 shrink-0 text-arb" />
@@ -270,7 +270,7 @@ export function LaunchStudio({ deployed, parent, job, chainPanel }: { deployed: 
 
             <div>
               <button type="submit" disabled={down || Boolean(offline) || aiDown || state.stage === "quoting"} className="slant w-full py-4 text-[22px] sm:w-auto sm:px-10">
-                {state.stage === "quoting" ? "Getting quote…" : `Pay ${LAUNCH_PRICE.toFixed(2)} AUSD & launch`}
+                {state.stage === "quoting" ? "Getting quote…" : `Pay ${LAUNCH_PRICE.toFixed(2)} USDC & launch`}
               </button>
               {down || offline || aiDown ? (
                 <p className="mt-3 text-[12px] text-kapow">
@@ -278,7 +278,7 @@ export function LaunchStudio({ deployed, parent, job, chainPanel }: { deployed: 
                 </p>
               ) : (
                 <p className="mt-3 flex items-center gap-1.5 text-[12px] text-mute">
-                  <MonadMark width={12} height={12} /> One signature in your wallet · no gas · about a minute to launch
+                  <ArcMark width={12} height={12} /> One signature in your wallet · no gas · about a minute to launch
                 </p>
               )}
               {tried && !valid && <p role="alert" className="mt-2 text-[13px] text-kapow">Fix the fields marked above first.</p>}
@@ -304,9 +304,9 @@ export function LaunchStudio({ deployed, parent, job, chainPanel }: { deployed: 
 }
 
 const STEPS: { key: LaunchState["stage"]; label: string }[] = [
-  { key: "settling", label: "Payment settled on Monad" },
+  { key: "settling", label: "Payment settled on Arc" },
   { key: "sheet", label: "Drawing your character sheet" },
-  { key: "launching", label: "Launching on Monad" },
+  { key: "launching", label: "Launching on Arc" },
 ];
 const ORDER: LaunchState["stage"][] = ["signing", "settling", "sheet", "launching", "done"];
 
@@ -349,7 +349,7 @@ function LaunchProgress({ state, onReset }: { state: LaunchState; onReset: () =>
   }, [done, state.seriesId, state.jobId]);
 
   const detail = (k: LaunchState["stage"]) => {
-    if (k === "settling") return state.paymentTx ? txLink(state.paymentTx, short(state.paymentTx, 8, 6)) : "Facilitator submitting the AUSD transfer…";
+    if (k === "settling") return state.paymentTx ? txLink(state.paymentTx, short(state.paymentTx, 8, 6)) : "Facilitator submitting the USDC transfer…";
     if (k === "sheet") return state.sheet ? "Drawn" : `${r?.characterName ?? "Your character"}, front, side and back…`;
     if (k === "launching")
       return state.launchTx ? txLink(state.launchTx, short(state.launchTx, 8, 6)) : "Character NFT and its wallet, coin, curve and vesting, in one transaction…";
@@ -411,7 +411,7 @@ function LaunchProgress({ state, onReset }: { state: LaunchState; onReset: () =>
           </div>
         ) : (
           <p className="mt-8 flex items-center gap-2 text-[12.5px] text-mute">
-            <MonadMark width={14} height={14} /> You can leave this page. The Character NFT lands in your wallet either way.
+            <ArcMark width={14} height={14} /> You can leave this page. The Character NFT lands in your wallet either way.
           </p>
         )}
       </aside>

@@ -89,7 +89,7 @@ export function RaisedBar({ raised, target, label = true, size = "sm" }: { raise
         aria-valuemin={0}
         aria-valuemax={target}
         aria-valuenow={raised}
-        aria-valuetext={`${raised.toFixed(2)} of ${target.toFixed(0)} AUSD raised, ${progressLabel(raised, target)}`}
+        aria-valuetext={`${raised.toFixed(2)} of ${target.toFixed(0)} USDC raised, ${progressLabel(raised, target)}`}
         className={size === "lg" ? "relative h-7 border-2 border-arb/60 bg-ink" : "h-2 bg-rule"}
       >
         <div className="relative h-full overflow-hidden bg-arb" style={{ width: `${pct}%` }}>
@@ -110,7 +110,7 @@ export function RaisedBar({ raised, target, label = true, size = "sm" }: { raise
 
 export function DemoBadge({ target }: { target: number }) {
   return (
-    <span className="bg-bam px-1.5 py-1 font-display text-[11px] uppercase leading-none text-ink" title={`Demo series: graduates at ${target} AUSD, 5-minute canon votes`}>
+    <span className="bg-bam px-1.5 py-1 font-display text-[11px] uppercase leading-none text-ink" title={`Demo series: graduates at ${target} USDC, 5-minute canon votes`}>
       Demo · graduates at ${target}
     </span>
   );

@@ -1,7 +1,7 @@
 @import "tailwindcss";
 
 /* KOMA — tokens. Black stock, one printing ink (kapow), paper for lettering,
-   and Monad blue reserved for anything that lives on-chain. */
+   and Arc blue reserved for anything that lives on-chain. */
 :root {
   --ink: #000000;
   --stock: #121212;

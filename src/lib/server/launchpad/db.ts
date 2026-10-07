@@ -119,10 +119,6 @@ export function db(): DatabaseSync {
       data TEXT NOT NULL
     );
   `);
-  // Added with the Chainlink CRE settler: who finalized a slot ("cre" when CanonSettler emitted Settled).
-  if (!(d.prepare("PRAGMA table_info(lp_slots)").all() as { name: string }[]).some((c) => c.name === "settled_by")) {
-    d.exec("ALTER TABLE lp_slots ADD COLUMN settled_by TEXT");
-  }
   ready = true;
   return d;
 }

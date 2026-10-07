@@ -56,7 +56,7 @@ export async function proposeOrQueue(seriesId: number, issueId: number, proposer
 export type VoteResult = { ok: true; weight: bigint } | { ok: false; status: number; error: string };
 
 /**
- * Checks and records one signed canon vote (the HTTP route and the autopilot both use this): the slot must
+ * Checks and records one signed canon vote: the slot must
  * be open, the issue a proposal for it, the EIP-712 signature the voter's, and the voter's snapshot weight > 0.
  * Voting again before the window closes replaces the earlier vote.
  */

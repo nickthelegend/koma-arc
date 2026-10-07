@@ -48,7 +48,7 @@ export function Footer() {
           <div className="max-w-sm">
             <p className="font-display text-2xl uppercase leading-tight text-paper">Comics that pay their own way.</p>
             <p className="mt-3 text-[14px] leading-relaxed text-mute">
-              Every issue is paid for with AUSD over x402, drawn by AI, and minted to its maker on Monad. No accounts, no
+              Every issue is paid for with USDC over x402, drawn by AI, and minted to its maker on Arc. No accounts, no
               subscriptions.
             </p>
           </div>
@@ -75,7 +75,7 @@ export function Footer() {
           </p>
           <div className="mt-4 flex flex-wrap justify-between gap-2 px-1 text-[12px] text-mute">
             <span>© 2026 KOMA. Art generated per issue; rights go to the minter.</span>
-            <span>Built on Monad · Paid with x402</span>
+            <span>Built on Arc · Paid with x402</span>
           </div>
         </div>
       </div>

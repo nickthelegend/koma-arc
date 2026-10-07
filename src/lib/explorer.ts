@@ -1,6 +1,6 @@
 import { KOMA, RPC_URL } from "./network";
 
-// Arbiscan only knows public chains. Against a local RPC, links go to KOMA's
+// The Arc explorer only knows public chains. Against a local RPC, links go to KOMA's
 // own /tx page, which reads the receipt from that RPC.
 const localRpc = /\/\/(127\.0\.0\.1|localhost)(:|\/|$)/.test(RPC_URL);
 export const EXPLORER_URL = process.env.NEXT_PUBLIC_EXPLORER_URL || (localRpc ? "" : KOMA.explorer);

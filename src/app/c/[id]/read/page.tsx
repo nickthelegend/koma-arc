@@ -34,8 +34,8 @@ export default async function Reader({ params }: PageProps<"/c/[id]/read">) {
         <section className="mt-6 px-2 text-center md:mt-10">
           <p className="masthead text-[22vw] text-kapow md:text-[150px]">The end</p>
           <p className="mx-auto mt-3 max-w-[40ch] text-[15px] text-soft">
-            {comic.title} was made by {comic.creator.name} for {comic.chain.paidUsdc} AUSD and is token #{comic.chain.tokenId} on
-            Monad.
+            {comic.title} was made by {comic.creator.name} for {comic.chain.paidUsdc} USDC and is token #{comic.chain.tokenId} on
+            Arc.
           </p>
           <div className="mt-7 flex flex-wrap justify-center gap-3">
             <Link href={`/create?remix=${comic.id}`} className="slant h-12 px-7 text-[19px]">

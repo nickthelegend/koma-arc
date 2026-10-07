@@ -14,9 +14,9 @@ const jetbrains = JetBrains_Mono({ variable: "--font-jetbrains", subsets: ["lati
 
 export const metadata: Metadata = {
   metadataBase: new URL(process.env.KOMA_PUBLIC_URL || "http://localhost:4310"),
-  title: { default: "KOMA — AI comics, minted on Monad", template: "%s · KOMA" },
+  title: { default: "KOMA — AI comics, minted on Arc", template: "%s · KOMA" },
   description:
-    "Describe a story, pay a few cents in AUSD with x402, and get a fully lettered comic minted on Monad. Read it, share it, remix it.",
+    "Describe a story, pay a few cents in USDC with x402, and get a fully lettered comic minted on Arc. Read it, share it, remix it.",
   applicationName: "KOMA",
 };
 

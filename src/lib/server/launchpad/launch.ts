@@ -31,8 +31,8 @@ export function parseLaunch(body: unknown): { request: LaunchJob["request"] } | 
   const parentSeriesId = Number(b.parentSeriesId ?? 0);
   if (!Number.isInteger(parentSeriesId) || parentSeriesId < 0) return { error: "parentSeriesId must be a series id." };
   if (parentSeriesId && !db().prepare("SELECT 1 FROM lp_series WHERE id = ?").get(parentSeriesId)) return { error: `Series #${parentSeriesId} doesn't exist.` };
-  // Demo series (25 AUSD graduation, 5-minute canon votes) exist so a graduation can be shown with faucet AUSD.
-  const demo = b.demo === true && config.network.key !== "monad";
+  // Demo series (25 USDC graduation, 5-minute canon votes) exist so a graduation can be shown with faucet USDC.
+  const demo = b.demo === true && config.network.testnet;
   const genre = str("genre") || undefined;
   return { request: { name, symbol, characterName, characterPrompt, pitch, genre, parentSeriesId, demo } };
 }
@@ -114,7 +114,7 @@ export async function runLaunch(job: LaunchJob) {
 export async function recoverLaunches() {
   for (const job of unfinishedLaunchJobs()) {
     if (job.stage === "settling" && !job.paymentTx) {
-      // Crash between settlement and bookkeeping: the AUSD authorization tells us if it went through.
+      // Crash between settlement and bookkeeping: the USDC authorization tells us if it went through.
       const used = await publicClient
         .readContract({ address: config.network.usdc, abi: usdcAbi, functionName: "authorizationState", args: [job.payer, job.nonce] })
         .catch(() => false);
@@ -124,7 +124,7 @@ export async function recoverLaunches() {
       }
       if (Date.now() / 1000 > job.validBefore + 60) {
         job.stage = "error";
-        job.error = "The payment never settled, so no AUSD moved. You can try again.";
+        job.error = "The payment never settled, so no USDC moved. You can try again.";
         saveLaunchJob(job);
       }
       continue;

@@ -8,7 +8,7 @@ import { episodeSeries } from "../series";
 
 export const metadata: Metadata = {
   title: "New issue (form)",
-  description: "Describe a story, pick a style and cast, and pay a few cents of AUSD on Monad to get a finished, minted comic.",
+  description: "Describe a story, pick a style and cast, and pay a few cents of USDC on Arc to get a finished, minted comic.",
 };
 
 export default async function FormPage({ searchParams }: PageProps<"/create/form">) {

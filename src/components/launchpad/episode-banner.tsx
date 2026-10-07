@@ -17,7 +17,7 @@ export type EpisodeSeries = { id: number; name: string; symbol: string; characte
 /**
  * Shown above the studio in episode mode. Proposing needs 1M coins (at the
  * open episode's snapshot) or the Character NFT; KOMA refuses the payment
- * before any AUSD moves otherwise, and this says so up front.
+ * before any USDC moves otherwise, and this says so up front.
  */
 export function EpisodeBanner({ series }: { series: EpisodeSeries }) {
   const wallet = useWallet();
@@ -96,7 +96,7 @@ export function EpisodeBanner({ series }: { series: EpisodeSeries }) {
             <span className={eligible ? "text-paper" : "text-kapow"}>
               You {snapshot ? "had" : "hold"} {coinAmount(held)} ${series.symbol}
               {snapshot ? " when this episode opened" : ""}.
-              {!eligible && " KOMA will refuse the payment before any AUSD moves."}
+              {!eligible && " KOMA will refuse the payment before any USDC moves."}
             </span>
           )}
         </p>

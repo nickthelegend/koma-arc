@@ -21,7 +21,7 @@ async function create(req: NextRequest): Promise<NextResponse> {
   const header = req.headers.get("PAYMENT-SIGNATURE") ?? req.headers.get("X-PAYMENT");
   const payment = decodePaymentSignatureHeader(header!);
   const auth = (payment.payload as { authorization?: { from: `0x${string}`; nonce: `0x${string}`; validBefore: string } }).authorization;
-  if (!auth) return NextResponse.json({ error: "Only AUSD transfer authorizations (EIP-3009) are accepted." }, { status: 400 });
+  if (!auth) return NextResponse.json({ error: "Only USDC transfer authorizations (EIP-3009) are accepted." }, { status: 400 });
   const now = new Date().toISOString();
   const job: LaunchJob = {
     id: randomBytes(5).toString("hex"),
@@ -50,7 +50,7 @@ const paid = (req: NextRequest) =>
         price: { amount: String(Math.round(LAUNCH_PRICE_USDC * 10 ** USDC_DECIMALS)), asset: config.network.usdc, extra: { ...USDC_DOMAIN } },
         maxTimeoutSeconds: 300,
       },
-      description: "Launch a KOMA series: an AI character sheet, a Character NFT with its own wallet, and a Series Coin on an AUSD bonding curve.",
+      description: "Launch a KOMA series: an AI character sheet, a Character NFT with its own wallet, and a Series Coin on a USDC bonding curve.",
       mimeType: "application/json",
     },
     resourceServer,

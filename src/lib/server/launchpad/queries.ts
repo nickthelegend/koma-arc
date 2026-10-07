@@ -17,7 +17,7 @@ type Row = {
 
 const usd = (raw: string | bigint) => Number(formatUnits(BigInt(raw), 6));
 const coins = (raw: string | bigint) => Number(formatUnits(BigInt(raw), 18));
-/** AUSD per whole coin from the virtual reserves. */
+/** USDC per whole coin from the virtual reserves. */
 export const priceOf = (vu: string | bigint, vc: string | bigint) => (Number(BigInt(vu)) / 1e6) / (Number(BigInt(vc)) / 1e18);
 
 const SELECT = "SELECT s.*, m.character_name, m.character_prompt, m.pitch, m.genre, m.sheet, m.demo FROM lp_series s LEFT JOIN lp_series_meta m ON m.id = s.id";
@@ -154,7 +154,7 @@ export function votesFor(seriesId: number, episode: number): SignedVote[] {
 export async function canonView(seriesId: number): Promise<CanonView> {
   const d = db();
   const slots = d.prepare("SELECT * FROM lp_slots WHERE series_id = ? ORDER BY episode").all(seriesId) as {
-    episode: number; snapshot: number; ends_at: number; finalized: number; winner: number | null; winner_votes: string | null; total_votes: string | null; votes_root: string | null; settled_by: string | null;
+    episode: number; snapshot: number; ends_at: number; finalized: number; winner: number | null; winner_votes: string | null; total_votes: string | null; votes_root: string | null;
   }[];
   const open = slots.find((s) => !s.finalized) ?? null;
   const episode = open?.episode ?? (slots.at(-1)?.episode ?? 0) + 1;
@@ -185,7 +185,6 @@ export async function canonView(seriesId: number): Promise<CanonView> {
       winnerVotes: coins(s.winner_votes ?? "0"),
       totalVotes: coins(s.total_votes ?? "0"),
       votesRoot: s.votes_root ?? "",
-      settledBy: s.settled_by === "cre" ? "cre" : "keeper",
     });
     const losers = d.prepare("SELECT issue_id FROM lp_proposals WHERE series_id = ? AND episode = ? AND issue_id != ?").all(seriesId, s.episode, s.winner) as { issue_id: number }[];
     for (const l of losers) alternates.push({ episode: s.episode, issueId: l.issue_id, issue: await issueCard(l.issue_id) });
@@ -205,7 +204,7 @@ export async function canonView(seriesId: number): Promise<CanonView> {
 
 // ——— The board: what happened lately across every series, and each one's recent prices.
 
-/** Price of a fresh curve: the 1,000 virtual AUSD against 1B virtual coins it opens with. */
+/** Price of a fresh curve: the 1,000 virtual USDC against 1B virtual coins it opens with. */
 const LAUNCH_PRICE_PER_COIN = priceOf(BigInt(1_000e6), BigInt(1_000_000_000) * BigInt(1e18));
 
 /**

@@ -72,8 +72,8 @@ export function HomeHero({ featured, issues, network }: { featured: Comic | null
               We draw it.
             </h1>
             <p className="mt-4 max-w-[46ch] text-[15px] leading-relaxed text-soft md:text-[16px]">
-              Describe a story and KOMA writes, draws and letters it in about a minute. Pay {cents}¢ a page in AUSD, and the issue is
-              minted to your wallet on Monad.
+              Describe a story and KOMA writes, draws and letters it in about a minute. Pay {cents}¢ a page in USDC, and the issue is
+              minted to your wallet on Arc.
             </p>
             <div className="mt-6 flex flex-wrap items-center gap-3">
               <Link href="/create" className="slant h-12 px-7 text-[20px]">

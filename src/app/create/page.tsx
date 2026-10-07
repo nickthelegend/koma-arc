@@ -7,7 +7,7 @@ import { episodeSeries } from "./series";
 
 export const metadata: Metadata = {
   title: "Studio",
-  description: "Talk your story through with KOMA's AI editor, then pay a few cents of AUSD on Monad and watch it get drawn and minted.",
+  description: "Talk your story through with KOMA's AI editor, then pay a few cents of USDC on Arc and watch it get drawn and minted.",
 };
 
 export default async function CreatePage({ searchParams }: PageProps<"/create">) {

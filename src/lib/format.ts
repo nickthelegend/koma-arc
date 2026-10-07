@@ -38,7 +38,7 @@ function sig3(n: number) {
 }
 const trimZeros = (s: string) => (s.includes(".") ? s.replace(/\.?0+$/, "") : s);
 
-/** Price of one coin in AUSD: "$0.0₅105", "$0.0421", "$1.25". */
+/** Price of one coin in USDC: "$0.0₅105", "$0.0421", "$1.25". */
 export function coinPrice(n: number) {
   if (!Number.isFinite(n) || n <= 0) return "$0";
   if (n >= 1) return `$${n.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;

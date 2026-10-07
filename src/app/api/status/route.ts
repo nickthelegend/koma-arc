@@ -10,7 +10,7 @@ export const dynamic = "force-dynamic";
 /** What the studio needs to know before quoting: is the server ready, and on which chain. */
 export async function GET() {
   const lp = launchpad();
-  const relayerEth = config.account ? await publicClient.getBalance({ address: config.account.address }).then((b) => Number(b) / 1e18).catch(() => null) : null;
+  const relayerUsdc = config.account ? await publicClient.getBalance({ address: config.account.address }).then((b) => Number(b) / 1e18 /* native USDC, 18 decimals */).catch(() => null) : null;
   return NextResponse.json({
     ready: config.missing.length === 0,
     missing: config.missing,
@@ -18,12 +18,12 @@ export async function GET() {
     caip: config.network.caip,
     chainId: config.network.chain.id,
     usdc: config.network.usdc,
-    faucet: config.network.faucet,
+    faucetUrl: config.network.faucetUrl,
     publicUrl: config.publicUrl,
     payTo: config.payTo ?? null,
     contract: config.contract ?? null,
     facilitator: config.account?.address ?? null,
-    relayerEth,
+    relayerUsdc,
     budget: budgetStatus(),
     ai: { ...aiSummary(), ...(await falHealth()) },
     launchpad: lp ? { engine: lp.engine, addresses: lp } : null,

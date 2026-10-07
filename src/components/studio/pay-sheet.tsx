@@ -1,11 +1,12 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef } from "react";
 import type { GenState, Quote } from "./use-generation";
-import { MonadMark, IconClose } from "../icons";
+import { ArcMark, IconClose } from "../icons";
 import { short } from "@/lib/format";
 import { KOMA } from "@/lib/network";
 import { useWallet } from "../wallet";
+import { FaucetHint } from "../launchpad/faucet-hint";
 
 /** What the sheet needs from a paid flow: the studio's GenState, or a series launch. */
 type PayState = Pick<GenState, "quoteError"> & { stage: string; quote?: Quote };
@@ -20,20 +21,7 @@ const ISSUE: Copy = { noun: "issue", after: "drawing starts once it lands", back
  */
 export function PaySheet({ state, onPay, onCancel, copy = ISSUE }: { state: PayState; onPay: () => void; onCancel: () => void; copy?: Copy }) {
   const ref = useRef<HTMLDialogElement>(null);
-  const { address, usdc, usdcLoaded, connect, connecting, error: walletError, refreshBalance } = useWallet();
-  const [faucet, setFaucet] = useState<{ busy: boolean; error?: string }>({ busy: false });
-
-  async function claim() {
-    setFaucet({ busy: true });
-    const res = await fetch("/api/faucet", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ address }) }).catch(() => null);
-    const body = (await res?.json().catch(() => null)) as { error?: string } | null;
-    if (!res?.ok) {
-      setFaucet({ busy: false, error: body?.error ?? "The faucet didn't answer. Try again." });
-      return;
-    }
-    refreshBalance();
-    setFaucet({ busy: false });
-  }
+  const { address, usdc, usdcLoaded, connect, connecting, error: walletError } = useWallet();
   const open = state.stage === "quote" || state.stage === "signing";
   const q = state.quote;
 
@@ -60,7 +48,7 @@ export function PaySheet({ state, onPay, onCancel, copy = ISSUE }: { state: PayS
         <div className="flex items-start justify-between gap-3 px-5 pt-5">
           <div>
             <p className="font-mono text-[11.5px] text-kapow">{q ? "HTTP 402 · Payment required" : `Can't quote this ${copy.noun}`}</p>
-            <p className="mt-1 font-display text-[34px] uppercase leading-none">{q ? `Pay ${q.amount} AUSD` : "Not yet"}</p>
+            <p className="mt-1 font-display text-[34px] uppercase leading-none">{q ? `Pay ${q.amount} USDC` : "Not yet"}</p>
           </div>
           {state.stage === "quote" && (
             <button onClick={onCancel} aria-label="Cancel" className="-mr-1 p-1 text-mute hover:text-paper">
@@ -73,8 +61,8 @@ export function PaySheet({ state, onPay, onCancel, copy = ISSUE }: { state: PayS
           <>
             <dl className="mx-5 mt-5 border border-rule bg-ink text-[13px]">
               {[
-                ["Network", <span key="n" className="flex items-center gap-1.5"><MonadMark /> {KOMA.label}</span>],
-                ["Token", <span key="t">AUSD <span className="font-mono text-[11.5px] text-mute">{short(q.asset)}</span></span>],
+                ["Network", <span key="n" className="flex items-center gap-1.5"><ArcMark /> {KOMA.label}</span>],
+                ["Token", <span key="t">USDC <span className="font-mono text-[11.5px] text-mute">{short(q.asset)}</span></span>],
                 ["Pay to", <span key="p" className="font-mono text-[12px]">{short(q.payTo)}</span>],
                 ["Settled by", "KOMA facilitator"],
                 ["Gas", "None for you"],
@@ -86,8 +74,8 @@ export function PaySheet({ state, onPay, onCancel, copy = ISSUE }: { state: PayS
               ))}
             </dl>
             <p className="mx-5 mt-4 text-[12.5px] leading-relaxed text-mute">
-              Your wallet signs a one-time AUSD transfer authorization for exactly this amount. The facilitator submits it on
-              Monad, and {copy.after}. The signature can&rsquo;t be reused.
+              Your wallet signs a one-time USDC transfer authorization for exactly this amount. The facilitator submits it on
+              Arc, and {copy.after}. The signature can&rsquo;t be reused.
             </p>
           </>
         )}
@@ -108,26 +96,15 @@ export function PaySheet({ state, onPay, onCancel, copy = ISSUE }: { state: PayS
               {connecting ? "Connecting…" : "Connect wallet to pay"}
             </button>
           ) : tooLow ? (
-            <p className="border border-kapow/50 px-3 py-3 text-[13px] leading-relaxed text-soft">
-              Your wallet has {usdc.toFixed(2)} AUSD on {KOMA.label}. Add at least {(Number(q.amount) - usdc).toFixed(2)} more to pay
-              for this {copy.noun}.
-              {KOMA.faucet && (
-                <>
-                  <button onClick={claim} disabled={faucet.busy} className="mt-3 block h-10 w-full bg-arb font-display text-[16px] uppercase text-ink disabled:opacity-60">
-                    {faucet.busy ? "Asking Agora's faucet…" : "Get 10,000 test AUSD"}
-                  </button>
-                  {faucet.error && <span role="alert" className="mt-2 block text-kapow">{faucet.error}</span>}
-                </>
-              )}
-            </p>
+            <FaucetHint need={Number(q.amount)} noun={`this ${copy.noun}`} />
           ) : (
             <button onClick={onPay} disabled={state.stage === "signing"} className="slant w-full py-3.5 text-[20px]">
-              {state.stage === "signing" ? "Confirm in your wallet…" : `Sign & pay ${q.amount} AUSD`}
+              {state.stage === "signing" ? "Confirm in your wallet…" : `Sign & pay ${q.amount} USDC`}
             </button>
           )}
           {address && q && (
             <p className="mt-3 text-center text-[12px] text-mute">
-              Paying from <span className="font-mono">{short(address)}</span> · {usdcLoaded ? usdc.toFixed(2) : "…"} AUSD available
+              Paying from <span className="font-mono">{short(address)}</span> · {usdcLoaded ? usdc.toFixed(2) : "…"} USDC available
             </p>
           )}
         </div>

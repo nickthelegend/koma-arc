@@ -78,7 +78,7 @@ export default async function Catalog({ searchParams }: PageProps<"/">) {
                 />
               </form>
               <p className="max-w-[60ch] text-[14px] leading-relaxed text-soft">
-                Every issue was written and drawn by AI from one person&rsquo;s prompt and minted to them on Monad. Read any of them free.
+                Every issue was written and drawn by AI from one person&rsquo;s prompt and minted to them on Arc. Read any of them free.
               </p>
             </div>
           </div>
@@ -161,7 +161,7 @@ function FirstIssue() {
         <p className="masthead text-[18vw] text-kapow md:text-[clamp(96px,10vw,150px)]">Issue #1 is yours</p>
         <div className="md:max-w-[360px]">
           <p className="text-[15px] leading-relaxed text-soft">
-            The rack is empty. Describe a story, pay $0.10 a page in AUSD, and the first comic on KOMA is drawn, lettered and minted to
+            The rack is empty. Describe a story, pay $0.10 a page in USDC, and the first comic on KOMA is drawn, lettered and minted to
             you.
           </p>
           <span className="slant mt-5 h-11 px-6 text-[17px]">

@@ -118,7 +118,7 @@ export function useGeneration() {
     let header: Record<string, string>;
     try {
       const signer = await wallet.signer();
-      // Pay only KOMA's AUSD on KOMA's network, never more than a 6-page episode costs ($1.80).
+      // Pay only KOMA's USDC on KOMA's network, never more than a 6-page episode costs ($1.80).
       http = new x402HTTPClient(
         x402Client.fromConfig({
           schemes: [{ network: KOMA.caip, client: new ExactEvmScheme(signer) }],

@@ -23,10 +23,6 @@ export type LaunchpadAddresses = {
   treasury: Addr;
   relayer: Addr;
   deployBlock: number;
-  /** Chainlink CRE receiver that settles canon votes (contracts/src/cre/CanonSettler.sol), once deployed. */
-  canonSettler?: Addr;
-  /** The Keystone forwarder the settler accepts reports from. */
-  creForwarder?: Addr;
 };
 
 export type SeriesSummary = {
@@ -69,7 +65,7 @@ export type SeriesDetail = SeriesSummary & {
   remixes: { id: number; name: string }[];
   parent: { id: number; name: string } | null;
   royalties: { recipient: Addr; kind: number; amountUsdc: number }[];
-  /** AUSD this character's wallet has received from trades in its remixes. */
+  /** USDC this character's wallet has received from trades in its remixes. */
   remixRoyaltiesUsdc: number;
   /** Latest block time, so clients count down in chain time. */
   chainTime: number;
@@ -91,7 +87,7 @@ export type CanonView = {
   episode: number;
   slot: { snapshot: number; endsAt: number; finalized: boolean; winner: number; open: boolean } | null;
   proposals: ProposalView[];
-  canon: { episode: number; issueId: number; issue: ProposalView["issue"]; winnerVotes: number; totalVotes: number; votesRoot: string; settledBy: "cre" | "keeper" }[];
+  canon: { episode: number; issueId: number; issue: ProposalView["issue"]; winnerVotes: number; totalVotes: number; votesRoot: string }[];
   alternates: { episode: number; issueId: number; issue: ProposalView["issue"] }[];
   votes: SignedVote[];
   thresholdCoins: number;

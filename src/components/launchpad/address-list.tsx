@@ -4,7 +4,7 @@ import { useState } from "react";
 import { short } from "@/lib/format";
 import { addressUrl, isExternal } from "@/lib/explorer";
 import { copyText } from "@/lib/clipboard";
-import { MonadMark, IconCheck, IconCopy, IconExternal } from "../icons";
+import { ArcMark, IconCheck, IconCopy, IconExternal } from "../icons";
 
 function Row({ label, value, note }: { label: string; value: string; note?: string }) {
   const [copied, setCopied] = useState(false);
@@ -46,7 +46,7 @@ export function AddressList({ title, rows }: { title: string; rows: { label: str
     <section aria-label={title} className="border border-arb/30 bg-[#06111a]">
       <header className="border-b border-arb/20 px-4 py-3">
         <h2 className="flex items-center gap-2 font-display text-[17px] uppercase tracking-wide text-arb">
-          <MonadMark /> {title}
+          <ArcMark /> {title}
         </h2>
       </header>
       <dl className="px-4 py-1">

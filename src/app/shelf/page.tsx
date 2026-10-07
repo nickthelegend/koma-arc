@@ -38,7 +38,7 @@ export default function Shelf() {
       {!address ? (
         <div className="mt-8 max-w-[520px]">
           <p className="text-[16px] leading-relaxed text-soft">
-            Your shelf is every issue minted to your wallet on Monad. Connect to see yours. Reading is free and never needs a wallet.
+            Your shelf is every issue minted to your wallet on Arc. Connect to see yours. Reading is free and never needs a wallet.
           </p>
           <button onClick={connect} disabled={connecting} className="slant mt-6 h-12 px-7 text-[19px]">
             {connecting ? "Connecting…" : "Connect wallet"}

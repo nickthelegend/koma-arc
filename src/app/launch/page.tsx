@@ -2,13 +2,13 @@ import type { Metadata } from "next";
 import { launchpad } from "@/lib/server/launchpad/addresses";
 import { seriesRow } from "@/lib/server/launchpad/queries";
 import { LaunchStudio, type ParentSeries } from "@/components/launchpad/launch-studio";
-import { BuiltOnMonad } from "@/components/launchpad/built-on-monad";
+import { BuiltOnArc } from "@/components/launchpad/built-on-arc";
 import { config } from "@/lib/server/config";
 import { LAUNCH_PRICE } from "@/lib/network";
 
 export const metadata: Metadata = {
   title: "Launch a series",
-  description: `Describe a character and pitch a story. For $${LAUNCH_PRICE} in AUSD KOMA draws the character sheet, mints a Character NFT with its own wallet and opens its coin on a curve.`,
+  description: `Describe a character and pitch a story. For $${LAUNCH_PRICE} in USDC KOMA draws the character sheet, mints a Character NFT with its own wallet and opens its coin on a curve.`,
 };
 
 export const dynamic = "force-dynamic";
@@ -27,7 +27,7 @@ export default async function LaunchPage({ searchParams }: PageProps<"/launch">)
       deployed={deployed}
       parent={parent}
       job={job}
-      chainPanel={<BuiltOnMonad lp={lp} facilitator={config.account?.address ?? null} />}
+      chainPanel={<BuiltOnArc lp={lp} facilitator={config.account?.address ?? null} />}
     />
   );
 }

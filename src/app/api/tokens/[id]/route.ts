@@ -17,7 +17,7 @@ export async function GET(_req: NextRequest, ctx: RouteContext<"/api/tokens/[id]
       { trait_type: "Genre", value: c.genre },
       { trait_type: "Style", value: c.style },
       { trait_type: "Pages", value: c.pageCount, display_type: "number" },
-      { trait_type: "Paid (AUSD)", value: c.chain.paidUsdc },
+      { trait_type: "Paid (USDC)", value: c.chain.paidUsdc },
       ...(c.remixOf ? [{ trait_type: "Remix of", value: c.remixOf.title }] : []),
     ],
     content_hash: c.chain.contentHash,

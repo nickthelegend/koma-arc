@@ -15,7 +15,7 @@ import { chainNow } from "./chain-time";
 export function reason(e: unknown): string {
   if (e instanceof BaseError) {
     const revert = e.walk((x) => x instanceof ContractFunctionRevertedError) as ContractFunctionRevertedError | null;
-    // Custom errors by name; plain `revert("…")` strings (e.g. AUSD's) by their text.
+    // Custom errors by name; plain `revert("…")` strings (e.g. USDC's FiatToken reverts) by their text.
     if (revert?.data?.errorName && revert.data.errorName !== "Error") return revert.data.errorName;
     if (revert?.reason) return revert.reason;
     return e.shortMessage;
@@ -50,7 +50,7 @@ const tooSmall = () => new Error(`Gasless trades start at $${GASLESS_MIN_USDC}. 
 function knownCurve(curve: string) {
   const row = db().prepare("SELECT id, complete FROM lp_series WHERE lower(curve) = ?").get(curve.toLowerCase()) as { id: number; complete: number } | undefined;
   if (!row) throw new Error("Unknown curve.");
-  if (row.complete) throw new Error("This series has graduated; trade it on Uniswap v4.");
+  if (row.complete) throw new Error("This series has graduated; trade it in its Uniswap v4 pool.");
   return row;
 }
 
@@ -169,30 +169,6 @@ async function finalizeSlot(seriesId: number, episode: number) {
   console.log(`[koma] canon: series ${seriesId} episode ${episode} → issue #${winner} (${hash})`);
 }
 
-/**
- * With KOMA_CANON_FINALIZER=cre and a CanonSettler deployed, Chainlink CRE settles canon (cre/koma-canon): the
- * keeper leaves due slots alone and only finalizes one that is still open KOMA_CANON_GRACE_S after its window
- * closed, so canon can't stall if the workflow stops.
- */
-export const creSettles = () => process.env.KOMA_CANON_FINALIZER === "cre" && Boolean(launchpad()?.canonSettler);
-const creGrace = () => Number(process.env.KOMA_CANON_GRACE_S ?? 900);
-
-/** Slots whose window has closed and that nobody has finalized yet, with the signed votes CRE re-verifies. */
-export function dueSlots(now: number) {
-  const rows = db().prepare("SELECT series_id, episode, ends_at FROM lp_slots WHERE finalized = 0 AND ends_at <= ? ORDER BY series_id, episode").all(now) as {
-    series_id: number; episode: number; ends_at: number;
-  }[];
-  return rows.map((r) => ({
-    seriesId: r.series_id,
-    episode: r.episode,
-    endsAt: r.ends_at,
-    // Weight is left out on purpose: each DON node re-reads it from the coin at the slot's snapshot.
-    votes: votesFor(r.series_id, r.episode)
-      .map((v) => ({ issueId: v.issueId, voter: v.voter.toLowerCase(), signature: v.signature }))
-      .sort((x, y) => (x.voter < y.voter ? -1 : 1)),
-  }));
-}
-
 /** Runs after each index pass: graduations, finalizations, proposals waiting for a slot. */
 export async function keeper() {
   if (!launchpad() || !serverWallet) return;
@@ -200,7 +176,7 @@ export async function keeper() {
   const now = await chainNow();
   const ready = d.prepare("SELECT id FROM lp_series WHERE complete = 1 AND graduated = 0").all() as { id: number }[];
   for (const s of ready) await once(`grad:${s.id}`, async () => void (await graduate(s.id)));
-  const due = d.prepare("SELECT series_id, episode FROM lp_slots WHERE finalized = 0 AND ends_at < ?").all(now - 2 - (creSettles() ? creGrace() : 0)) as {
+  const due = d.prepare("SELECT series_id, episode FROM lp_slots WHERE finalized = 0 AND ends_at < ?").all(now - 2) as {
     series_id: number;
     episode: number;
   }[];

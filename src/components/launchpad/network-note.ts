@@ -1,7 +1,7 @@
 import { KOMA } from "@/lib/network";
 
-/** Monad: real AUSD, no faucet, no demo series. Everything testnet-only hides behind this. */
-export const MAINNET = KOMA.key === "monad";
+/** Arc mainnet: real USDC, no faucet, no demo series. Everything testnet-only hides behind this. */
+export const MAINNET = !KOMA.testnet;
 
 /** Said on every network: what a coin is for. Never a promise of returns. */
 export const COIN_NOTE = "Coins give votes on the story, not a share of fees or any return.";

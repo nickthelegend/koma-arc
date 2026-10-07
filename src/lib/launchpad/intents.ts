@@ -4,7 +4,7 @@ import { BUY_TAG } from "./abi";
 /**
  * The EIP-3009 nonce a gasless buy is signed with. It commits to the curve,
  * amount, minimum out and deadline, so the relayer can't change any of them:
- * the curve recomputes it on-chain and AUSD rejects a mismatch.
+ * the curve recomputes it on-chain and USDC rejects a mismatch.
  */
 export function buyNonce(o: { curve: Address; buyer: Address; usdcIn: bigint; minCoinOut: bigint; deadline: bigint; salt: Hex }): Hex {
   return keccak256(

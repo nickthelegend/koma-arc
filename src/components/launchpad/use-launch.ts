@@ -38,7 +38,7 @@ async function errorText(res: Response) {
 
 /**
  * A series launch over x402, the same way the studio buys an issue:
- * quote → one AUSD signature → resend with PAYMENT-SIGNATURE → poll the launch.
+ * quote → one USDC signature → resend with PAYMENT-SIGNATURE → poll the launch.
  */
 export function useLaunch() {
   const wallet = useWallet();
@@ -113,7 +113,7 @@ export function useLaunch() {
     let header: Record<string, string>;
     try {
       const signer = await wallet.signer();
-      // Pay only KOMA's AUSD on KOMA's network, never more than a launch costs.
+      // Pay only KOMA's USDC on KOMA's network, never more than a launch costs.
       http = new x402HTTPClient(
         x402Client.fromConfig({
           schemes: [{ network: KOMA.caip, client: new ExactEvmScheme(signer) }],
