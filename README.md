@@ -4,7 +4,7 @@
 
 Describe a story and KOMA's AI editor (Tencent **Hunyuan 3**) shapes it into a pitch; **Kimi K2.6** writes the
 script and fal draws it (character sheets and covers by **Hunyuan Image 3**). You pay a few cents of **USDC on Arc**
-with one signature (x402, no gas) and the issue is minted to you before the spinner stops. Launch its hero as a
+with one signature (x402, no gas); the payment is final in under a second, and the finished issue is minted to you. Launch its hero as a
 **series**: a Character NFT with its own ERC-6551 wallet, a coin on a USDC bonding curve, and a canon that holders
 vote on. The character earns 40% of every trading fee in USDC, and whoever holds it can send those earnings to any
 CCTP chain in one transaction.
