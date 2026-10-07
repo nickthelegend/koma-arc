@@ -34,7 +34,7 @@ voting window (no demo series on mainnet).
 | `KOMA_PUBLIC_URL` | The hosted app's origin, e.g. `https://koma.example` (token metadata URIs are derived from it). |
 | `DEPLOYER_ENV` | File with `DEPLOYER_PRIVATE_KEY` (default `../.deployer/deployer.env`). |
 
-Fund the deployer with **~1.5 USDC** on Arc mainnet (estimate below) and the relayer with **5–10 USDC** (its gas
+Fund the deployer with **1.5 USDC** on Arc mainnet (the deploy spends ~0.7–0.85 USDC, see below; each transaction also needs headroom for forge's gas reservation, at most ~0.35 USDC for the PoolManager) and the relayer with **5–10 USDC** (its gas
 float; see §5).
 
 ## 2. Simulate, then deploy
@@ -54,11 +54,12 @@ explorer.arc.io). Commit the JSON; the app and the indexer read it.
 
 ### Gas (USDC)
 
-| | Gas | USDC at 20–25 gwei |
-|---|---|---|
-| Testnet deploy, measured (§ deployments/arc-testnet.json → `deployGas`) | see file | see file |
-| Mainnet simulation (`DRY_RUN=1`, includes the 5 ERC-6551 contracts testnet already had 1 of) | ~44.4M | ~0.9–1.1 |
-| Budget with margin | | **1.5 USDC** |
+| | Transactions | Gas used | USDC |
+|---|---|---|---|
+| Full deploy on a fork of Arc testnet (`scripts/local-fork.sh`, arc-anvil, base fee 20 gwei): 4 Tokenbound contracts + v4 + KOMA | 24 | 33,065,114 | 0.661 |
+| Same, Tokenbound already present | 20 | 28,233,945 | 0.565 |
+| Mainnet estimate (adds the ERC-6551 registry, ~0.3M gas) at 20–25 gwei | 25 | ~33.4M | **0.67–0.84** |
+| Budget with margin (forge prices its pre-flight estimate at ~2.5× the base fee and +30% gas: ~2.3 USDC "required", but only ~0.85 is spent) | | | **1.5 USDC** |
 
 Arc's base fee floor is 20 gwei and is paid in USDC (native 18-decimal units): 1M gas ≈ 0.02 USDC.
 
@@ -114,4 +115,4 @@ the server alone.
 5. Watch `relayerUsdc` drop by cents, not dollars.
 
 A full demo (one comic, one launch, a few trades, one CCTP withdrawal) costs about **2.5 USDC** in payments plus
-**~0.3 USDC** of relayer gas, on top of the ~1.5 USDC deploy.
+**~0.3 USDC** of relayer gas, on top of the deploy (~0.85 USDC).

@@ -84,7 +84,11 @@ From [`deployments/arc-testnet.json`](deployments/arc-testnet.json) (with proof 
 <https://explorer.testnet.arc.io>.
 
 <!-- addresses:start -->
-_Filled in by the testnet deploy._
+_Not deployed yet: the testnet deploy is waiting for the deployer wallet to be funded. `sh scripts/deploy.sh testnet`
+then `node scripts/addresses-md.mjs` fills this table. Canonical contracts KOMA uses on Arc: USDC
+`0x3600000000000000000000000000000000000000`, CCTP TokenMessengerV2 `0x8FE6B999Dc680CcFDD5Bf7EB0974218be2542DAA`
+(testnet) / `0x28b5a0e9C621a5BadaA536219b3a228C8168cf5d` (mainnet), ERC-6551 registry
+`0x000000006551c19487814612e58FE06813775758`, Permit2 `0x000000000022D473030F116dDEE9F6B43aC78BA3`._
 <!-- addresses:end -->
 
 Arc mainnet (chain 5042): [`deployments/arc-mainnet.json`](deployments/arc-mainnet.json) is written by

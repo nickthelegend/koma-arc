@@ -49,5 +49,24 @@ Arbitrum, OP or Avalanche over Circle's CCTP in one Arc transaction. USDC is the
 ## Evidence
 
 <!-- evidence:start -->
-_Filled in after the testnet run._
+Run on 2026-10-07. **Arc testnet deploy: pending** — the shared deployer wallet had 0 USDC, so the broadcast stopped
+at its first transaction (`insufficient funds … have 0`). Everything else was run for real against a **fork of Arc
+testnet** made with Circle's Arc Foundry (`arc-anvil --network arc`, which moves Arc's native USDC; `scripts/local-fork.sh`):
+the real deploy script, Arc's real USDC contract, the real CCTP TokenMessengerV2, real AI models.
+
+| Suite | Result |
+|---|---|
+| `forge test` (unit + fuzz, FiatToken v2.2 at Arc's USDC address, real Tokenbound + Uniswap v4) | 161 passed (also with 10,000–40,000 fuzz runs) |
+| Deploy script on the Arc fork | 24 txs, 33,065,114 gas, 0.661 USDC; mainnet path simulated against live Arc mainnet (`DRY_RUN=1`) |
+| `test:api` (x402 on Arc USDC, facilitator, minting, real models) | 13/13 (B4 and B12 re-checked after switching to Transfer-log amounts) |
+| `test:launchpad` (launch → gasless buy/sell → canon → remix royalties → graduation into v4 → pool swap) | 16/17, the one failure (L8a, an unfunded non-holder) fixed in the suite since |
+| CCTP from a character wallet (L13a: `executeBatch` approve + `depositForBurnWithHook`) | passed on the fork (183k gas); the attestation + Base Sepolia mint (L13b) needs the real testnet |
+| `test:browser` (UI flows with real signatures) | 8/8 |
+| `test:ai` (Kimi script with `get_series_canon`, Hunyuan editor and images) | 4/4 |
+| `test:room` (WebAuthn PRF Writers' Room) | 7/7 (+1 skipped: cross-device needs two real devices) |
+| `test:walk` (15 pages at 375 px, no stale chain copy) | 15/15 |
+| typecheck, lint, `next build` | clean |
+
+Measured on Arc: x402 settlement 87k gas (0.0018 USDC), relayed curve buy 393k gas (0.008 USDC), Tokenbound
+`executeBatch` CCTP burn 184k gas.
 <!-- evidence:end -->

@@ -51,3 +51,4 @@ next-env.d.ts
 # local Arc-fork rehearsals (arc-anvil)
 /deployments/local-*.json
 /.data.fork.log
+/deployments/*.pending

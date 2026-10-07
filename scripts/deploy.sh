@@ -50,8 +50,9 @@ DEPLOYER_ENV=${DEPLOYER_ENV:-$ROOT/../.deployer/deployer.env}
 set -a; . "$DEPLOYER_ENV"; set +a
 [ -n "$DEPLOYER_PRIVATE_KEY" ] || { echo "$DEPLOYER_ENV doesn't define DEPLOYER_PRIVATE_KEY"; exit 1; }
 
-export RELAYER BASE_URI="$PUBLIC_URL/api/characters/" KOMA_BASE_URI="$PUBLIC_URL/api/tokens/" ADDRESSES_OUT="$ROOT/$OUT"
-case "$OUT" in /*) ADDRESSES_OUT=$OUT ;; esac
+# forge writes the addresses during simulation, before broadcasting: write to .pending, move into place on success.
+export RELAYER BASE_URI="$PUBLIC_URL/api/characters/" KOMA_BASE_URI="$PUBLIC_URL/api/tokens/" ADDRESSES_OUT="$ROOT/$OUT.pending"
+case "$OUT" in /*) ADDRESSES_OUT=$OUT.pending ;; esac
 mkdir -p deployments
 cd contracts
 run() {
@@ -65,10 +66,11 @@ fi
 # Shared deployer wallet: hold the lock only for the broadcast.
 LOCK="$ROOT/../.deployer/lock"
 until mkdir "$LOCK" 2>/dev/null; do echo "waiting for the deployer lock…"; sleep 3; done
-trap 'rmdir "$LOCK" 2>/dev/null' EXIT
+trap 'rmdir "$LOCK" 2>/dev/null; rm -f "$ADDRESSES_OUT"' EXIT
 run --broadcast
 rmdir "$LOCK"; trap - EXIT
 cd "$ROOT"
+mv "$ADDRESSES_OUT" "$OUT"
 # Record what the deploy cost and its transactions next to the addresses (receipts from forge's broadcast log).
 node -e '
 const fs = require("fs");
