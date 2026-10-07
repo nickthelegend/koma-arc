@@ -28,6 +28,7 @@ case "$NETWORK" in
   mainnet) RPC=${ARC_MAINNET_RPC_URL:-https://rpc.mainnet.arc.io}; CHAIN=5042; OUT=deployments/arc-mainnet.json; EXPLORER=https://explorer.arc.io ;;
   *) echo "usage: sh scripts/deploy.sh testnet|mainnet"; exit 1 ;;
 esac
+OUT=${ADDRESSES_OUT:-$OUT}
 command -v forge >/dev/null || { echo "missing: forge (https://getfoundry.sh)"; exit 1; }
 [ -d node_modules/@uniswap/v4-core ] || npm ci --no-audit --no-fund
 [ "$(cast chain-id --rpc-url "$RPC")" = "$CHAIN" ] || { echo "$RPC is not chain $CHAIN"; exit 1; }
@@ -49,7 +50,8 @@ DEPLOYER_ENV=${DEPLOYER_ENV:-$ROOT/../.deployer/deployer.env}
 set -a; . "$DEPLOYER_ENV"; set +a
 [ -n "$DEPLOYER_PRIVATE_KEY" ] || { echo "$DEPLOYER_ENV doesn't define DEPLOYER_PRIVATE_KEY"; exit 1; }
 
-export RELAYER BASE_URI="$PUBLIC_URL/api/characters/" KOMA_BASE_URI="$PUBLIC_URL/api/tokens/"
+export RELAYER BASE_URI="$PUBLIC_URL/api/characters/" KOMA_BASE_URI="$PUBLIC_URL/api/tokens/" ADDRESSES_OUT="$ROOT/$OUT"
+case "$OUT" in /*) ADDRESSES_OUT=$OUT ;; esac
 mkdir -p deployments
 cd contracts
 run() {
@@ -83,4 +85,4 @@ console.log(`deploy: ${b.receipts.length} txs, ${gas} gas, ${d.deployGas.usdc} U
 echo "addresses: $OUT"
 
 if [ -n "$VERIFY" ]; then sh scripts/verify.sh "$NETWORK"; fi
-echo "explorer: $EXPLORER/address/$(node -e "console.log(require('./$OUT').seriesFactory)")"
+echo "explorer: $EXPLORER/address/$(node -e "console.log(require(require('path').resolve('$OUT')).seriesFactory)")"

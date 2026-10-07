@@ -238,7 +238,7 @@ export function LaunchStudio({ deployed, parent, job, chainPanel }: { deployed: 
                   <span className="font-semibold text-paper">Demo series (graduates at {DEMO_TARGET_USDC} USDC, 5-minute canon votes)</span>
                   <span className="mt-1 block text-[12.5px] text-mute">
                     So a whole run, from launch to canon to a Uniswap v4 pool, fits in an afternoon with test USDC. A normal series graduates at{" "}
-                    {GRADUATION_TARGET_USDC.toLocaleString("en-US")} USDC and votes run for 24 hours. Only on {KOMA.label}; Arc has no demo series.
+                    {GRADUATION_TARGET_USDC.toLocaleString("en-US")} USDC and votes run for 24 hours. Only on {KOMA.label}; Arc mainnet has no demo series.
                   </span>
                 </span>
               </label>

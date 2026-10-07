@@ -5,7 +5,7 @@
 //   node scripts/e2e-api.mjs [only=B2,B3,...]
 import { existsSync, readFileSync } from "node:fs";
 import { DatabaseSync } from "node:sqlite";
-import { createPublicClient, http, parseAbi } from "viem";
+import { createPublicClient, http, parseAbi, parseEventLogs } from "viem";
 import { privateKeyToAccount } from "viem/accounts";
 import { x402Client } from "@x402/core/client";
 import { x402HTTPClient, decodePaymentRequiredHeader } from "@x402/core/http";
@@ -39,6 +39,17 @@ const komaAbi = parseAbi([
   "function issue(uint256) view returns ((bytes32 contentHash, bytes32 paymentTx, uint256 remixOf, uint64 mintedAt, uint16 pages))",
 ]);
 const bal = (a) => chain.readContract({ address: USDC, abi: usdcAbi, functionName: "balanceOf", args: [a] });
+const transferAbi = parseAbi(["event Transfer(address indexed from, address indexed to, uint256 value)"]);
+/**
+ * USDC that a settlement tx moved from `from` to `to` (ERC-20 Transfer logs of Arc's USDC). On Arc the facilitator
+ * pays its gas in the same USDC, so when payTo is the facilitator its balance moves by the payment minus gas; the
+ * transfer log is the exact amount.
+ */
+async function moved(tx, from, to) {
+  const receipt = await chain.waitForTransactionReceipt({ hash: tx });
+  const logs = parseEventLogs({ abi: transferAbi, logs: receipt.logs.filter((l) => l.address.toLowerCase() === USDC.toLowerCase()) });
+  return logs.filter((l) => l.args.from.toLowerCase() === from.toLowerCase() && l.args.to.toLowerCase() === to.toLowerCase()).reduce((a, l) => a + l.args.value, 0n);
+}
 // Local runs can also look straight into the database; remote runs use the public API.
 // Only the default local server's database; pass KOMA_DB for another local server.
 const dbPath = process.env.KOMA_DB ?? (process.env.KOMA_URL ? null : ".data/koma.db");
@@ -180,14 +191,15 @@ if (run("B4") && !skipPaid("B4", "paid order, B4b genre/cast, B6 replay, B10 tok
   const h = httpClient(KEYS.agent);
   const header = h.encodePaymentSignatureHeader(await h.createPaymentPayload(required));
   const payer = privateKeyToAccount(KEYS.agent).address;
-  const [pb0, tb0] = [await bal(payer), await bal(PAY_TO)];
+  const pb0 = await bal(payer);
   const res = await post(order, header);
   const body = await res.json();
   if (res.status !== 202) throw new Error(`paid order answered ${res.status}: ${JSON.stringify(body).slice(0, 300)} ${reason(res)}`);
   const settled = h.getPaymentSettleResponse((n) => res.headers.get(n));
-  const [pb1, tb1] = [await bal(payer), await bal(PAY_TO)];
-  const exact = pb0 - pb1 === 100000n && tb1 - tb0 === 100000n;
-  console.log(`     202? ${res.status} job ${body.jobId} tx ${settled?.transaction}; payer −${pb0 - pb1}, payTo +${tb1 - tb0}`);
+  const pb1 = await bal(payer);
+  const toPayTo = settled?.transaction ? await moved(settled.transaction, payer, PAY_TO) : 0n;
+  const exact = pb0 - pb1 === 100000n && toPayTo === 100000n;
+  console.log(`     202? ${res.status} job ${body.jobId} tx ${settled?.transaction}; payer −${pb0 - pb1}, transfer to payTo ${toPayTo}`);
   const job = await pollJob(body.jobId);
   const issue = (await getJson(`/api/comics?owner=${payer}`)).comics.find((c) => c.id === body.jobId) ?? null;
   let chainOk = false;
@@ -284,13 +296,14 @@ if (run("B12")) {
   bad.payload.signature = bad.payload.signature.slice(0, -4) + (bad.payload.signature.endsWith("1b") ? "1c00" : "1b00").slice(0, 4);
   const vb = await (await fetch(`${BASE}/api/facilitator/verify`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ x402Version: 2, paymentPayload: bad, paymentRequirements: reqs }) })).json();
   const payer = privateKeyToAccount(KEYS.agent).address;
-  const [b0, t0] = [await bal(payer), await bal(PAY_TO)];
+  const b0 = await bal(payer);
   const s = await (await fetch(`${BASE}/api/facilitator/settle`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ x402Version: 2, paymentPayload: payload, paymentRequirements: reqs }) })).json();
-  const [b1, t1] = [await bal(payer), await bal(PAY_TO)];
+  const b1 = await bal(payer);
+  const toPayTo = s.success ? await moved(s.transaction, payer, PAY_TO) : 0n;
   check(
     "B12",
     "facilitator supported/verify(good,bad)/settle move USDC",
-    hasKind && v.isValid === true && vb.isValid === false && s.success === true && /^0x[0-9a-f]{64}$/.test(s.transaction) && b0 - b1 === 100000n && t1 - t0 === 100000n,
+    hasKind && v.isValid === true && vb.isValid === false && s.success === true && /^0x[0-9a-f]{64}$/.test(s.transaction) && b0 - b1 === 100000n && toPayTo === 100000n,
     `verify ${v.isValid}/${vb.isValid} (${vb.invalidReason}) settle ${s.success} ${s.transaction}`,
   );
   if (s.success) proofs.facilitatorSettleTx = s.transaction;

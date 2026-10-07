@@ -6,7 +6,7 @@
 import { readFileSync, writeFileSync } from "node:fs";
 
 const target = process.argv[2] ?? "testnet";
-const file = `../deployments/arc-${target === "mainnet" ? "mainnet" : "testnet"}.json`;
+const file = process.env.KOMA_DEPLOYMENT_FILE ?? `../deployments/arc-${target === "mainnet" ? "mainnet" : "testnet"}.json`;
 const a = JSON.parse(readFileSync(file, "utf8"));
 const rpc = process.env.ENVIO_HYPERSYNC === "1" ? null : process.env.ENVIO_RPC_URL ?? (a.chainId === 5042 ? "https://rpc.mainnet.arc.io" : "https://rpc.testnet.arc.io");
 

@@ -8,7 +8,7 @@
 // demo series (graduates at 5 USDC): about 15 USDC across the wallets, plus the server's gas.
 import { readFileSync } from "node:fs";
 import { randomBytes } from "node:crypto";
-import { createPublicClient, encodeAbiParameters, formatUnits, http, keccak256, parseAbi, parseUnits, stringToBytes, toHex } from "viem";
+import { createPublicClient, createWalletClient, encodeAbiParameters, formatUnits, http, keccak256, parseAbi, parseUnits, stringToBytes, toHex } from "viem";
 import { generatePrivateKey, privateKeyToAccount } from "viem/accounts";
 import { x402Client } from "@x402/core/client";
 import { x402HTTPClient, decodePaymentRequiredHeader } from "@x402/core/http";
@@ -76,6 +76,13 @@ const who = {
 
 const proofs = {};
 const nativeOf = (a) => chain.getBalance({ address: a });
+const arc = { id: chainId, name: "Arc Testnet", nativeCurrency: { name: "USDC", symbol: "USDC", decimals: 18 }, rpcUrls: { default: { http: [RPC] } } };
+/** A plain USDC transfer from a test wallet (a wallet-sent tx: gas in USDC). */
+async function sendUsdc(from, to, amount) {
+  const w = createWalletClient({ account: from, chain: arc, transport: http(RPC) });
+  const hash = await w.writeContract({ address: USDC, abi: parseAbi(["function transfer(address,uint256) returns (bool)"]), functionName: "transfer", args: [to, amount] });
+  await chain.waitForTransactionReceipt({ hash });
+}
 
 // ——— x402 payments ———
 const payer = (acct) =>
@@ -334,6 +341,8 @@ if (S && run("L7")) {
 let proposal = null;
 if (S && run("L8")) {
   const order = { prompt: "Juniper sneaks into the junkyard at night to steal a racing engine, but the engine is alive.", pages: 1, style: "retro-sf", seriesId: S.id };
+  // The non-holder can afford the episode; holding no coins is what must stop it.
+  await sendUsdc(who.creator, who.fresh.address, U(0.35));
   const before = await usdc(who.fresh.address);
   const deniedRes = await paidPost("/api/comics", order, who.fresh);
   const denied = await deniedRes.json().catch(() => ({}));
