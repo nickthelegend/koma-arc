@@ -1,0 +1,57 @@
+# Postgres + Hasura for the KOMA indexer only. Not the containers `envio dev` creates (envio-postgres /
+# envio-hasura are global names other projects on this machine use): own names, ports, network and volume,
+# so `npm run db:up` / `db:down` can only touch these.
+#   Postgres  koma-envio-pg      host port 55443  (db envio-dev, user postgres)
+#   Hasura    koma-envio-hasura  host port 8093   (GraphQL at /v1/graphql)
+name: koma-envio
+
+services:
+  postgres:
+    image: postgres:18.3
+    container_name: koma-envio-pg
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: ${KOMA_ENVIO_PG_PASSWORD:-koma-envio-local}
+      POSTGRES_DB: envio-dev
+    ports:
+      - "${KOMA_ENVIO_PG_PORT:-55443}:5432"
+    volumes:
+      - pg-data:/var/lib/postgresql
+    networks: [net]
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d envio-dev"]
+      interval: 2s
+      timeout: 3s
+      retries: 30
+
+  hasura:
+    image: hasura/graphql-engine:v2.43.0
+    container_name: koma-envio-hasura
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      HASURA_GRAPHQL_DATABASE_URL: postgres://postgres:${KOMA_ENVIO_PG_PASSWORD:-koma-envio-local}@koma-envio-pg:5432/envio-dev
+      HASURA_GRAPHQL_ADMIN_SECRET: ${KOMA_ENVIO_HASURA_SECRET:-koma-admin}
+      HASURA_GRAPHQL_ENABLE_CONSOLE: "true"
+      HASURA_GRAPHQL_UNAUTHORIZED_ROLE: public
+      HASURA_GRAPHQL_STRINGIFY_NUMERIC_TYPES: "true"
+      HASURA_GRAPHQL_CORS_DOMAIN: "*"
+      HASURA_GRAPHQL_NO_OF_RETRIES: "10"
+      PORT: "8080"
+    ports:
+      - "${KOMA_ENVIO_HASURA_PORT:-8093}:8080"
+    networks: [net]
+    healthcheck:
+      test: ["CMD-SHELL", "timeout 1s bash -c ':> /dev/tcp/127.0.0.1/8080' || exit 1"]
+      interval: 2s
+      timeout: 3s
+      retries: 60
+
+networks:
+  net:
+    name: koma-envio-net
+
+volumes:
+  pg-data:
+    name: koma-envio-pg-data

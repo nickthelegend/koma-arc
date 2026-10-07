@@ -1,0 +1,131 @@
+# KOMA on Monad. Raw events become aggregates the app reads: per-series totals and fee split, holder counts,
+# daily volume, a backer leaderboard, canon history and global stats.
+
+type Series {
+  id: ID! # seriesId
+  name: String!
+  symbol: String!
+  creator: String!
+  coin: String!
+  curve: String!
+  characterAccount: String!
+  parentSeriesId: BigInt!
+  graduationTarget: BigInt!
+  launchedAt: Int!
+  launchTx: String!
+  # curve state, from the latest Trade
+  raised: BigInt!
+  priceE18: BigInt! # AUSD per coin, scaled 1e18 (vU / vC)
+  complete: Boolean!
+  graduated: Boolean!
+  poolId: String
+  poolUsdc: BigInt
+  # aggregates
+  volumeUsdc: BigInt!
+  trades: Int!
+  buys: Int!
+  sells: Int!
+  feesUsdc: BigInt!
+  toCharacterUsdc: BigInt!
+  toAncestorsUsdc: BigInt!
+  toTreasuryUsdc: BigInt!
+  graduationFeeUsdc: BigInt!
+  poolVolumeUsdc: BigInt!
+  holders: Int!
+  proposals: Int!
+  canonEpisodes: Int!
+  lastTradeAt: Int!
+}
+
+type Trade {
+  id: ID! # tx-logIndex
+  seriesId: String! @index
+  trader: String! @index
+  isBuy: Boolean!
+  usdc: BigInt!
+  coins: BigInt!
+  fee: BigInt!
+  priceE18: BigInt!
+  venue: String! # "curve" | "pool"
+  timestamp: Int!
+  tx: String!
+}
+
+type Holder {
+  id: ID! # seriesId-address
+  seriesId: String! @index
+  address: String! @index
+  balance: BigInt!
+  # false for contract-held balances: the curve, the vesting wallet (the launch mint's other recipient), the burn
+  # address, the Graduator and the v4 PoolManager / PositionManager
+  counted: Boolean!
+}
+
+type Backer {
+  id: ID! # address
+  volumeUsdc: BigInt!
+  trades: Int!
+  buys: Int!
+  firstTradeAt: Int!
+  lastTradeAt: Int!
+}
+
+type SeriesDay {
+  id: ID! # seriesId-dayIndex
+  seriesId: String! @index
+  day: Int!
+  volumeUsdc: BigInt!
+  trades: Int!
+  closePriceE18: BigInt!
+}
+
+type Proposal {
+  id: ID! # issueId
+  seriesId: String! @index
+  episode: Int!
+  proposer: String!
+  timestamp: Int!
+}
+
+type CanonEpisode {
+  id: ID! # seriesId-episode
+  seriesId: String! @index
+  episode: Int!
+  opensAt: Int!
+  endsAt: Int!
+  winnerIssueId: BigInt
+  votesRoot: String
+  winnerVotes: BigInt
+  totalVotes: BigInt
+  finalizedAt: Int
+  # "cre" when KOMA's Chainlink CRE workflow settled it (CanonSettler.Settled), else "keeper"
+  settledBy: String
+}
+
+type Comic {
+  id: ID! # tokenId
+  owner: String! @index
+  remixOf: BigInt!
+  pages: Int!
+  mintedAt: Int!
+}
+
+type CurveIndex {
+  id: ID! # curve address (lowercase)
+  seriesId: String!
+}
+
+type CoinIndex {
+  id: ID! # coin address (lowercase)
+  seriesId: String!
+}
+
+type Stats {
+  id: ID! # "global"
+  series: Int!
+  trades: Int!
+  volumeUsdc: BigInt!
+  comics: Int!
+  canonEpisodes: Int!
+  backers: Int!
+}
