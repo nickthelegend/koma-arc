@@ -25,8 +25,8 @@ if ! cast chain-id --rpc-url $RPC >/dev/null 2>&1; then
   i=0; until cast chain-id --rpc-url $RPC >/dev/null 2>&1; do i=$((i+1)); [ $i -gt 60 ] && exit 1; sleep 1; done
 fi
 KEYFILE=.data/fork-deployer.env
-# anvil's public dev key 0: only ever used on this local fork
-printf 'DEPLOYER_PRIVATE_KEY=0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80\n' > $KEYFILE
+# anvil's public dev account 0 (from the well-known "test … junk" mnemonic): only ever used on this local fork
+printf 'DEPLOYER_PRIVATE_KEY=%s\n' "$(cast wallet private-key --mnemonic "test test test test test test test test test test test junk")" > $KEYFILE
 # The fork has testnet's chain id, so forge would file its records with the real testnet deploy's: set those aside.
 B=contracts/broadcast/DeployLaunchpad.s.sol/5042002
 rm -rf .data/broadcast-keep; [ -d $B ] && mkdir -p .data/broadcast-keep && cp -R $B .data/broadcast-keep/
