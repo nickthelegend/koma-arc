@@ -16,9 +16,9 @@ export const metadata: Metadata = {
 const STEPS = [
   { t: "You ask for a comic", d: "The studio (or any script or AI agent) sends your story to POST /api/comics." },
   { t: "The server quotes a price", d: "It answers 402 Payment Required with the amount, USDC on Arc, and where it goes." },
-  { t: "Your wallet signs once", d: "An USDC transfer authorization (EIP-3009) for exactly that amount. Signing costs no gas." },
+  { t: "Your wallet signs once", d: "A USDC transfer authorization (EIP-3009) for exactly that amount. Signing costs no gas." },
   { t: "The request is sent again, signed", d: "The same call, now carrying the signature in its PAYMENT-SIGNATURE header." },
-  { t: "The facilitator settles it", d: "It checks the signature and submits the transfer on Arc, paying the gas itself." },
+  { t: "The facilitator settles it", d: "It checks the signature and submits the transfer on Arc, paying the gas (in USDC) itself. The block is final in under a second." },
   { t: "Your issue is drawn and minted", d: "Script, panels and lettering are generated; a hash of the finished issue is minted to your wallet." },
 ];
 
