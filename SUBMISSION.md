@@ -58,7 +58,7 @@ the real deploy script, Arc's real USDC contract, the real CCTP TokenMessengerV2
 |---|---|
 | `forge test` (unit + fuzz, FiatToken v2.2 at Arc's USDC address, real Tokenbound + Uniswap v4) | 161 passed (also with 10,000–40,000 fuzz runs) |
 | Deploy script on the Arc fork | 24 txs, 33,065,114 gas, 0.661 USDC; mainnet path simulated against live Arc mainnet (`DRY_RUN=1`) |
-| `test:api` (x402 on Arc USDC, facilitator, minting, real models) | 13/13 (B4 and B12 re-checked after switching to Transfer-log amounts) |
+| `test:api` (x402 on Arc USDC, facilitator, minting, real models) | 13/13 across runs: B4/B12 re-run after the amount check moved to Transfer logs (on Arc the facilitator's own USDC also pays its gas); one run hit fal's content filter on a panel (the job is retryable with no second charge) and passed on re-run |
 | `test:launchpad` (launch → gasless buy/sell → canon → remix royalties → graduation into v4 → pool swap) | 16/17, the one failure (L8a, an unfunded non-holder) fixed in the suite since |
 | CCTP from a character wallet (L13a: `executeBatch` approve + `depositForBurnWithHook`) | passed on the fork (183k gas); the attestation + Base Sepolia mint (L13b) needs the real testnet |
 | `test:browser` (UI flows with real signatures) | 8/8 |
