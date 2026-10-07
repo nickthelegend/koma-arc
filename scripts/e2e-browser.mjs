@@ -17,11 +17,11 @@ import { installWallet } from "./lib/wallet-shim.mjs";
 
 const env = Object.fromEntries(readFileSync(".env.local", "utf8").split("\n").filter((l) => l.includes("=")).map((l) => [l.slice(0, l.indexOf("=")), l.slice(l.indexOf("=") + 1)]));
 const BASE = process.env.KOMA_URL ?? "http://localhost:4310";
-const RPC = env.NEXT_PUBLIC_ARC_RPC_URL || "https://rpc.testnet.arc.io";
+const RPC = process.env.KOMA_RPC ?? (env.NEXT_PUBLIC_ARC_RPC_URL || "https://rpc.testnet.arc.io");
 const ONLY = process.env.ONLY ? new Set(process.env.ONLY.split(",")) : null;
 const run = (id) => !ONLY || ONLY.has(id);
 const chain = createPublicClient({ transport: http(RPC) });
-const LP = JSON.parse(readFileSync(env.KOMA_LAUNCHPAD_ADDRESSES || "deployments/arc-testnet.json", "utf8"));
+const LP = JSON.parse(readFileSync(process.env.KOMA_DEPLOYMENT_FILE ?? (env.KOMA_LAUNCHPAD_ADDRESSES || "deployments/arc-testnet.json"), "utf8"));
 const arc = { id: 5042002, name: "Arc Testnet", nativeCurrency: { name: "USDC", symbol: "USDC", decimals: 18 }, rpcUrls: { default: { http: [RPC] } } };
 // KOMA's own testnet server key (LAUNCHER_ROLE + MINTER_ROLE): W5 sets up a votable slot without a second AI run.
 const relayer = createWalletClient({ account: privateKeyToAccount(env.SERVER_PRIVATE_KEY), chain: arc, transport: http(RPC) });
@@ -205,7 +205,7 @@ if (run("W7")) {
     await panel.getByText("Or send it to another chain").waitFor({ timeout: 20_000 });
     await panel.getByText(/Circle's fee to Base Sepolia|USDC arrives/).waitFor({ timeout: 20_000 });
     const text = await panel.innerText();
-    check("W7", "character wallet: the CCTP panel offers Base Sepolia and quotes Circle's live forwarding fee", /Base Sepolia/.test(text) && /fee/.test(text), text.split("\n").find((l) => /fee/.test(l)) ?? "");
+    check("W7", "character wallet: the CCTP panel offers Base Sepolia and quotes Circle's live forwarding fee", /Base Sepolia/.test(text) && /fee/.test(text), text.split("\n").find((l) => /USDC arrives|Circle.s fee/.test(l)) ?? "");
   }
 }
 
