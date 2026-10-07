@@ -105,6 +105,10 @@ Get testnet USDC (which is also the gas) from <https://faucet.circle.com> → Ar
 (MetaMask, Rabby, Coinbase Wallet); the app adds Arc testnet itself. Without AI keys the studio says it isn't
 configured; trading, voting and the Writers' Room still work.
 
+No testnet USDC yet? `sh scripts/local-fork.sh` forks Arc testnet with Arc Foundry's `arc-anvil` (which, unlike plain
+anvil, moves Arc's native USDC), deploys the same contracts and funds the test wallets; the header of that script
+shows how to point the app and the e2e suites at it.
+
 Deploying your own copy: `sh scripts/deploy.sh testnet` (reads the deployer key from `DEPLOYER_ENV`, default
 `../.deployer/deployer.env`; `DRY_RUN=1` simulates against the live chain).
 
