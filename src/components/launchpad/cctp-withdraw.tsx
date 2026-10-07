@@ -27,24 +27,26 @@ export function CctpWithdraw({ account, balance, onDone }: { account: Addr; bala
   const destinations = KOMA.cctpDestinations;
   const [domain, setDomain] = useState<number>(destinations[0].domain);
   const [recipient, setRecipient] = useState("");
-  const [quote, setQuote] = useState<CctpQuote | null>(null);
-  const [quoteError, setQuoteError] = useState<string | null>(null);
+  // Keyed by destination and amount, so a stale answer is never shown for a new choice.
+  const [quoted, setQuoted] = useState<{ key: string; quote?: CctpQuote; error?: string } | null>(null);
   const [phase, setPhase] = useState<Phase>({ step: "idle" });
   const dest = destinations.find((d) => d.domain === domain) ?? destinations[0];
   const to = (recipient || wallet.address || "") as Addr;
 
+  const quoteKey = `${domain}:${balance}`;
   useEffect(() => {
     let live = true;
-    setQuote(null);
-    setQuoteError(null);
     cctpQuote(domain, balance).then(
-      (q) => live && setQuote(q),
-      (e: Error) => live && setQuoteError(e.message),
+      (quote) => live && setQuoted({ key: `${domain}:${balance}`, quote }),
+      (e: Error) => live && setQuoted({ key: `${domain}:${balance}`, error: e.message }),
     );
     return () => {
       live = false;
     };
   }, [domain, balance]);
+  const current = quoted?.key === quoteKey ? quoted : null;
+  const quote = current?.quote ?? null;
+  const quoteError = current?.error ?? null;
 
   // Poll Circle until the destination mint lands (or the attestation says it's complete without forwarding info).
   const trackingTx = phase.step === "tracking" ? phase.tx : null;

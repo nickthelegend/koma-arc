@@ -1,8 +1,8 @@
 // The AI layer on real models (no fixtures): what /api/status says each role runs on, a real Hunyuan editor turn,
 // and the credits recorded on real issues — Kimi wrote them, a series episode's script called get_series_canon,
 // Hunyuan Image 3 drew the cover. Run after test:api and test:launchpad have made a regular issue and an episode.
-//   node scripts/e2e-ai.mjs        (app on :4320 with FAL_KEY, or MOONSHOT_API_KEY + HUNYUAN_API_KEY + FAL_KEY)
-const BASE = process.env.KOMA_URL ?? "http://localhost:4320";
+//   node scripts/e2e-ai.mjs        (app on :4310 with FAL_KEY, or MOONSHOT_API_KEY + HUNYUAN_API_KEY + FAL_KEY)
+const BASE = process.env.KOMA_URL ?? "http://localhost:4310";
 const results = [];
 const check = (id, name, ok, detail = "") => {
   results.push(ok);

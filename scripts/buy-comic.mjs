@@ -1,13 +1,13 @@
 // Buys one comic over x402 the way an AI agent would: no UI, just a wallet.
 //   BUYER_KEY=0x… node scripts/buy-comic.mjs "a kaiju on its lunch break" [pages] [style] [genre] [cast ids…]
-//   KOMA_URL defaults to http://localhost:4320
+//   KOMA_URL defaults to http://localhost:4310
 import { wrapFetchWithPayment } from "@x402/fetch";
 import { x402Client } from "@x402/core/client";
 import { x402HTTPClient } from "@x402/core/http";
 import { ExactEvmScheme } from "@x402/evm/exact/client";
 import { privateKeyToAccount } from "viem/accounts";
 
-const base = process.env.KOMA_URL ?? "http://localhost:4320";
+const base = process.env.KOMA_URL ?? "http://localhost:4310";
 const key = process.env.BUYER_KEY;
 if (!key) throw new Error("BUYER_KEY missing");
 const [prompt = "A tired courier races a thunderstorm to deliver a cake to the moon.", pages = "1", style = "pop-art", genre, ...cast] = process.argv.slice(2);

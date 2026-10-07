@@ -1,12 +1,12 @@
-// Writers' Room (Mera "One Passkey, Many Keys") end to end in headless Chromium with a virtual WebAuthn
+// Writers' Room (one passkey, many keys: WebAuthn PRF → HKDF) end to end in headless Chromium with a virtual WebAuthn
 // authenticator that supports PRF: create a room passkey, save an encrypted draft, check the server only holds
 // ciphertext under a room id unrelated to any wallet, wipe the browser and reopen with the passkey (the stateless
 // test), carry the passkey to a fresh browser profile (cross-device), and hand the pitch to the studio.
-//   node scripts/e2e-room.mjs        (app on :4320)
+//   node scripts/e2e-room.mjs        (app on :4310)
 import { DatabaseSync } from "node:sqlite";
 import { chromium } from "playwright";
 
-const BASE = process.env.KOMA_URL ?? "http://localhost:4320";
+const BASE = process.env.KOMA_URL ?? "http://localhost:4310";
 const results = [];
 const check = (id, name, ok, detail = "") => {
   results.push(ok);
@@ -50,7 +50,7 @@ await A.page.getByLabel("Pitch").fill("A kaiju runs for mayor and the city has t
 await A.page.getByLabel(/Notes/).fill(SECRET);
 await A.page.getByRole("button", { name: "Save encrypted" }).click();
 await A.page.getByText("Saved. KOMA holds only the ciphertext.").waitFor({ timeout: 10_000 });
-check("R1", "a room passkey (WebAuthn PRF via Mera) opens a room and saves an encrypted draft", /^0x[0-9a-f]{64}$/.test(roomId), `room ${roomId.slice(0, 14)}…`);
+check("R1", "a room passkey (WebAuthn PRF) opens a room and saves an encrypted draft", /^0x[0-9a-f]{64}$/.test(roomId), `room ${roomId.slice(0, 14)}…`);
 
 // R2: the server has ciphertext only, under an Ed25519 room id, not a wallet address.
 const db = new DatabaseSync(process.env.KOMA_DB ?? ".data/koma.db", { readOnly: true });
@@ -89,7 +89,7 @@ if (other === roomId) {
 }
 if (other.includes("no WebAuthn PRF")) {
   // Chrome's virtual authenticator exports a credential without its PRF (hmac-secret) seed, so a copy can't
-  // evaluate PRF. A real synced passkey carries it; that check needs two real devices (see docs/SPONSOR-GAP.md).
+  // evaluate PRF. A real synced passkey carries it; that check needs two real devices .
   console.log("SKIP R5 cross-device with a copied virtual credential — CDP doesn't export the PRF seed; verify on two real devices");
 } else {
   check("R5", "cross-device: the passkey on a fresh profile opens the same room and reads the draft", other === roomId && crossNotes === SECRET, other === roomId ? "same room, draft decrypted" : other.slice(0, 160));

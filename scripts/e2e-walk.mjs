@@ -1,12 +1,12 @@
 // Product walk at phone width (375×812) in headless Chromium: every page of the app loads with a clean console,
-// no failed requests, no horizontal scroll, and no copy left over from the Arbitrum base (Arbitrum, Arbiscan,
-// "ETH" for gas). Saves a screenshot of each page to docs/screenshots/monad/ (WALK_SHOTS=0 to skip).
-//   node scripts/e2e-walk.mjs        (app on :4320, local fork running)
+// no failed requests, no horizontal scroll, and no copy left over from earlier chains (Monad, AUSD, MON,
+// Arbitrum, "ETH" for gas). Saves a screenshot of each page to docs/screenshots/ (WALK_SHOTS=0 to skip).
+//   node scripts/e2e-walk.mjs        (app on :4310 against Arc testnet)
 import { mkdirSync } from "node:fs";
 import { chromium } from "playwright";
 
-const BASE = process.env.KOMA_URL ?? "http://localhost:4320";
-const SHOTS = process.env.WALK_SHOTS !== "0" ? "docs/screenshots/monad" : null;
+const BASE = process.env.KOMA_URL ?? "http://localhost:4310";
+const SHOTS = process.env.WALK_SHOTS !== "0" ? "docs/screenshots" : null;
 const results = [];
 const check = (id, name, ok, detail = "") => {
   results.push(ok);
@@ -39,7 +39,7 @@ const pages = [
 ];
 
 // Old-chain copy that must not appear anywhere a user can read.
-const STALE = [/arbitrum/i, /arbiscan/i, /arb sepolia/i, /\bETH\b/, /sepolia/i, /stylus/i, /\bUSDC\b/];
+const STALE = [/monad/i, /\bAUSD\b/, /\bMON\b/, /agora/i, /arbitrum/i, /arbiscan/i, /\bETH\b/, /stylus/i, /privy/i, /chainlink/i];
 const ALLOW_CONSOLE = [/Download the React DevTools/i, /favicon/i];
 
 if (SHOTS) mkdirSync(SHOTS, { recursive: true });

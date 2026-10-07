@@ -41,37 +41,6 @@ jobs:
       - run: forge test -vv
         working-directory: contracts
 
-  fork:
-    name: Contracts (Monad testnet fork)
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v5
-      - uses: actions/setup-node@v5
-        with:
-          node-version: 24
-          cache: npm
-      - run: npm ci
-      - uses: foundry-rs/foundry-toolchain@v1
-      # Real AUSD (Agora faucet), Tokenbound, Safe; Uniswap v4 deployed by the deploy script.
-      - run: forge test --match-path "test/fork/*" -vv
-        working-directory: contracts
-        env:
-          FORK_TESTS: "1"
-
-  cre:
-    name: Chainlink CRE workflow (tests + WASM)
-    runs-on: ubuntu-latest
-    defaults:
-      run:
-        working-directory: cre/koma-canon
-    steps:
-      - uses: actions/checkout@v5
-      - uses: oven-sh/setup-bun@v2
-      - run: bun install
-      - run: bun test
-      - run: bunx tsc --noEmit
-      - run: bunx cre-compile main.ts dist/koma-canon.wasm
-
   indexer:
     name: Envio indexer (codegen + typecheck)
     runs-on: ubuntu-latest
@@ -84,5 +53,6 @@ jobs:
         with:
           node-version: 22
       - run: npm install --no-audit --no-fund
+      - run: node gen-config.mjs testnet
       - run: npx envio codegen
       - run: npx tsc --noEmit

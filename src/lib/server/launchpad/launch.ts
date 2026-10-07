@@ -1,5 +1,5 @@
 import { keccak256, parseEventLogs } from "viem";
-import { factoryAbi, usdcAbi } from "@/lib/launchpad/abi";
+import { DEMO_TARGET_USDC, factoryAbi, usdcAbi } from "@/lib/launchpad/abi";
 import { LAUNCH_PRICE } from "@/lib/network";
 import type { LaunchJob } from "@/lib/launchpad/types";
 import { characterSheet } from "../ai";
@@ -11,7 +11,7 @@ import { db, saveLaunchJob, unfinishedLaunchJobs } from "./db";
 import { reason } from "./relay";
 
 export const LAUNCH_PRICE_USDC = LAUNCH_PRICE;
-const DEMO_TARGET = BigInt(25e6);
+const DEMO_TARGET = BigInt(DEMO_TARGET_USDC * 1e6);
 const DEMO_WINDOW = BigInt(300);
 
 /** Validates a launch request; shared by the quote and the paid handler. */
@@ -31,7 +31,7 @@ export function parseLaunch(body: unknown): { request: LaunchJob["request"] } | 
   const parentSeriesId = Number(b.parentSeriesId ?? 0);
   if (!Number.isInteger(parentSeriesId) || parentSeriesId < 0) return { error: "parentSeriesId must be a series id." };
   if (parentSeriesId && !db().prepare("SELECT 1 FROM lp_series WHERE id = ?").get(parentSeriesId)) return { error: `Series #${parentSeriesId} doesn't exist.` };
-  // Demo series (25 USDC graduation, 5-minute canon votes) exist so a graduation can be shown with faucet USDC.
+  // Demo series (5 USDC graduation, 5-minute canon votes) exist so a graduation can be shown with faucet USDC.
   const demo = b.demo === true && config.network.testnet;
   const genre = str("genre") || undefined;
   return { request: { name, symbol, characterName, characterPrompt, pitch, genre, parentSeriesId, demo } };

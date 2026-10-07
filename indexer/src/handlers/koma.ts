@@ -1,5 +1,5 @@
 /*
- * KOMA on Monad — Envio HyperIndex handlers.
+ * KOMA on Arc — Envio HyperIndex handlers.
  * Raw events → per-series aggregates (volume, fee split, holders, price, canon), daily volume, a backer
  * leaderboard and global totals. Curves and coins are registered dynamically when a series launches.
  */
@@ -251,13 +251,6 @@ indexer.onEvent({ contract: "CanonRegistry", event: "CanonFinalized" }, async ({
   if (s) context.Series.set({ ...s, canonEpisodes: s.canonEpisodes + 1 });
   const g = await global(context);
   context.Stats.set({ ...g, canonEpisodes: g.canonEpisodes + 1 });
-});
-
-// ——— Chainlink CRE: CanonSettler emits Settled right after CanonFinalized, in the same transaction ———
-indexer.onEvent({ contract: "CanonSettler", event: "Settled" }, async ({ event, context }) => {
-  const id = `${event.params.seriesId}-${event.params.episode}`;
-  const ep = await context.CanonEpisode.get(id);
-  if (ep) context.CanonEpisode.set({ ...ep, settledBy: "cre" });
 });
 
 // ——— Comics ———

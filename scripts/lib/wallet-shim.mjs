@@ -1,14 +1,15 @@
 // A real EIP-1193 wallet for headless browser tests: the page gets `window.ethereum` (and an EIP-6963
 // announcement), every signature is made in Node by a viem account from a local test key, and every transaction is
-// signed and sent to the local fork. Signatures and transactions are real; only the wallet's UI is absent (it
-// approves everything the page asks). Local anvil fork only.
+// signed and sent to Arc testnet. Signatures and transactions are real; only the wallet's UI is absent (it
+// approves everything the page asks). Test keys on Arc testnet (or a local chain) only.
 import { createWalletClient, http, numberToHex } from "viem";
 import { privateKeyToAccount } from "viem/accounts";
 
-export async function installWallet(page, key, { rpc = "http://127.0.0.1:18643", chainId = 10143 } = {}) {
-  if (!/^https?:\/\/(127\.0\.0\.1|localhost)(:\d+)?/.test(rpc)) throw new Error("wallet shim only signs for a local chain");
+export async function installWallet(page, key, { rpc = "https://rpc.testnet.arc.io", chainId = 5042002 } = {}) {
+  if (!/^https?:\/\/(127\.0\.0\.1|localhost)(:\d+)?/.test(rpc) && chainId !== 5042002) throw new Error("wallet shim only signs on Arc testnet or a local chain");
   const account = privateKeyToAccount(key);
-  const wallet = createWalletClient({ account, transport: http(rpc) });
+  const chain = { id: chainId, name: "Arc Testnet", nativeCurrency: { name: "USDC", symbol: "USDC", decimals: 18 }, rpcUrls: { default: { http: [rpc] } } };
+  const wallet = createWalletClient({ account, chain, transport: http(rpc) });
   const log = [];
   await page.exposeFunction("__komaWallet", async (method, params) => {
     log.push(method);
@@ -23,7 +24,6 @@ export async function installWallet(page, key, { rpc = "http://127.0.0.1:18643",
       case "eth_sendTransaction": {
         const tx = params[0];
         return wallet.sendTransaction({
-          chain: null,
           to: tx.to,
           data: tx.data,
           value: tx.value ? BigInt(tx.value) : undefined,

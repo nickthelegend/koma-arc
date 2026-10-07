@@ -1,4 +1,4 @@
-# KOMA on Monad. Raw events become aggregates the app reads: per-series totals and fee split, holder counts,
+# KOMA on Arc. Raw events become aggregates the app reads: per-series totals and fee split, holder counts,
 # daily volume, a backer leaderboard, canon history and global stats.
 
 type Series {
@@ -15,7 +15,7 @@ type Series {
   launchTx: String!
   # curve state, from the latest Trade
   raised: BigInt!
-  priceE18: BigInt! # AUSD per coin, scaled 1e18 (vU / vC)
+  priceE18: BigInt! # USDC per coin, scaled 1e18 (vU / vC)
   complete: Boolean!
   graduated: Boolean!
   poolId: String
@@ -98,7 +98,7 @@ type CanonEpisode {
   winnerVotes: BigInt
   totalVotes: BigInt
   finalizedAt: Int
-  # "cre" when KOMA's Chainlink CRE workflow settled it (CanonSettler.Settled), else "keeper"
+  # who finalized the slot on chain ("keeper": KOMA's server)
   settledBy: String
 }
 

@@ -12,7 +12,6 @@
     "buy": "node scripts/buy-comic.mjs",
     "test:api": "node scripts/e2e-api.mjs",
     "test:launchpad": "node scripts/e2e-launchpad.mjs",
-    "check:economics": "node scripts/check-economics.mjs",
     "typecheck": "next typegen && tsc --noEmit",
     "test:ai": "node scripts/e2e-ai.mjs",
     "test:unit": "node --test --disable-warning=MODULE_TYPELESS_PACKAGE_JSON tests/*.test.mts",
@@ -20,7 +19,9 @@
     "test:room": "node scripts/e2e-room.mjs",
     "test:walk": "node scripts/e2e-walk.mjs",
     "test:browser": "node scripts/e2e-browser.mjs",
-    "setup:testnet": "sh scripts/testnet-setup.sh"
+    "setup:testnet": "sh scripts/testnet-setup.sh",
+    "demo": "sh scripts/demo.sh",
+    "demo:stop": "sh scripts/demo-stop.sh"
   },
   "dependencies": {
     "@noble/curves": "^1.9.1",

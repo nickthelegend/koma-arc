@@ -1,6 +1,7 @@
-// End-to-end API checks against a running KOMA server and its chain.
-// Every check is real: real x402 signatures from funded keys, real settlement,
-// real minting, real FAL generation. Run after `npm run chain` + local-setup.
+// End-to-end API checks against a running KOMA server on Arc testnet.
+// Every check is real: real x402 signatures from funded keys, real USDC settlement
+// on Arc, real minting, real AI generation. Run after scripts/testnet-setup.sh and
+// the deploy, with the app running (npm run build && npm start).
 //   node scripts/e2e-api.mjs [only=B2,B3,...]
 import { existsSync, readFileSync } from "node:fs";
 import { DatabaseSync } from "node:sqlite";
@@ -9,14 +10,16 @@ import { privateKeyToAccount } from "viem/accounts";
 import { x402Client } from "@x402/core/client";
 import { x402HTTPClient, decodePaymentRequiredHeader } from "@x402/core/http";
 import { ExactEvmScheme } from "@x402/evm/exact/client";
-import { AUSD_DOMAIN } from "./lib/ausd.mjs";
+import { USDC_DOMAIN } from "./lib/usdc.mjs";
+import { recordProof } from "./lib/proof.mjs";
 
-const BASE = process.env.KOMA_URL ?? "http://localhost:4320";
+const BASE = process.env.KOMA_URL ?? "http://localhost:4310";
 const envFile = process.env.KOMA_ENV_FILE ?? ".env.local";
 const env = Object.fromEntries(readFileSync(envFile, "utf8").split("\n").filter((l) => l.includes("=") && !l.startsWith("#")).map((l) => [l.slice(0, l.indexOf("=")), l.slice(l.indexOf("=") + 1)]));
 const status = await (await fetch(`${BASE}/api/status`)).json();
 // Against a deployed server, chain reads go through its public RPC proxy.
-const RPC = process.env.KOMA_RPC ?? env.NEXT_PUBLIC_MONAD_RPC_URL;
+const RPC = process.env.KOMA_RPC ?? (env.NEXT_PUBLIC_ARC_RPC_URL || "https://rpc.testnet.arc.io");
+const proofs = {};
 const USDC = status.usdc;
 const CONTRACT = status.contract;
 const PAY_TO = status.payTo;
@@ -123,11 +126,11 @@ if (run("B3") && !skipPaid("B3", "402 quotes")) {
     const ok =
       res.status === 402 && required.x402Version === 2 && a.scheme === "exact" && a.network === status.caip &&
       a.asset.toLowerCase() === USDC.toLowerCase() && a.amount === String(pages * 100000) &&
-      a.payTo.toLowerCase() === PAY_TO.toLowerCase() && a.extra?.name === AUSD_DOMAIN.name && a.extra?.version === AUSD_DOMAIN.version;
+      a.payTo.toLowerCase() === PAY_TO.toLowerCase() && a.extra?.name === USDC_DOMAIN.name && a.extra?.version === USDC_DOMAIN.version;
     if (!ok) console.log(`     ✗ pages ${pages}:`, res.status, JSON.stringify(a));
     all &&= ok;
   }
-  check("B3", "402 quotes: v2, exact, KOMA network, AUSD, pages×100000, payTo, Agora Dollar/1", all);
+  check("B3", "402 quotes: v2, exact, Arc network, USDC, pages×100000, payTo, EIP-712 USDC/2", all);
 
   const order = { prompt: "A perfectly fine story idea here.", pages: 4 };
   const direct = decodePaymentRequiredHeader((await post(order)).headers.get("PAYMENT-REQUIRED"));
@@ -197,6 +200,7 @@ if (run("B4") && !skipPaid("B4", "paid order, B4b genre/cast, B6 replay, B10 tok
   }
   const usesCustom = issue && issue.genre === "Superhero" && issue.cast?.includes("Madame Wok");
   check("B4", "paid order: 202, exact USDC moved, done, owner/tokenOfPayment/contentHash on-chain", res.status === 202 && settled?.success && exact && chainOk);
+  if (job.stage === "done") proofs.comic = { tokenId: job.tokenId, x402PaymentTx: job.paymentTx, mintTx: job.mintTx, payer };
   check("B4b", "genre + designed character stored on the issue", Boolean(usesCustom), `${issue?.genre} / ${issue?.cast}`);
 
   // B6: replay the same signed payment
@@ -270,7 +274,7 @@ if (run("B12")) {
   const required = {
     x402Version: 2,
     resource: { url: `${BASE}/facilitator-test`, description: "facilitator check", mimeType: "application/json" },
-    accepts: [{ scheme: "exact", network: status.caip, amount: "100000", asset: USDC, payTo: PAY_TO, maxTimeoutSeconds: 300, extra: { ...AUSD_DOMAIN } }],
+    accepts: [{ scheme: "exact", network: status.caip, amount: "100000", asset: USDC, payTo: PAY_TO, maxTimeoutSeconds: 300, extra: { ...USDC_DOMAIN } }],
   };
   const h = httpClient(KEYS.agent);
   const payload = await h.createPaymentPayload(required);
@@ -289,8 +293,10 @@ if (run("B12")) {
     hasKind && v.isValid === true && vb.isValid === false && s.success === true && /^0x[0-9a-f]{64}$/.test(s.transaction) && b0 - b1 === 100000n && t1 - t0 === 100000n,
     `verify ${v.isValid}/${vb.isValid} (${vb.invalidReason}) settle ${s.success} ${s.transaction}`,
   );
+  if (s.success) proofs.facilitatorSettleTx = s.transaction;
 }
 
+if (Object.keys(proofs).length) recordProof("x402", proofs);
 const failed = results.filter((r) => !r.ok);
 console.log(`\n${results.length - failed.length}/${results.length} passed${untested.length ? `, ${untested.length} untested (${untested.join(", ")})` : ""}`);
 process.exit(failed.length ? 1 : 0);

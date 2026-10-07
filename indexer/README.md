@@ -1,6 +1,6 @@
 # KOMA indexer (Envio HyperIndex)
 
-Indexes KOMA on Monad into aggregates the app's `/series` leaderboard reads over GraphQL:
+Indexes KOMA on Arc into aggregates the app's `/series` leaderboard reads over GraphQL:
 
 | Entity | What |
 | --- | --- |
@@ -15,13 +15,14 @@ Indexes KOMA on Monad into aggregates the app's `/series` leaderboard reads over
 
 Curves and coins are registered dynamically from `SeriesFactory.SeriesLaunched`.
 
-## Run locally (against the anvil fork from `scripts/chain.sh`)
+## Run locally (against Arc testnet)
 
-Needs Node 22 (Envio 3.12 doesn't support newer) and Docker.
+Needs Node 22 (Envio 3.12 doesn't support newer) and Docker. Envio lists Arc and Arc Testnet among its
+HyperSync networks; by default this indexer syncs from Arc's public RPC, so no Envio token is needed.
 
 ```sh
 npm install
-npm run config:local      # config.yaml + src/deployment.ts from ../.data/addresses.local.json, RPC 127.0.0.1:18643
+npm run config:testnet    # config.yaml + src/deployment.ts from ../deployments/arc-testnet.json
 npm run codegen
 npm run db:up             # Postgres koma-envio-pg :55443 + Hasura koma-envio-hasura :8093 (own network and volume)
 npm run dev               # envio start -r (re-index from the deploy block); `npm start` resumes
@@ -35,8 +36,9 @@ only the `koma-envio-*` containers. `envio dev` isn't used because it creates fi
 End to end: `npm run test:envio` in the app (parity with the chain and the app's index, a live trade indexed, board
 served from Envio).
 
-## Testnet / mainnet
+## Mainnet
 
-`npm run config:testnet` reads `../deploy/addresses.10143.json` and indexes over HyperSync
-(`https://10143.hypersync.xyz`), which needs an Envio API token (`ENVIO_API_TOKEN`). Hosted: deploy this folder to
-Envio's hosted service and set `ENVIO_GRAPHQL_URL` to its endpoint (see `../docs/DEPLOY-LATER.md`).
+`npm run config:mainnet` reads `../deployments/arc-mainnet.json`. `ENVIO_HYPERSYNC=1 npm run config:mainnet` syncs
+over Envio's HyperSync for Arc instead of the RPC (needs `ENVIO_API_TOKEN`). Hosted: deploy this folder to Envio's
+hosted service and set `ENVIO_GRAPHQL_URL` in the app (see `../MAINNET.md`). The indexer is optional: without it
+the app's own SQLite index serves the board.

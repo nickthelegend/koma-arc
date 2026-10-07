@@ -8,6 +8,8 @@
 #      SERVER_PRIVATE_KEY  KOMA's server: x402 facilitator, trade relayer, canon keeper, issue minter
 #      TEST_BROWSER_KEY    a reader/creator wallet the e2e suites sign with (payments, trades, votes)
 #      TEST_AGENT_KEY      a second holder (an AI agent paying with x402 from a script)
+#      TEST_PAYTO_KEY      a third wallet (remix launches, pool buys)
+#      TEST_EMPTY_KEY      never funded (the "payer without USDC" checks)
 #    These hold testnet USDC only. Never reuse them anywhere else.
 # 2. Tops them up with testnet USDC (the gas token too) from the deployer wallet, under the shared deployer lock.
 #    The deployer gets its USDC from https://faucet.circle.com (Arc Testnet).
@@ -37,6 +39,8 @@ put KOMA_LAUNCHPAD_ADDRESSES deployments/arc-testnet.json
 newkey SERVER_PRIVATE_KEY SERVER_ADDRESS
 newkey TEST_BROWSER_KEY TEST_BROWSER_ADDRESS
 newkey TEST_AGENT_KEY TEST_AGENT_ADDRESS
+newkey TEST_PAYTO_KEY TEST_PAYTO_ADDRESS
+newkey TEST_EMPTY_KEY TEST_EMPTY_ADDRESS
 put KOMA_PAY_TO "$(val SERVER_ADDRESS)"
 
 [ "${FUND:-1}" = 0 ] && exit 0
@@ -61,6 +65,8 @@ fund() {
   rmdir "$LOCK"; trap - EXIT
   echo "  $who topped up by $need → $(bal "$who")"
 }
-fund "$(val SERVER_ADDRESS)" "${SERVER_USDC:-4000000}"
-fund "$(val TEST_BROWSER_ADDRESS)" "${BROWSER_USDC:-8000000}"
-fund "$(val TEST_AGENT_ADDRESS)" "${AGENT_USDC:-2000000}"
+# Sized for one full run of the e2e suites (test:api, test:launchpad, test:browser): ~23 USDC in all.
+fund "$(val SERVER_ADDRESS)" "${SERVER_USDC:-3000000}"
+fund "$(val TEST_BROWSER_ADDRESS)" "${BROWSER_USDC:-9000000}"
+fund "$(val TEST_AGENT_ADDRESS)" "${AGENT_USDC:-7000000}"
+fund "$(val TEST_PAYTO_ADDRESS)" "${PAYTO_USDC:-4500000}"
