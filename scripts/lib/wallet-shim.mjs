@@ -18,7 +18,8 @@ export async function installWallet(page, key, { rpc = "https://rpc.testnet.arc.
         return account.signMessage({ message: { raw: params[0] } });
       case "eth_signTypedData_v4": {
         const t = typeof params[1] === "string" ? JSON.parse(params[1]) : params[1];
-        const { EIP712Domain: _, ...types } = t.types;
+        const types = { ...t.types };
+        delete types.EIP712Domain;
         return account.signTypedData({ domain: t.domain, types, primaryType: t.primaryType, message: t.message });
       }
       case "eth_sendTransaction": {

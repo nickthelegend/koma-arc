@@ -39,7 +39,8 @@ const pages = [
 ];
 
 // Old-chain copy that must not appear anywhere a user can read.
-const STALE = [/monad/i, /\bAUSD\b/, /\bMON\b/, /agora/i, /arbitrum/i, /arbiscan/i, /\bETH\b/, /stylus/i, /privy/i, /chainlink/i];
+// ("Arbitrum" alone is a legitimate CCTP destination now.)
+const STALE = [/monad/i, /\bAUSD\b/, /\bMON\b/, /agora/i, /arbitrum one/i, /arbiscan/i, /\bETH\b/, /stylus/i, /privy/i, /chainlink/i];
 const ALLOW_CONSOLE = [/Download the React DevTools/i, /favicon/i];
 
 if (SHOTS) mkdirSync(SHOTS, { recursive: true });
