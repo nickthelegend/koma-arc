@@ -180,11 +180,15 @@ async function apply(logs: Log[]) {
         break;
       case "CanonFinalized":
         if (addr === a.canonRegistry.toLowerCase())
-          d.prepare("UPDATE lp_slots SET finalized = 1, winner = ?, winner_votes = ?, total_votes = ?, votes_root = ? WHERE series_id = ? AND episode = ?").run(
+          d.prepare(
+            "UPDATE lp_slots SET finalized = 1, winner = ?, winner_votes = ?, total_votes = ?, votes_root = ?, finalized_tx = ?, finalized_at = ? WHERE series_id = ? AND episode = ?",
+          ).run(
             Number(e.args.winnerIssueId),
             String(e.args.winnerVotes),
             String(e.args.totalVotes),
             String(e.args.votesRoot),
+            String(e.transactionHash),
+            at,
             Number(e.args.seriesId),
             Number(e.args.episode),
           );
@@ -212,11 +216,36 @@ function followDeployment() {
   console.log(`[koma] indexer: following launchpad ${current}`);
 }
 
+/**
+ * Slots finalized before the index recorded the finalize transaction get it filled in once per process, from
+ * just those CanonFinalized logs (a full re-index would double-count balances).
+ */
+let backfilled = false;
+async function backfillFinalizeTx() {
+  if (backfilled) return;
+  backfilled = true;
+  const a = launchpad()!;
+  const rows = db().prepare("SELECT series_id, episode FROM lp_slots WHERE finalized = 1 AND finalized_tx IS NULL").all() as { series_id: number; episode: number }[];
+  if (rows.length === 0) return;
+  try {
+    const logs = await logsClient.getContractEvents({ address: a.canonRegistry, abi: canonAbi, eventName: "CanonFinalized", fromBlock: BigInt(a.deployBlock) });
+    for (const l of logs) {
+      const { seriesId, episode } = l.args as { seriesId: bigint; episode: bigint };
+      db()
+        .prepare("UPDATE lp_slots SET finalized_tx = ?, finalized_at = ? WHERE series_id = ? AND episode = ? AND finalized_tx IS NULL")
+        .run(l.transactionHash, await timeOf(l.blockNumber), Number(seriesId), Number(episode));
+    }
+  } catch (e) {
+    console.error(`[koma] indexer: couldn't backfill canon finalize txs: ${(e as Error).message}`);
+  }
+}
+
 /** Index up to the chain head once. Returns the block it reached. */
 export async function indexOnce(): Promise<bigint | null> {
   const a = launchpad();
   if (!a) return null;
   followDeployment();
+  void backfillFinalizeTx();
   const key = cursorKey();
   const head = await logsClient.getBlockNumber();
   let from = BigInt(meta(key) ?? a.deployBlock);

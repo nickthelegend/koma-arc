@@ -102,3 +102,9 @@ export function ageSec(unix: number, nowUnix: number) {
   if (s < 172_800) return `${Math.round(s / 3600)}h`;
   return `${Math.round(s / 86_400)}d`;
 }
+
+/** A coin price people can read: the price of 1M coins ("$10.10 / 1M"), with the exact per-coin price as its title. */
+export function perMillion(n: number) {
+  if (!Number.isFinite(n) || n <= 0) return "$0 / 1M";
+  return `${usdAmount(n * 1e6)} / 1M`;
+}

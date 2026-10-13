@@ -6,6 +6,8 @@ const HARSH: [RegExp, string][] = [
   [/\b(kill(s|ed|ing)?|murder(s|ed|ing)?|shoot(s|ing)?|shot dead|stab(s|bed|bing)?)\b/gi, "confront"],
   [/\b(dead|corpses?|bod(y|ies) on the floor)\b/gi, "still"],
   [/\b(mobsters?|gangsters?|hitm[ae]n)\b/gi, "stern figure"],
+  [/\b(scar(s|red|ring)?|scarification|disfigured|mutilat\w*)\b/gi, "weathered"],
+  [/\b(scream(s|ing)?|shriek(s|ing)?)\b/gi, "gasp"],
 ];
 /** The same shot with the words fal's filter trips on swapped for tamer ones, framed as a non-graphic comic panel. */
 export function soften(prompt: string) {

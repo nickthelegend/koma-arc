@@ -1,6 +1,7 @@
 import { formatUnits } from "viem";
 import type { Addr } from "@/lib/launchpad/types";
 import { db } from "./db";
+import { listSeries } from "./queries";
 
 /**
  * The board's leaderboard: global totals, the series with the most volume and the biggest backers.
@@ -83,12 +84,8 @@ function fromLocal(): Board {
   const names = new Map(
     (d.prepare("SELECT id, name, symbol FROM lp_series").all() as { id: number; name: string; symbol: string }[]).map((r) => [r.id, r]),
   );
-  const holders = new Map(
-    (d.prepare("SELECT series_id, COUNT(*) AS n FROM lp_balances WHERE balance != '0' GROUP BY series_id").all() as { series_id: number; n: number }[]).map((r) => [
-      r.series_id,
-      r.n,
-    ]),
-  );
+  // The same holder count as each series card: contracts (curve, vesting, burn, pool) aren't holders.
+  const holders = new Map(listSeries().map((s) => [s.id, s.holders]));
   const desc = <T extends { usdc: bigint }>(a: [unknown, T], b: [unknown, T]) => (b[1].usdc > a[1].usdc ? 1 : b[1].usdc < a[1].usdc ? -1 : 0);
   return {
     source: "local",

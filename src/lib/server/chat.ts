@@ -49,10 +49,15 @@ export async function editorTurn(messages: ChatMessage[], current: Pitch | null,
   let prompt = transcript(messages, current, remix, genre);
   for (let attempt = 0; attempt < 3; attempt++) {
     let output: string;
+    // Hunyuan 3 reasons first and can spend its whole budget doing it (an empty answer), so it gets room to think.
+    // If two tries still fail, Kimi answers this one turn, and the reply says so (`by`).
+    const stand = attempt === 2;
     try {
-      output = await llm({ role: "editor", system: SYSTEM, prompt, estimateUsd: estimate.llm("chat"), maxTokens: 1_500, timeoutMs: 60_000 });
+      output = await llm({ role: stand ? "script" : "editor", system: SYSTEM, prompt, estimateUsd: estimate.llm("chat"), maxTokens: stand ? 1_500 : 4_000, timeoutMs: 60_000 });
     } catch (e) {
+      // Not-configured is an answer, not a glitch: say it instead of retrying.
       if (e instanceof AiNotConfiguredError) throw e;
+      console.error("[koma] editor turn failed, retrying:", (e as Error).message);
       continue;
     }
     try {
@@ -61,13 +66,14 @@ export async function editorTurn(messages: ChatMessage[], current: Pitch | null,
       if (!reply) throw new Error("empty reply");
       // A reply that swallowed the pitch's JSON (quotes mixed up) isn't an answer: ask again.
       if (/['"]pitch['"]\s*:|['"]synopsis['"]\s*:/.test(reply)) throw new Error("pitch leaked into the reply");
-      if (!json.pitch) return { reply, pitch: null };
+      const by = stand ? "Kimi K2.6 (standing in for Hunyuan 3)" : undefined;
+      if (!json.pitch) return { reply, pitch: null, by };
       const pitch = toPitch(json.pitch, remix?.id);
       if ("error" in pitch) {
         prompt += `\n(Your pitch was rejected: ${pitch.error} Fix it and answer again.)\nEDITOR (JSON):`;
         continue;
       }
-      return { reply, pitch };
+      return { reply, pitch, by };
     } catch {
       /* malformed; try again */
     }

@@ -9,6 +9,7 @@ import { readFile } from "node:fs/promises";
 import { requireLaunchpad } from "./addresses";
 import { db, saveLaunchJob, unfinishedLaunchJobs } from "./db";
 import { reason } from "./relay";
+import { track } from "../speed";
 
 export const LAUNCH_PRICE_USDC = LAUNCH_PRICE;
 const DEMO_TARGET = BigInt(DEMO_TARGET_USDC * 1e6);
@@ -86,7 +87,9 @@ export async function runLaunch(job: LaunchJob) {
         ],
       });
       const gas = await serverWallet.estimateContractGas(request);
+      const sentAt = Date.now();
       job.launchTx = await serverWallet.writeContract({ ...request, gas: (gas * BigInt(13)) / BigInt(10) });
+      track("launch", job.launchTx, sentAt);
       saveLaunchJob(job);
     }
     const receipt = await publicClient.waitForTransactionReceipt({ hash: job.launchTx, timeout: 120_000 });

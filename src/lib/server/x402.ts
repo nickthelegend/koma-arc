@@ -7,6 +7,7 @@ import { toFacilitatorEvmSigner } from "@x402/evm";
 import type { Job } from "@/lib/types";
 import type { LaunchJob } from "@/lib/launchpad/types";
 import { config, serverWallet } from "./config";
+import { track } from "./speed";
 import { runJob } from "./pipeline";
 import { saveJob } from "./store";
 import { saveLaunchJob } from "./launchpad/db";
@@ -28,7 +29,12 @@ function makeFacilitator() {
       address: config.account.address,
       readContract: (a) => w.readContract(a as never),
       verifyTypedData: (a) => w.verifyTypedData(a as never),
-      writeContract: (a) => w.writeContract(a as never),
+      writeContract: async (a) => {
+        const sentAt = Date.now();
+        const hash = await w.writeContract(a as never);
+        track("x402", hash, sentAt); // Arc speed receipt for the settlement
+        return hash;
+      },
       sendTransaction: (a) => w.sendTransaction(a as never),
       waitForTransactionReceipt: (a) => w.waitForTransactionReceipt(a as never),
       getCode: (a) => w.getCode(a),

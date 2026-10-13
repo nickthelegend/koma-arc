@@ -12,6 +12,7 @@ import { artPath, bump, saveArt, saveIssue, saveJob, unfinishedJobs } from "./st
 import { readFile } from "node:fs/promises";
 import { canonView, seriesRow } from "./launchpad/queries";
 import { proposeOrQueue } from "./launchpad/canon";
+import { track } from "./speed";
 
 const SHAPES: PanelShape[] = ["wide", "square", "square", "wide"];
 
@@ -190,12 +191,14 @@ export async function runJob(job: Job) {
       mintTx = log.transactionHash;
       job.tokenId = Number(already);
     } else {
+      const mintSentAt = Date.now();
       mintTx = await serverWallet!.writeContract({
         address: config.contract!,
         abi: komaAbi,
         functionName: "mint",
         args: [job.payer, contentHash, job.paymentTx!, order.pages, remixToken],
       });
+      track("tx", mintTx, mintSentAt);
       job.mintTx = mintTx;
       await saveJob(job);
       const receipt = await serverWallet!.waitForTransactionReceipt({ hash: mintTx, timeout: 90_000 });

@@ -6,6 +6,7 @@ import { GASLESS_MIN_USDC } from "@/lib/network";
 import { launchpad, requireLaunchpad } from "./addresses";
 import { db } from "./db";
 import { votesFor } from "./queries";
+import { track, type SpeedKind } from "../speed";
 import { chainNow } from "./chain-time";
 
 // KOMA's relayer: the same server wallet that settles x402 payments submits
@@ -28,12 +29,14 @@ function wallet() {
   return serverWallet;
 }
 
-async function send(req: Parameters<NonNullable<typeof serverWallet>["simulateContract"]>[0]): Promise<Hex> {
+async function send(req: Parameters<NonNullable<typeof serverWallet>["simulateContract"]>[0], kind: SpeedKind = "tx"): Promise<Hex> {
   const w = wallet();
   const { request } = await w.simulateContract({ ...req, account: w.account } as never);
   const gas = await w.estimateContractGas({ ...req, account: w.account } as never);
   // Estimates run tight on calls with nested transfers and refunds (a clipped buy ran out at 99.5%).
+  const sentAt = Date.now();
   const hash = await w.writeContract({ ...(request as object), gas: (gas * BigInt(13)) / BigInt(10) } as never);
+  track(kind, hash, sentAt); // Arc speed receipt: send → receipt, read from the real receipt
   return hash;
 }
 
@@ -66,7 +69,7 @@ export async function relayBuy(b: BuyIntent): Promise<Hex> {
     abi: curveAbi,
     functionName: "buyWithAuthorization",
     args: [b.buyer, BigInt(b.usdcIn), BigInt(b.minCoinOut), BigInt(b.deadline), b.salt, BigInt(b.validAfter), BigInt(b.validBefore), Number(v ?? BigInt(27 + (yParity ?? 0))), r, s],
-  });
+  }, "trade");
 }
 
 export type SwapBuyIntent = {
@@ -84,7 +87,7 @@ export async function relaySwapBuy(b: SwapBuyIntent): Promise<Hex> {
     abi: swapperAbi,
     functionName: "swapWithAuthorization",
     args: [b.buyer, BigInt(b.seriesId), BigInt(b.usdcIn), BigInt(b.minCoinOut), BigInt(b.deadline), b.salt, BigInt(b.validAfter), BigInt(b.validBefore), Number(v ?? BigInt(27 + (yParity ?? 0))), r, s],
-  });
+  }, "trade");
 }
 
 export type SellIntent = {
@@ -100,7 +103,7 @@ export async function relaySell(b: SellIntent): Promise<Hex> {
     abi: curveAbi,
     functionName: "sellWithPermit",
     args: [b.seller, BigInt(b.coinIn), BigInt(b.minUsdcOut), BigInt(b.deadline), Number(p.v ?? BigInt(27 + (p.yParity ?? 0))), p.r, p.s, b.intentSignature],
-  });
+  }, "trade");
 }
 
 const inflight = globalThis as unknown as { __komaInflight?: Set<string> };
@@ -121,7 +124,7 @@ async function once(key: string, run: () => Promise<void>) {
 export async function graduate(seriesId: number): Promise<Hex> {
   const row = db().prepare("SELECT curve FROM lp_series WHERE id = ?").get(seriesId) as { curve: Addr } | undefined;
   if (!row) throw new Error("Unknown series.");
-  const hash = await send({ address: row.curve, abi: curveAbi, functionName: "graduate" });
+  const hash = await send({ address: row.curve, abi: curveAbi, functionName: "graduate" }, "graduate");
   await confirm(hash);
   return hash;
 }
@@ -129,7 +132,7 @@ export async function graduate(seriesId: number): Promise<Hex> {
 /** Propose a minted issue for the series' open episode. */
 export async function propose(seriesId: number, issueId: number, proposer: Addr) {
   const a = requireLaunchpad();
-  const hash = await send({ address: a.canonRegistry, abi: canonAbi, functionName: "propose", args: [BigInt(seriesId), BigInt(issueId), proposer] });
+  const hash = await send({ address: a.canonRegistry, abi: canonAbi, functionName: "propose", args: [BigInt(seriesId), BigInt(issueId), proposer] }, "canon");
   await confirm(hash);
   return hash;
 }
@@ -164,7 +167,7 @@ async function finalizeSlot(seriesId: number, episode: number) {
     abi: canonAbi,
     functionName: "finalize",
     args: [BigInt(seriesId), BigInt(episode), BigInt(winner), root, best, total],
-  });
+  }, "canon");
   await confirm(hash);
   console.log(`[koma] canon: series ${seriesId} episode ${episode} → issue #${winner} (${hash})`);
 }

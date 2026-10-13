@@ -14,3 +14,9 @@ test("soften swaps the words fal's filter trips on and keeps the rest of the sho
 test("soften leaves harmless words alone", () => {
   assert.equal(soften("a gunmetal sky over the docks"), "non-graphic, all-ages comic illustration: a gunmetal sky over the docks");
 });
+
+test("soften covers body-horror words a horror script reaches for", () => {
+  const out = soften("a keeper with ritual scarification across her scarred scalp, mouth open in a silent scream");
+  assert.equal(/scar|scream/i.test(out), false);
+  assert.match(out, /weathered/);
+});

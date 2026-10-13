@@ -119,6 +119,10 @@ export function db(): DatabaseSync {
       data TEXT NOT NULL
     );
   `);
+  // The finalize transaction and its block time, for the canon timeline.
+  const cols = (d.prepare("PRAGMA table_info(lp_slots)").all() as { name: string }[]).map((c) => c.name);
+  if (!cols.includes("finalized_tx")) d.exec("ALTER TABLE lp_slots ADD COLUMN finalized_tx TEXT");
+  if (!cols.includes("finalized_at")) d.exec("ALTER TABLE lp_slots ADD COLUMN finalized_at INTEGER");
   ready = true;
   return d;
 }

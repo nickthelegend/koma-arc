@@ -154,7 +154,7 @@ export function votesFor(seriesId: number, episode: number): SignedVote[] {
 export async function canonView(seriesId: number): Promise<CanonView> {
   const d = db();
   const slots = d.prepare("SELECT * FROM lp_slots WHERE series_id = ? ORDER BY episode").all(seriesId) as {
-    episode: number; snapshot: number; ends_at: number; finalized: number; winner: number | null; winner_votes: string | null; total_votes: string | null; votes_root: string | null;
+    episode: number; snapshot: number; ends_at: number; finalized: number; winner: number | null; winner_votes: string | null; total_votes: string | null; votes_root: string | null; finalized_tx: string | null; finalized_at: number | null;
   }[];
   const open = slots.find((s) => !s.finalized) ?? null;
   const episode = open?.episode ?? (slots.at(-1)?.episode ?? 0) + 1;
@@ -185,6 +185,9 @@ export async function canonView(seriesId: number): Promise<CanonView> {
       winnerVotes: coins(s.winner_votes ?? "0"),
       totalVotes: coins(s.total_votes ?? "0"),
       votesRoot: s.votes_root ?? "",
+      finalizedTx: s.finalized_tx,
+      finalizedAt: s.finalized_at,
+      voters: votesFor(seriesId, s.episode).length,
     });
     const losers = d.prepare("SELECT issue_id FROM lp_proposals WHERE series_id = ? AND episode = ? AND issue_id != ?").all(seriesId, s.episode, s.winner) as { issue_id: number }[];
     for (const l of losers) alternates.push({ episode: s.episode, issueId: l.issue_id, issue: await issueCard(l.issue_id) });
@@ -264,4 +267,133 @@ export function sparklines(points = 24): Record<number, number[]> {
   for (const r of rows) (out[r.series_id] ??= []).push(priceOf(r.vu, r.vc));
   for (const id of Object.keys(out)) if (out[+id].length < points) out[+id].unshift(LAUNCH_PRICE_PER_COIN);
   return out;
+}
+
+export type CreatorStats = {
+  address: Addr;
+  series: { id: number; name: string; symbol: string; sheetUrl: string; characterName: string; earnedUsdc: number; fromRemixesUsdc: number; volumeUsdc: number; trades: number; holders: number; episodes: number; graduated: boolean }[];
+  totals: { series: number; earnedUsdc: number; fromRemixesUsdc: number; volumeUsdc: number; trades: number; holders: number; episodes: number };
+  /** Character earnings per UTC day for the last `days` days (oldest first), from the fee splits of real trades. */
+  daily: { day: number; usdc: number }[];
+};
+
+/** Everything an address has launched, and what its characters have earned (own trades and royalties from remixes). */
+export function creatorStats(address: Addr, days = 30): CreatorStats {
+  const d = db();
+  const rows = d.prepare(`${SELECT} WHERE lower(s.creator) = lower(?) ORDER BY s.launched_at`).all(address) as Row[];
+  const accounts = rows.map((r) => r.character_account.toLowerCase());
+  const earned = (account: string) => {
+    const own = d.prepare("SELECT kind, SUM(CAST(amount AS INTEGER)) AS t FROM lp_routed WHERE lower(recipient) = ? GROUP BY kind").all(account) as { kind: number; t: number }[];
+    return { total: own.reduce((s, x) => s + x.t, 0) / 1e6, fromRemixes: (own.find((x) => x.kind === 1)?.t ?? 0) / 1e6 };
+  };
+  const series = rows.map((r) => {
+    const sum = summary(r);
+    const v = d.prepare("SELECT COUNT(*) AS n, SUM(CAST(usdc AS INTEGER)) AS t FROM lp_trades WHERE series_id = ?").get(r.id) as { n: number; t: number | null };
+    const e = earned(r.character_account.toLowerCase());
+    return { id: r.id, name: r.name, symbol: r.symbol, sheetUrl: sum.sheetUrl, characterName: sum.characterName, earnedUsdc: e.total, fromRemixesUsdc: e.fromRemixes, volumeUsdc: (v.t ?? 0) / 1e6, trades: v.n, holders: sum.holders, episodes: sum.episodes, graduated: sum.graduated };
+  });
+  const today = Math.floor(Date.now() / 86_400_000);
+  const byDay = new Map<number, number>();
+  if (accounts.length) {
+    const marks = accounts.map(() => "?").join(",");
+    const daily = d
+      .prepare(
+        `SELECT t.at / 86400 AS day, SUM(CAST(r.amount AS INTEGER)) AS total FROM lp_routed r JOIN (SELECT DISTINCT tx, at FROM lp_trades) t ON t.tx = r.tx WHERE lower(r.recipient) IN (${marks}) GROUP BY day`,
+      )
+      .all(...accounts) as { day: number; total: number }[];
+    for (const x of daily) byDay.set(x.day, x.total / 1e6);
+  }
+  // Day indices follow the chain's clock (a fork's can differ from the wall clock): end at the latest earning day if later.
+  const last = Math.max(today, ...byDay.keys());
+  const series30 = Array.from({ length: days }, (_, i) => last - days + 1 + i).map((day) => ({ day, usdc: byDay.get(day) ?? 0 }));
+  const sum = (k: "earnedUsdc" | "fromRemixesUsdc" | "volumeUsdc" | "trades" | "holders" | "episodes") => series.reduce((s, x) => s + x[k], 0);
+  return {
+    address,
+    series,
+    totals: { series: series.length, earnedUsdc: sum("earnedUsdc"), fromRemixesUsdc: sum("fromRemixesUsdc"), volumeUsdc: sum("volumeUsdc"), trades: sum("trades"), holders: sum("holders"), episodes: sum("episodes") },
+    daily: series30,
+  };
+}
+
+export type Holding = { id: number; name: string; symbol: string; characterName: string; sheetUrl: string; coins: number; valueUsdc: number };
+
+/** Every series coin an address holds, by the index (the chain is authoritative), largest position first. */
+export function holdingsOf(address: Addr): Holding[] {
+  const rows = db()
+    .prepare(`${SELECT.replace("SELECT s.*", "SELECT b.balance, s.*")} JOIN lp_balances b ON b.series_id = s.id WHERE b.holder = ? AND b.balance != '0'`)
+    .all(address.toLowerCase()) as (Row & { balance: string })[];
+  return rows
+    .map((r) => {
+      const n = coins(r.balance);
+      return { id: r.id, name: r.name, symbol: r.symbol, characterName: r.character_name ?? r.name, sheetUrl: r.sheet ?? "", coins: n, valueUsdc: n * currentPrice(r) };
+    })
+    .filter((h) => h.coins > 0)
+    .sort((a, b) => b.valueUsdc - a.valueUsdc);
+}
+
+export type FamilyNode = {
+  id: number; parentId: number; depth: number; name: string; symbol: string; characterName: string; sheetUrl: string; creator: Addr;
+  /** USDC this series' trades sent to its ancestors' character wallets (Routed kind 1). */
+  sentUpUsdc: number;
+  /** USDC this character's wallet received from trades in its descendants. */
+  fromBelowUsdc: number;
+};
+
+/**
+ * The whole remix family a series belongs to: up to its root, then every descendant, depth-first (parents before
+ * children), with the royalties that actually flowed up the tree, from the indexed Routed events.
+ */
+export function familyTree(id: number): FamilyNode[] {
+  const d = db();
+  const all = d.prepare("SELECT s.id, s.parent_id, s.name, s.symbol, s.creator, s.character_account, m.character_name, m.sheet FROM lp_series s LEFT JOIN lp_series_meta m ON m.id = s.id ORDER BY s.id").all() as {
+    id: number; parent_id: number; name: string; symbol: string; creator: Addr; character_account: Addr; character_name: string | null; sheet: string | null;
+  }[];
+  const byId = new Map(all.map((r) => [r.id, r]));
+  let root = byId.get(id);
+  if (!root) return [];
+  for (let hops = 0; root.parent_id && byId.has(root.parent_id) && hops < 32; hops++) root = byId.get(root.parent_id)!;
+  const kids = new Map<number, number[]>();
+  for (const r of all) if (r.parent_id) kids.set(r.parent_id, [...(kids.get(r.parent_id) ?? []), r.id]);
+  const sentUp = d.prepare("SELECT SUM(CAST(amount AS INTEGER)) AS t FROM lp_routed WHERE series_id = ? AND kind = 1");
+  const fromBelow = d.prepare("SELECT SUM(CAST(amount AS INTEGER)) AS t FROM lp_routed WHERE lower(recipient) = lower(?) AND series_id != ? AND kind = 1");
+  const out: FamilyNode[] = [];
+  const seen = new Set<number>();
+  const walk = (nid: number, depth: number) => {
+    if (seen.has(nid) || out.length >= 200) return;
+    seen.add(nid);
+    const r = byId.get(nid)!;
+    out.push({
+      id: r.id, parentId: r.parent_id, depth, name: r.name, symbol: r.symbol, characterName: r.character_name ?? r.name, sheetUrl: r.sheet ?? "", creator: r.creator,
+      sentUpUsdc: ((sentUp.get(r.id) as { t: number | null }).t ?? 0) / 1e6,
+      fromBelowUsdc: ((fromBelow.get(r.character_account, r.id) as { t: number | null }).t ?? 0) / 1e6,
+    });
+    for (const c of kids.get(nid) ?? []) walk(c, depth + 1);
+  };
+  walk(root.id, 0);
+  return out;
+}
+
+export type TopCreator = { address: Addr; series: number; earnedUsdc: number };
+
+/** Creators ranked by what their characters' wallets have earned (indexed Routed events to each character account). */
+export function topCreators(limit = 5): TopCreator[] {
+  const rows = db()
+    .prepare(
+      `SELECT s.creator AS address, COUNT(DISTINCT s.id) AS series, COALESCE(SUM(CAST(r.amount AS INTEGER)), 0) AS earned
+       FROM lp_series s LEFT JOIN lp_routed r ON lower(r.recipient) = lower(s.character_account)
+       GROUP BY lower(s.creator) ORDER BY earned DESC, series DESC LIMIT ?`,
+    )
+    .all(limit) as { address: Addr; series: number; earned: number }[];
+  return rows.map((r) => ({ address: r.address, series: r.series, earnedUsdc: r.earned / 1e6 }));
+}
+
+export type SinceVisit = { since: number; now: number; trades: number; volumeUsdc: number; proposals: number; settled: number[] };
+
+/** What changed on a series since a chain time: trades (count, volume), new proposals, episodes settled. */
+export async function changesSince(seriesId: number, since: number): Promise<SinceVisit> {
+  const d = db();
+  const t = d.prepare("SELECT COUNT(*) AS n, COALESCE(SUM(CAST(usdc AS INTEGER)), 0) AS v FROM lp_trades WHERE series_id = ? AND at > ?").get(seriesId, since) as { n: number; v: number };
+  const p = d.prepare("SELECT COUNT(*) AS n FROM lp_proposals WHERE series_id = ? AND at > ?").get(seriesId, since) as { n: number };
+  const settled = (d.prepare("SELECT episode FROM lp_slots WHERE series_id = ? AND finalized = 1 AND finalized_at > ? ORDER BY episode").all(seriesId, since) as { episode: number }[]).map((r) => r.episode);
+  return { since, now: await chainNow(), trades: t.n, volumeUsdc: t.v / 1e6, proposals: p.n, settled };
 }
