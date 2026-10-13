@@ -10,7 +10,7 @@ const MADE_BY = [
   { who: "FLUX.2 on fal", does: "draws every sheet, cover and panel", href: "/launch" },
   { who: "Arc", does: "USDC is the gas; every trade is final on inclusion", href: "/receipts" },
   { who: "x402", does: "pay a page at a time over HTTP 402, in USDC", href: "/how" },
-  { who: "Circle CCTP", does: "a character wallet withdraws its earnings to any chain", href: "/series" },
+  { who: "Circle CCTP", does: "a character wallet can send its earnings to Base, Ethereum, Arbitrum, OP or Avalanche (verified on a testnet fork)", href: "/series" },
   { who: "Envio", does: "indexes the leaderboard", href: "/series" },
   { who: "KOMA's keeper", does: "tallies the vote and settles the canon on chain", href: "/series" },
 ];

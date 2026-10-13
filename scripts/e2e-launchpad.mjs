@@ -219,7 +219,8 @@ if (run("L1")) {
   if (!LP) process.exit(1);
 }
 
-const need = { creator: 4.5, agent: 6, payto: 4 };
+// Minimum balances per wallet; a live testnet run with small faucet amounts overrides them: KOMA_NEED='{"creator":2.4,"agent":2.6}'.
+const need = process.env.KOMA_NEED ? JSON.parse(process.env.KOMA_NEED) : { creator: 4.5, agent: 6, payto: 4 };
 for (const [k, a] of Object.entries(who)) if (need[k] && (!only || only.some((id) => ["L4", "L5", "L10", "L12", "L13"].includes(id)))) await requireUsdc(chain, a.address, U(need[k]), `TEST_${k.toUpperCase()}`);
 
 // ——— L2 invalid launches ———

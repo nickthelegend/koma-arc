@@ -18,7 +18,7 @@ const STEPS = [
   { t: "The server quotes a price", d: "It answers 402 Payment Required with the amount, USDC on Arc, and where it goes." },
   { t: "Your wallet signs once", d: "A USDC transfer authorization (EIP-3009) for exactly that amount. Signing costs no gas." },
   { t: "The request is sent again, signed", d: "The same call, now carrying the signature in its PAYMENT-SIGNATURE header." },
-  { t: "The facilitator settles it", d: "It checks the signature and submits the transfer on Arc, paying the gas (in USDC) itself. The block is final in under a second." },
+  { t: "The facilitator settles it", d: "It checks the signature and submits the transfer on Arc, paying the gas (in USDC) itself. The block is final on inclusion; Arc testnet blocks arrive about every half second." },
   { t: "Your issue is drawn and minted", d: "Script, panels and lettering are generated; a hash of the finished issue is minted to your wallet." },
 ];
 
@@ -35,7 +35,7 @@ function launchpadSteps() {
     },
     {
       t: "Its coin sits on a USDC curve",
-      d: `${compact(TOTAL_SUPPLY)} coins: 95% are sold by a bonding curve that raises the price as people buy and lowers it as they sell; 5% go to the creator, released over 30 days. The curve runs on Arc, so a trade is final in under a second.`,
+      d: `${compact(TOTAL_SUPPLY)} coins: 95% are sold by a bonding curve that raises the price as people buy and lowers it as they sell; 5% go to the creator, released over 30 days. The curve runs on Arc, so a trade is final as soon as its block lands (about half a second on testnet).`,
     },
     {
       t: "Trading costs no gas",
@@ -70,7 +70,7 @@ PAYMENT-REQUIRED: eyJ4NDAyVmVyc2lvbiI6Mi…   (base64 JSON, decoded below)
     "asset": "${KOMA.usdc}",
     "amount": "200000",
     "payTo": "0x…",
-    "extra": { "name": "USD Coin", "version": "2" }
+    "extra": { "name": "USDC", "version": "2" }
   }]
 }`;
 

@@ -10,8 +10,8 @@ the live Arc mainnet state (`DRY_RUN=1`, see §2).
 
 1. **ERC-6551 registry + Tokenbound v0.3** at their canonical addresses (registry `0x000000006551c19487814612e58FE06813775758`,
    AccountGuardian, ERC-2771 multicall forwarder, AccountV3 `0x41C8…44eC`, AccountProxy `0x5526…6E7F`), replayed
-   through the deterministic deployer from the Ethereum init code in `contracts/script/erc6551/`. Arc mainnet has
-   none of them today; each is skipped if it already exists.
+   through the deterministic deployer from the Ethereum init code in `contracts/script/erc6551/`. On 2026-10-14 Arc mainnet already has the registry but not the Tokenbound
+   accounts; each is skipped if it already exists.
 2. **Uniswap v4** PoolManager (owner = `ADMIN`), PositionManager and V4Quoter from Uniswap's published artifacts
    (Arc has no Uniswap deployment). Permit2 is already at its canonical address.
 3. `CurveMathReference`, `RoyaltyRouterReference`, `KomaIssues`, `CharacterNFT`, `CanonRegistry`, `Graduator`
@@ -103,7 +103,7 @@ the server alone.
 | Service | What | Required |
 |---|---|---|
 | The KOMA server (above) | x402 facilitator, AI pipeline, trade relayer, canon keeper (finalizes votes after each window, graduates complete curves), event index | yes |
-| Relayer gas float | the server key pays gas for every settlement, relayed trade, launch (~5M gas ≈ 0.1 USDC) and mint. A $1 relayed buy costs ≈ 0.008 USDC of gas against 0.015 USDC of fee. Keep 5–10 USDC on it and alert under 2 (`/api/status` → `relayerUsdc`) | yes |
+| Relayer gas float | the server key pays gas for every settlement, relayed trade, launch (~5M gas ≈ 0.1 USDC) and mint. A $1 relayed buy costs ≈ 0.01 USDC of gas (0.0098 measured on testnet at 25 gwei) against 0.015 USDC of fee. Keep 5–10 USDC on it and alert under 2 (`/api/status` → `relayerUsdc`) | yes |
 | Envio indexer (`indexer/`) | leaderboard aggregates; `npm run config:mainnet` then deploy to Envio's hosted service | optional |
 
 ## 6. Smoke test (smallest amounts, ~2.5 USDC)

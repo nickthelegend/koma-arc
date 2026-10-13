@@ -6,7 +6,7 @@ const RPC_OVERRIDE = process.env.NEXT_PUBLIC_ARC_RPC_URL;
 /**
  * Arc: Circle's stablecoin-native L1. USDC is the gas token: the native balance (18 decimals) and the ERC-20 at
  * 0x3600…0000 (6 decimals) are one balance, so a KOMA user only ever holds USDC. Blocks finalize deterministically
- * in under a second, so a payment is final when its receipt arrives.
+ * about every half second (testnet), so a payment is final when its receipt arrives.
  */
 const nativeCurrency = { name: "USDC", symbol: "USDC", decimals: 18 } as const;
 const multicall3 = { address: "0xcA11bde05977b3631167028862bE2a173976CA11", blockCreated: 0 } as const;
@@ -116,8 +116,9 @@ export const FEE_SPLIT = { character: 40, remix: 20, treasury: 40 } as const;
 /** Share of the USDC raised that goes to KOMA's treasury when a curve graduates. */
 export const GRADUATION_FEE_PCT = 5;
 /**
- * Smallest trade KOMA's relayer submits for free. A relayed buy costs about 0.008 USDC of gas on Arc (≈390k gas at
- * the 20 gwei floor); a $1 trade's fee is 0.015 USDC, so the relayer stays ahead from $1.
+ * Smallest trade KOMA's relayer submits for free. A relayed buy costs about 0.01 USDC of gas on Arc testnet (measured
+ * live: 393,418 gas at 25 gwei = 0.0098 USDC, see docs/E2E-TESTNET.md); a $1 trade's whole 1.5% fee is 0.015 USDC, so
+ * the fee covers the gas from $1 up. KOMA's own 40% share of that fee (0.006) does not on its own: below $1 it'd be a loss.
  */
 export const GASLESS_MIN_USDC = 1;
 export const PAGE_OPTIONS = [1, 2, 4, 6] as const;

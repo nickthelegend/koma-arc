@@ -4,7 +4,7 @@ export async function CcipReceipts() {
  return <section className="mt-12 border-t border-rule pt-6 pb-12" aria-labelledby="ccip-receipts">
   <h2 id="ccip-receipts" className="font-display text-3xl text-paper">Cross-chain canon receipts</h2>
   <p className="mt-3 max-w-2xl text-sm text-soft">These messages record finalized canon from an allowed source. They do not transfer USDC, mint issues or change local votes.</p>
-  {view.state==='unconfigured' && <p className="mt-4 text-mute">Cross-chain receipts are not configured yet.</p>}
+  {view.state==='unconfigured' && <p className="mt-4 text-mute">This optional CCIP feature is off by default. No CCIP receiver is deployed and no CCIP message has been sent, so there is nothing to show.</p>}
   {view.state==='unavailable' && <p className="mt-4 text-mute" role="status">Cross-chain receipts could not be read. Try again later.</p>}
   {view.state==='ready' && <>
    <p className="mt-4 break-all font-mono text-xs text-mute">Receiver {view.receiver} · chain {view.chainId}<br/>Router {view.router}<br/>Most recent 1,000 blocks ({view.fromBlock}–{view.toBlock}); up to 25 receipts. This is a recent scan, not a full history.</p>

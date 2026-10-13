@@ -55,5 +55,24 @@
     "0xe9eea56dcf759933f0d1778d0782a35897dd4a43aab7f1bea92c229f918625fd",
     "0xf816559d596ce7a94c73b26dae255b3c8c41cde2b07b0a6fc898dda8b52266fc",
     "0x17b7b0cccd2a2c48057e7c690d496d2b5f11c2dbe593940dac0abc2f108201b7"
-  ]
+  ],
+  "proof": {
+    "launchpad": {
+      "launch": {
+        "seriesId": 1,
+        "coin": "0x675CdC70450644F16774dF88783Bf857C23Ea634",
+        "curve": "0x90422F141A58aF1390e93eDEE50dCbeb9cB478f0",
+        "characterAccount": "0x66c92E89C06e695F5c322cecE143d43489208Dc8",
+        "launchTx": "0x57f430b3d2aaf19c22f2ab36925327d328ce682ef51b7409b6875a3f0eb6899e"
+      },
+      "gaslessBuy": "0x4acee7bd53187f51d7bc3814d5af61cc7ea80fd42ac1f5946f37c2cfd59020fb",
+      "gaslessSell": "0xce7729a55fe7e6a4f14e57d39d79f2539bd09c26dd62b48bfcf6d286991d19f2",
+      "episode": {
+        "issueId": 1,
+        "paymentTx": "0x1680a8fda50f22c00a8ef64ce4ee94574b92f35966105941c663afb7801e7e59",
+        "mintTx": "0xe905067a9386afc574870d33bfd2acfd70a9e8d76a8e297ea03252ec1cf63fdd"
+      },
+      "at": "2026-10-13T20:19:28.001Z"
+    }
+  }
 }

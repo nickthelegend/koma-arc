@@ -225,13 +225,16 @@ if (run("B4") && !skipPaid("B4", "paid order, B4b genre/cast, B6 replay, B10 tok
   // B10: metadata
   if (job.tokenId) {
     const uri = await chain.readContract({ address: CONTRACT, abi: komaAbi, functionName: "tokenURI", args: [BigInt(job.tokenId)] });
-    const meta = await (await fetch(uri)).json().catch(() => ({}));
+    // The deployed contracts' base URI is the origin the deploy script was given (localhost:4310 on testnet until the app is hosted):
+    // compare the path, and fetch the metadata from the server under test.
+    const uriPath = new URL(uri).pathname;
+    const meta = await (await fetch(`${BASE}${uriPath}`)).json().catch(() => ({}));
     const img = meta.image ? await fetch(meta.image) : { status: 0, headers: new Headers() };
     const missing = await fetch(`${BASE}/api/tokens/999999`);
     check(
       "B10",
       "tokenURI → metadata; image 200 jpeg; unknown → 404",
-      uri === `${status.publicUrl ?? BASE}/api/tokens/${job.tokenId}` && meta.name === `${issue.title} · KOMA #${job.tokenId}` &&
+      uriPath === `/api/tokens/${job.tokenId}` && meta.name === `${issue.title} · KOMA #${job.tokenId}` &&
         meta.external_url.endsWith(`/c/${job.id}`) && img.status === 200 && img.headers.get("content-type") === "image/jpeg" && missing.status === 404,
       uri,
     );

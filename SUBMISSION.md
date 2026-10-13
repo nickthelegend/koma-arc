@@ -10,7 +10,7 @@
 
 KOMA turns fandom into ownership, paid entirely in USDC on Arc. Describe a story: an AI editor (Hunyuan 3) shapes it
 into a pitch, Kimi K2.6 writes it, fal draws it, and for ten cents of USDC (one x402 signature, no gas) the issue is
-minted to you, final in under a second. Launch its hero as a series and the character becomes an economy: a
+minted to you, final on inclusion. Launch its hero as a series and the character becomes an economy: a
 Character NFT with its own ERC-6551 wallet that earns 40% of every trade, a coin on a USDC bonding curve with
 gasless trades from $1, and a canon holders write together with free signed votes. At its target the curve
 graduates into a locked Uniswap v4 pool. Whoever holds the character can send its earnings to Base, Ethereum,
@@ -23,11 +23,13 @@ Arbitrum, OP or Avalanche over Circle's CCTP in one Arc transaction. USDC is the
 - **x402 on Arc's USDC.** EIP-3009 `transferWithAuthorization` on `0x3600…0000` (domain `USDC`/`2`), settled by
   KOMA's own facilitator, which other apps can call too. AI agents buy comics from a script the same way.
 - **Gasless trading that pays its way.** `receiveWithAuthorization` buys and permit + intent sells, relayed for
-  ~0.008 USDC of gas each, so the relayer breaks even from $1 trades.
-- **Sub-second deterministic finality.** Drawing starts the moment the payment's block lands; no confirmation
-  waits anywhere.
+  ~0.01 USDC of gas each on testnet (measured 0.0098), under the 0.015 USDC fee on a $1 trade, which is why
+  the relayer floor is $1.
+- **Deterministic finality.** Drawing starts the moment the payment's block lands; no confirmation counts anywhere
+  in the code. Testnet blocks arrive about every 0.5 s; measured server-side send-to-receipt was 0.8-3.0 s
+  (docs/E2E-TESTNET.md).
 - **CCTP V2 + Forwarding Service.** A character's ERC-6551 wallet burns its USDC on Arc in one `executeBatch` and
-  Circle mints it on the destination chain.
+  Circle mints it on the destination chain. (Fork-verified only; not part of the live testnet run.)
 - **Arc-native deployment.** Uniswap v4 deployed from Uniswap's bytecode and ERC-6551/Tokenbound replayed at their
   canonical addresses, because Arc mainnet has neither; contracts reviewed against Arc's EVM differences.
 
@@ -49,24 +51,27 @@ Arbitrum, OP or Avalanche over Circle's CCTP in one Arc transaction. USDC is the
 ## Evidence
 
 <!-- evidence:start -->
-Run on 2026-10-07. **Arc testnet deploy: pending** — the shared deployer wallet had 0 USDC, so the broadcast stopped
-at its first transaction (`insufficient funds … have 0`). Everything else was run for real against a **fork of Arc
-testnet** made with Circle's Arc Foundry (`arc-anvil --network arc`, which moves Arc's native USDC; `scripts/local-fork.sh`):
-the real deploy script, Arc's real USDC contract, the real CCTP TokenMessengerV2, real AI models.
+**Live on Arc testnet (2026-10-13/14):** the full contract set is deployed (24 txs, 0.83 USDC; addresses in the
+README) and a real end-to-end run was made against it with real USDC: an x402 payment and mint, a series launch, a
+gasless buy and sell, and a keeper-finalized canon vote. Every transaction is linked in
+[docs/E2E-TESTNET.md](docs/E2E-TESTNET.md); the judge pass is in [docs/JUDGE-REPORT.md](docs/JUDGE-REPORT.md).
 
-| Suite | Result |
-|---|---|
-| `forge test` (unit + fuzz, FiatToken v2.2 at Arc's USDC address, real Tokenbound + Uniswap v4) | 161 passed (also with 10,000–40,000 fuzz runs) |
-| Deploy script on the Arc fork | 24 txs, 33,065,114 gas, 0.661 USDC; mainnet path simulated against live Arc mainnet (`DRY_RUN=1`) |
-| `test:api` (x402 on Arc USDC, facilitator, minting, real models) | 13/13 across runs: B4/B12 re-run after the amount check moved to Transfer logs (on Arc the facilitator's own USDC also pays its gas); one run hit fal's content filter on a panel (the job is retryable with no second charge) and passed on re-run |
-| `test:launchpad` (launch → gasless buy/sell → canon → remix royalties → graduation into v4 → pool swap) | 16/17, the one failure (L8a, an unfunded non-holder) fixed in the suite since |
-| CCTP from a character wallet (L13a: `executeBatch` approve + `depositForBurnWithHook`) | passed on the fork (183k gas); the attestation + Base Sepolia mint (L13b) needs the real testnet |
-| `test:browser` (UI flows with real signatures) | 8/8 |
-| `test:ai` (Kimi script with `get_series_canon`, Hunyuan editor and images) | 4/4 |
-| `test:room` (WebAuthn PRF Writers' Room) | 7/7 (+1 skipped: cross-device needs two real devices) |
-| `test:walk` (15 pages at 375 px, no stale chain copy) | 15/15 |
-| typecheck, lint, `next build` | clean |
+Earlier, on a **fork of Arc testnet** made with Circle's Arc Foundry (`arc-anvil --network arc`, `scripts/local-fork.sh`)
+(this is **not** live evidence): the full launchpad suite incl. graduation into v4, the CCTP burn from a character wallet,
+the browser flows, and the Writers' Room.
 
-Measured on Arc: x402 settlement 87k gas (0.0018 USDC), relayed curve buy 393k gas (0.008 USDC), Tokenbound
-`executeBatch` CCTP burn 184k gas.
+| Suite | Where | Result |
+|---|---|---|
+| `forge test` (unit + fuzz, FiatToken v2.2 at Arc's USDC address, real Tokenbound + Uniswap v4) | local | 161 passed |
+| `test:launchpad` L1-L9 (x402 launch, gasless buy/sell, slippage/tamper, canon proposal, votes, keeper finalize) | **live testnet** | 14/14 |
+| `test:api` B2/B3/B5/B7/B8/B9/B11 (x402 quotes, tamper, zero balance, listing, art) | **live testnet** | 8/8 |
+| `test:ai` (Hunyuan editor, Kimi + `get_series_canon`, fal) | **live testnet** | see E2E-TESTNET |
+| `test:walk` (17 pages at 390 px incl. series/creator/embed with data) | **live testnet** | 17/17 |
+| `test:launchpad` L10 remix, L12 graduation into v4 + gasless pool buy, L13 CCTP burn | fork only | passed on the fork (not re-run live) |
+| `test:browser`, `test:room` | fork | 8/8, 7/7 (+1 skipped: cross-device) |
+| typecheck, lint, `next build` | local | clean |
+
+Measured on Arc testnet (live): x402 settlement 87,177 gas (0.0022 USDC), relayed curve buy 393,418 gas (0.0098 USDC),
+relayed sell 310,498 gas (0.0078 USDC), series launch 5.35M gas (0.134 USDC), all at 25 gwei. The Tokenbound
+`executeBatch` CCTP burn (184k gas) was measured on the fork.
 <!-- evidence:end -->

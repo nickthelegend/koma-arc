@@ -6,7 +6,8 @@ import { mkdirSync } from "node:fs";
 import { chromium } from "playwright";
 
 const BASE = process.env.KOMA_URL ?? "http://localhost:4310";
-const SHOTS = process.env.WALK_SHOTS !== "0" ? "docs/screenshots" : null;
+const SHOTS = process.env.WALK_SHOTS === "0" ? null : (process.env.WALK_SHOTS ?? "docs/screenshots");
+const WIDTH = Number(process.env.WALK_WIDTH ?? 375);
 const results = [];
 const check = (id, name, ok, detail = "") => {
   results.push(ok);
@@ -31,6 +32,8 @@ const pages = [
   ["studio", "/create"],
   ["studio-form", "/create/form"],
   ...(comic ? [["comic", `/c/${comic.id}`], ["reader", `/c/${comic.id}/read`], ["tx", `/tx/${comic.chain.paymentTx}`]] : []),
+  ...(open ? [["embed", `/embed/s/${open.id}`]] : []),
+  ...(series[0] ? [["creator", `/creator/${series[0].creator}`]] : []),
   ["search", "/search?q=kaiju"],
   ["shelf", "/shelf"],
   ["receipts", "/receipts"],
@@ -45,7 +48,7 @@ const ALLOW_CONSOLE = [/Download the React DevTools/i, /favicon/i];
 
 if (SHOTS) mkdirSync(SHOTS, { recursive: true });
 const browser = await chromium.launch();
-const context = await browser.newContext({ viewport: { width: 375, height: 812 }, deviceScaleFactor: 2, isMobile: true, hasTouch: true });
+const context = await browser.newContext({ viewport: { width: WIDTH, height: 812 }, deviceScaleFactor: 2, isMobile: true, hasTouch: true });
 for (const [name, path] of pages) {
   const page = await context.newPage();
   const errors = [];
@@ -65,13 +68,17 @@ for (const [name, path] of pages) {
   const text = await page.evaluate(() => document.body.innerText);
   const stale = STALE.filter((r) => r.test(text)).map((r) => text.match(r)?.[0]);
   const title = await page.title();
+  // Broken images, and explorer links that don't point at the Arc testnet explorer.
+  const broken = await page.evaluate(() => [...document.images].filter((i) => i.complete && i.naturalWidth === 0 && i.currentSrc).map((i) => i.currentSrc.slice(-60)));
+  const hrefs = await page.evaluate(() => [...document.querySelectorAll("a[href^='http']")].map((a) => a.href));
+  const badExplorer = hrefs.filter((h) => /arcscan|etherscan|basescan|arbiscan|explorer\.arc\.io/i.test(h) && !/explorer\.testnet\.arc\.io|sepolia\.(etherscan|basescan)/i.test(h)).slice(0, 2);
   if (SHOTS) await page.screenshot({ path: `${SHOTS}/${name}.jpg`, type: "jpeg", quality: 78, fullPage: false });
-  const ok = res?.status() === 200 && errors.length === 0 && failed.length === 0 && overflow <= 1 && stale.length === 0 && !!title;
+  const ok = res?.status() === 200 && errors.length === 0 && failed.length === 0 && overflow <= 1 && stale.length === 0 && !!title && broken.length === 0 && badExplorer.length === 0;
   check(
     name,
     path,
     ok,
-    ok ? title : [res?.status() !== 200 && `HTTP ${res?.status()}`, errors.length && `console: ${errors[0]}`, failed.length && `requests: ${failed.slice(0, 2).join(", ")}`, overflow > 1 && `overflow ${overflow}px`, stale.length && `stale copy: ${stale.join(", ")}`].filter(Boolean).join("; "),
+    ok ? title : [res?.status() !== 200 && `HTTP ${res?.status()}`, errors.length && `console: ${errors[0]}`, failed.length && `requests: ${failed.slice(0, 2).join(", ")}`, overflow > 1 && `overflow ${overflow}px`, stale.length && `stale copy: ${stale.join(", ")}`, broken.length && `broken images: ${broken.join(", ")}`, badExplorer.length && `explorer links: ${badExplorer.join(", ")}`].filter(Boolean).join("; "),
   );
   await page.close();
 }

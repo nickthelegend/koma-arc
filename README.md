@@ -4,12 +4,12 @@
 
 Describe a story and KOMA's AI editor (Tencent **Hunyuan 3**) shapes it into a pitch; **Kimi K2.6** writes the
 script and fal draws it (character sheets and covers by **Hunyuan Image 3**). You pay a few cents of **USDC on Arc**
-with one signature (x402, no gas); the payment is final in under a second, and the finished issue is minted to you. Launch its hero as a
+with one signature (x402, no gas); the payment is final on inclusion (Arc blocks arrive about every half second), and the finished issue is minted to you. Launch its hero as a
 **series**: a Character NFT with its own ERC-6551 wallet, a coin on a USDC bonding curve, and a canon that holders
 vote on. The character earns 40% of every trading fee in USDC, and whoever holds it can send those earnings to any
 CCTP chain in one transaction.
 
-[Submission](SUBMISSION.md) · [Mainnet runbook](MAINNET.md) · [Security review](contracts/AUDIT.md) · [Spec](contracts/LAUNCHPAD_SPEC.md) · MIT
+[Submission](SUBMISSION.md) · [Mainnet runbook](MAINNET.md) · [AI-assisted security review, not an external audit](contracts/AUDIT.md) · [Spec](contracts/LAUNCHPAD_SPEC.md) · MIT
 
 | Home (phone) | A series: coin, canon, character wallet | Writers' Room |
 |---|---|---|
@@ -17,14 +17,16 @@ CCTP chain in one transaction.
 
 ## What KOMA uses Arc for
 
-| Arc / Circle primitive | Where it shows up in KOMA |
-|---|---|
-| **USDC as the gas token** | USDC is the only token anyone ever holds. Readers pay, backers trade, creators launch, all in USDC; the relayer, the x402 facilitator and the keeper pay their gas in the same USDC, so KOMA's whole cost base is in dollars. The rare wallet-sent transaction (selling into a graduated pool, withdrawing a character's earnings) costs a fraction of a cent of USDC, never a second token. |
-| **x402 over Arc's USDC (EIP-3009)** | Comics ($0.10/page) and series launches ($1) are HTTP 402 payments: one `TransferWithAuthorization` signature on Arc's USDC (`USDC`/`2` EIP-712 domain), settled by KOMA's own x402 facilitator (`/api/facilitator/*`, usable by other apps). AI agents buy comics the same way from a script. |
-| **Gasless trading via `receiveWithAuthorization` + permit** | A buy on a bonding curve is one USDC `ReceiveWithAuthorization` whose nonce commits to the curve, amount, minimum out and deadline; a sell is a permit plus a signed intent. KOMA's relayer submits them. On Arc a relayed buy costs ~0.008 USDC of gas, so gasless trading pays its way from **$1** (it was $3 on the source chain). |
-| **Sub-second deterministic finality** | A payment's receipt is final, so the studio starts drawing the moment the facilitator's transaction lands, and a mint confirms in under a second. No confirmation counts anywhere in the code. |
-| **CCTP V2 + Forwarding Service** | A character's ERC-6551 wallet sends its USDC earnings to Base, Ethereum, Arbitrum, OP or Avalanche: the Character NFT's owner signs one Arc transaction (`executeBatch`: approve + `depositForBurnWithHook` with the `cctp-forward` hook) and Circle mints on the destination. The owner never needs gas or an RPC on the other chain. |
-| **Arc's EVM, as is** | Uniswap v4 (PoolManager, PositionManager, V4Quoter) isn't on Arc, so the deploy script deploys Uniswap's own bytecode; the ERC-6551 registry and Tokenbound v0.3 are replayed at their canonical addresses through the deterministic deployer. The contracts never touch native value, `PREVRANDAO` or `SELFDESTRUCT` (see the [Arc port review](contracts/AUDIT.md#arc-port-review-2026-10-07)). |
+| Arc / Circle primitive | Where it shows up in KOMA | Verified |
+|---|---|---|
+| **USDC as the gas token** | USDC is the only token anyone ever holds. Readers pay, backers trade, creators launch, all in USDC; the relayer, the x402 facilitator and the keeper pay their gas in the same USDC, so KOMA's whole cost base is in dollars. The rare wallet-sent transaction (selling into a graduated pool, withdrawing a character's earnings) costs a fraction of a cent of USDC, never a second token. | Live on Arc testnet: every tx in [docs/E2E-TESTNET.md](docs/E2E-TESTNET.md) paid gas in USDC (25 gwei, 0.002–0.13 USDC each). |
+| **x402 over Arc's USDC (EIP-3009)** | Comics ($0.10/page) and series launches ($1) are HTTP 402 payments: one `TransferWithAuthorization` signature on Arc's USDC (`USDC`/`2` EIP-712 domain), settled by KOMA's own x402 facilitator (`/api/facilitator/*`, usable by other apps). AI agents buy comics the same way from a script. | Live on Arc testnet: a real x402 issue payment and mint ([E2E-TESTNET](docs/E2E-TESTNET.md)), quotes/tamper/0-balance checks. Agent-script path uses the same endpoint. |
+| **Gasless trading via `receiveWithAuthorization` + permit** | A buy on a bonding curve is one USDC `ReceiveWithAuthorization` whose nonce commits to the curve, amount, minimum out and deadline; a sell is a permit plus a signed intent. KOMA's relayer submits them. On Arc testnet a relayed buy measured 0.0098 USDC of gas (393k gas at 25 gwei), under the 0.015 USDC fee on a $1 trade, so the relayer floor is **$1** (it was $3 on the source chain); KOMA's own 40% share of that fee (0.006) is less than the gas, so this is a subsidy at the margin. | Live on Arc testnet: one relayed buy and one relayed sell ([E2E-TESTNET](docs/E2E-TESTNET.md)). |
+| **Sub-second deterministic finality** | A payment's receipt is final, so the studio starts drawing the moment the facilitator's transaction lands, and a mint confirms in under a second. No confirmation counts anywhere in the code. | Measured, not assumed: testnet blocks arrive about every 0.5 s; KOMA's server-side send-to-receipt times on the live run were 0.8-3.0 s (see `/receipts` and [E2E-TESTNET](docs/E2E-TESTNET.md)). Finality-on-inclusion is Arc's documented property; KOMA did not test reorgs. |
+| **CCTP V2 + Forwarding Service** | A character's ERC-6551 wallet sends its USDC earnings to Base, Ethereum, Arbitrum, OP or Avalanche: the Character NFT's owner signs one Arc transaction (`executeBatch`: approve + `depositForBurnWithHook` with the `cctp-forward` hook) and Circle mints on the destination. The owner never needs gas or an RPC on the other chain. | **Fork only.** The character-wallet burn (`executeBatch`) passed on a fork of Arc testnet; Circle's attestation and the Base Sepolia mint were not re-run on the live testnet. |
+| **Arc's EVM, as is** | Uniswap v4 (PoolManager, PositionManager, V4Quoter) isn't on Arc, so the deploy script deploys Uniswap's own bytecode; the ERC-6551 registry and Tokenbound v0.3 are replayed at their canonical addresses through the deterministic deployer when missing (checked 2026-10-14: the registry already exists on Arc mainnet, the Tokenbound accounts do not). The contracts never touch native value, `PREVRANDAO` or `SELFDESTRUCT` (see the [Arc port review](contracts/AUDIT.md#arc-port-review-2026-10-07)). | Deployed live on Arc testnet (24 txs). Graduation into the v4 pool and the swapper's gasless pool buy are **fork-proven only**; they were not part of the live run. |
+| **Circle Gateway funding** (opt-in) | `/fund` and `/api/gateway`, off unless `NEXT_PUBLIC_FEATURE_GATEWAY=1`. | **Never run live.** Code and mocked tests only; no funded Gateway transfer was performed. |
+| **Chainlink CCIP canon receipts** (opt-in) | `KomaCanonSender` / `KomaCanonReceipt` publish finalized canon cross-chain as messages (no tokens). | **Not deployed, never run live.** Five local Foundry tests; `/receipts` shows "off by default". |
 
 ## Architecture
 
@@ -76,7 +78,7 @@ flowchart LR
   the winner plus a root of every vote on chain; anyone can re-check it from `/api/canon/[series]`.
 - **Writers' Room** (`/room`): one passkey, keys that are not a wallet. WebAuthn PRF under KOMA's own salt → HKDF →
   an Ed25519 room identity and an AES-256-GCM drafts key; the server stores ciphertext only.
-- **Indexer** (`indexer/`, optional): Envio HyperIndex for the leaderboard, over Arc's RPC or Envio's HyperSync for Arc.
+- **Indexer** (`indexer/`, optional, not hosted): Envio HyperIndex config for a leaderboard. The app's own SQLite index is what the live testnet run used; the Envio path was not run against Arc testnet.
 
 ## Addresses (Arc testnet, chain 5042002)
 
@@ -161,8 +163,8 @@ npm run test:walk       # every page at 375 px      npm run test:ai   # model cr
 npm run test:room       # Writers' Room (virtual WebAuthn PRF authenticator)
 ```
 
-The e2e suites record their transaction hashes in `deployments/arc-testnet.json` → `proof`. The latest run is in
-[SUBMISSION.md](SUBMISSION.md#evidence).
+The e2e suites record their transaction hashes in `deployments/arc-testnet.json` → `proof`. The live testnet run is in
+[docs/E2E-TESTNET.md](docs/E2E-TESTNET.md), the judge pass in [docs/JUDGE-REPORT.md](docs/JUDGE-REPORT.md), the rest in [SUBMISSION.md](SUBMISSION.md#evidence).
 
 ## Repository
 
@@ -176,6 +178,7 @@ scripts/      deploy / verify / testnet-setup / demo, e2e suites, wallet shim
 
 ## Known limits
 
+- The testnet contracts' `tokenURI` points at `http://localhost:4310` (the base URL the deploy script was given), so explorers can't show NFT metadata until the app is hosted and the admin calls `setBaseURI`. See [docs/E2E-TESTNET.md](docs/E2E-TESTNET.md).
 - SQLite and on-disk art mean one server instance on a persistent volume, with the pipeline in-process.
 - The canon tally runs on KOMA's server; the published votes root makes a wrong tally detectable, not impossible.
 - The Uniswap v4 contracts on Arc are deployed by KOMA (Uniswap's bytecode, unmodified), not by Uniswap Labs.

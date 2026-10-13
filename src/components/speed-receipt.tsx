@@ -44,7 +44,7 @@ export function SpeedReceipt({ tx, who = "KOMA", className = "" }: { tx: string;
       </p>
       <p className="pl-[22px] text-mute">
         {s.feeUsdc != null ? `${fee(s.feeUsdc)} gas paid by ${who}` : `gas paid by ${who}`}
-        {s.ethereum ? ` · ≈ ${usd(s.ethereum.usd)} on Ethereum` : ""}
+        {s.ethereum ? ` · est. ≈ ${usd(s.ethereum.usd)} for the same gas on Ethereum` : ""}
       </p>
       <Details className="pl-[22px]">
         <ul className="font-mono text-[11px]">
@@ -52,7 +52,13 @@ export function SpeedReceipt({ tx, who = "KOMA", className = "" }: { tx: string;
           <li>
             {s.gasUsed?.toLocaleString("en-US")} gas, paid in USDC by {who}
           </li>
-          {s.ethereum && <li>Ethereum estimate at {s.ethereum.gwei.toFixed(2)} gwei, today&rsquo;s ETH price</li>}
+          {s.ethereum && (
+            <li className="max-w-prose whitespace-normal">
+              Ethereum figure is an estimate, not a quote: this transaction&rsquo;s gas units &times; Ethereum mainnet&rsquo;s current gas price
+              ({s.ethereum.gwei.toFixed(2)} gwei, <code>eth_gasPrice</code> from ethereum-rpc.publicnode.com) &times; the Ethereum-to-USD spot price from
+              Coinbase, cached for 10 minutes. Real cost differs with gas usage on Ethereum and price moves.
+            </li>
+          )}
         </ul>
       </Details>
     </div>

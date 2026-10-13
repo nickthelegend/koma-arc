@@ -3,7 +3,7 @@ import { FEE_SPLIT, GASLESS_MIN_USDC, GRADUATION_FEE_PCT, KOMA, LAUNCH_PRICE, TR
 import { ArcMark } from "../icons";
 import { AddrChip } from "./addr-chip";
 
-type Row = { title: string; text: React.ReactNode; chips: { label: string; address?: Addr | null }[] };
+type Row = { title: string; text: React.ReactNode; note?: string; chips: { label: string; address?: Addr | null }[] };
 
 /**
  * What runs where. Plain statements about this deployment, with the contract
@@ -28,7 +28,7 @@ export function BuiltOnArc({
         <>
           Every quote and trade prices through KOMA&rsquo;s curve-math contract, and a royalty router splits each {TRADE_FEE_PCT}% fee in the same
           transaction: {FEE_SPLIT.character}% to the character, {FEE_SPLIT.remix}% up the remix tree, {FEE_SPLIT.treasury}% to KOMA. On Arc a
-          trade is final the moment its block lands, in under a second, with no reorgs to wait out.
+          trade is final the moment its block lands (Arc testnet blocks arrive about every half second), with no reorgs to wait out. The receipts page shows the send-to-receipt times KOMA actually measured.
         </>
       ),
       chips: [
@@ -45,6 +45,7 @@ export function BuiltOnArc({
           CCTP: one transaction here, and Circle&rsquo;s Forwarding Service mints on the other side.
         </>
       ),
+      note: "The CCTP burn from a character wallet was verified on a fork of Arc testnet; it was not part of the live testnet run.",
       chips: character
         ? [
             { label: `${character.name}’s wallet`, address: character.account },
@@ -100,6 +101,7 @@ export function BuiltOnArc({
           bytecode. The liquidity position goes to a dead address, so it can&rsquo;t be pulled.
         </>
       ),
+      note: "Graduation into v4 was verified on a fork of Arc testnet; it was not part of the live testnet run.",
       chips: [
         { label: "Graduator", address: lp?.graduator },
         { label: "v4 PoolManager", address: lp?.poolManager },
@@ -133,6 +135,7 @@ export function BuiltOnArc({
           <div key={r.title} className={`border-arb/15 px-4 py-4 md:px-6 ${i > 0 ? "border-t" : ""} ${i === 1 ? "md:border-t-0" : ""} ${i % 2 === 1 ? "md:border-l" : ""}`}>
             <dt className="font-display text-[17px] uppercase leading-tight text-paper">{r.title}</dt>
             <dd className="mt-1.5 text-[13px] leading-relaxed text-soft">{r.text}</dd>
+            {r.note && <dd className="mt-2 font-mono text-[11.5px] leading-relaxed text-mute">{r.note}</dd>}
             {lp && r.chips.some((c) => c.address) && (
               <dd className="mt-3 flex flex-wrap gap-2">
                 {r.chips.map((c) => c.address && <AddrChip key={c.label} label={c.label} address={c.address} />)}
