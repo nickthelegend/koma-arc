@@ -35,6 +35,7 @@ jobs:
           cache: npm
       # OpenZeppelin and Uniswap v4 come from node_modules (foundry.toml libs = ["../node_modules"]).
       - run: npm ci
+      - run: npm --prefix contracts ci --ignore-scripts --no-audit --no-fund
       - uses: foundry-rs/foundry-toolchain@v1
       - run: forge build --sizes
         working-directory: contracts

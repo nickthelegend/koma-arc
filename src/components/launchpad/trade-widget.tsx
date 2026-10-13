@@ -1,11 +1,15 @@
 "use client";
+import {withOriginTransactionLock} from "@/lib/origin-transaction-lock";
+import {SubmissionBoundary} from "@/lib/submission-boundary";
 
 import { useRouter } from "next/navigation";
-import { useEffect, useId, useState } from "react";
+import { useEffect, useId, useRef, useState } from "react";
 import { useBalance, useReadContract } from "wagmi";
-import { formatUnits, parseUnits, type Hex } from "viem";
+import { formatUnits, getAddress, parseUnits, type Hex } from "viem";
 import { coinAbi, curveAbi } from "@/lib/launchpad/abi";
-import { directBuy, directSell, directSwap, landed, lpClient, quotePool, relay, signGaslessBuy, signGaslessSell, signGaslessSwapBuy, tradeError } from "@/lib/launchpad/client";
+import { directBuy, directSell, directSwap, recoverPendingTrade, landed, lpClient, quotePool, relay, signGaslessBuy, signGaslessSell, signGaslessSwapBuy, tradeError } from "@/lib/launchpad/client";
+import {readPendingTrade,savePendingTrade,clearPendingTrade,clearUnsignedTrade,pendingMatches,type PendingTrade} from "@/lib/launchpad/pending-trade";
+import {UnconfirmedTradeError,requireTradeWallet} from "@/lib/launchpad/trade-guard";
 import { withSlippage } from "@/lib/launchpad/intents";
 import type { Addr } from "@/lib/launchpad/types";
 import { txUrl } from "@/lib/explorer";
@@ -40,7 +44,7 @@ export type TradeSeries = {
 
 type Side = "buy" | "sell";
 type Quote = { side: Side; input: bigint; out: bigint; fee: bigint; used: bigint };
-type Phase = { step: "idle" | "signing" | "sending" | "confirming" | "done" | "error"; tx?: Hex; message?: string };
+type Phase = { step: "idle" | "signing" | "sending" | "confirming" | "done" | "error"; tx?: Hex; message?: string; uncertain?: boolean };
 
 const parse = (v: string, decimals: number) => {
   try {
@@ -60,10 +64,19 @@ export function TradeWidget({ s }: { s: TradeSeries }) {
   const [amount, setAmount] = useState("");
   const [quote, setQuote] = useState<Quote | null>(null);
   const [quoteError, setQuoteError] = useState<string | null>(null);
+  const submission = useRef(false);
+  const [pending, setPending] = useState<PendingTrade|null>(null);
+  const [journalReady,setJournalReady]=useState(false);
+  const [journalError,setJournalError]=useState<string|null>(null);
   const [phase, setPhase] = useState<Phase>({ step: "idle" });
   // The snipe window is in block time; count on the chain's clock.
   const [skew] = useState(() => s.chainTime - Math.floor(Date.now() / 1000));
   const [now, setNow] = useState(() => s.chainTime);
+
+  useEffect(()=>{
+    const load=()=>{try{const current=readPendingTrade(localStorage);setPending(current);setJournalReady(true);setJournalError(null);if(current)setPhase({step:"error",tx:current.hash,uncertain:true,message:current.stage==="approval"?"An approval is unresolved. Check its receipt; the trade has not been confirmed.":"A previous transaction is unresolved. No new trade will be submitted."});}catch(error){setJournalReady(false);setJournalError(error instanceof Error?error.message:"Pending transaction storage is unavailable");}};
+    load();window.addEventListener("storage",load);return()=>window.removeEventListener("storage",load);
+  },[]);
 
   const me = wallet.address ?? undefined;
   const coinBal = useReadContract({
@@ -89,6 +102,8 @@ export function TradeWidget({ s }: { s: TradeSeries }) {
 
   // Before graduation the pool doesn't exist and the curve is the market; after, the reverse.
   const pool = s.graduated;
+  const currentContext=useRef({wallet:me,contract:pool?s.swapper:s.curve,seriesId:s.id,coin:s.coin,pool:Boolean(pool),curve:s.curve,swapper:s.swapper});
+  currentContext.current={wallet:me,contract:pool?s.swapper:s.curve,seriesId:s.id,coin:s.coin,pool:Boolean(pool),curve:s.curve,swapper:s.swapper};
   const poolQuote = (amountIn: bigint) => quotePool({ quoter: s.quoter, graduator: s.graduator, seriesId: s.id, buyCoin: side === "buy", amountIn });
 
   // Live quote from the curve (or the v4 pool) itself, a moment after typing stops.
@@ -137,11 +152,11 @@ export function TradeWidget({ s }: { s: TradeSeries }) {
   // KOMA relays trades for free from $1; smaller ones would cost more gas than their fee.
   const gaslessOk = !q || (side === "buy" ? (pool ? q.input : q.used) >= MIN_GASLESS : q.out >= MIN_GASLESS);
   const tradeOk = Boolean(me && q && !busy && !shortUsdc && !shortCoins && !overCap);
-  const canSend = tradeOk && (needsGas ? hasGas : gaslessOk);
-  const canSendDirect = tradeOk && hasGas;
+  const canSend = journalReady && !pending && !phase.uncertain && tradeOk && (needsGas ? hasGas : gaslessOk);
+  const canSendDirect = journalReady && !pending && !phase.uncertain && tradeOk && hasGas;
 
   function pick(next: Side) {
-    if (busy) return;
+    if (busy || phase.uncertain || submission.current) return;
     setSide(next);
     setAmount("");
     setQuote(null);
@@ -150,13 +165,25 @@ export function TradeWidget({ s }: { s: TradeSeries }) {
   }
 
   async function trade(direct: boolean) {
-    if (!q || !input || !me) return;
+    try { await withOriginTransactionLock('koma:pending-trade',()=>tradeLocked(direct)); }
+    catch(error){setPhase({step:"error",uncertain:true,message:error instanceof Error?error.message:"Browser transaction locking is unavailable."});}
+  }
+
+  async function tradeLocked(direct: boolean) {
+    if (!q || !input || !me || submission.current || phase.uncertain || pending || !journalReady) return;
+    submission.current = true;
     // A buy that would overshoot the curve's target only authorizes what the target needs,
     // so the wallet never has to hold (or sign for) USDC the curve would refund.
     const spend = !pool && side === "buy" && q.used < input ? q.used : input;
     setPhase({ step: "signing" });
+    let intent:PendingTrade|undefined;
+    const boundary=new SubmissionBoundary();
     try {
-      const w = await wallet.walletClient();
+      if(readPendingTrade(localStorage))throw new Error("An original transaction is unresolved. Check its receipt before any new trade.");
+      if(KOMA.chain.id !== 5042002)throw new Error("Durable trade recovery is available only on Arc testnet 5042002; no signature was requested.");
+      let w = await wallet.walletClient();
+      if (getAddress(w.account.address) !== getAddress(me)) throw new Error("Wallet changed. Request a new quote.");
+      if (await w.getChainId() !== KOMA.chain.id) throw new Error("The wallet network changed. Switch to the configured Arc network before signing.");
       // Re-quote right before signing so the 1% floor is measured from the latest price.
       let min = minOut;
       if (pool) {
@@ -168,27 +195,41 @@ export function TradeWidget({ s }: { s: TradeSeries }) {
         const [out] = await lpClient.readContract({ address: s.curve, abi: curveAbi, functionName: "quoteSell", args: [spend] });
         min = withSlippage(out, SLIPPAGE_BPS);
       }
+      w = await wallet.walletClient();
+      if (getAddress(w.account.address) !== getAddress(me)) throw new Error("Wallet changed while refreshing the quote. Request a new quote.");
+      requireTradeWallet(currentContext.current.wallet ?? "", me);
+      if (await w.getChainId() !== KOMA.chain.id) throw new Error("Wallet network changed while refreshing the quote.");
+      intent={version:1,id:crypto.randomUUID(),chainId:5042002,wallet:me,tradeContract:pool?s.swapper:s.curve,coin:s.coin,side,amount:spend.toString(),minimum:min.toString(),seriesId:s.id,pool:Boolean(pool),direct,stage:"intent",stepContract:pool?s.swapper:s.curve,startedAt:Date.now()};
+      savePendingTrade(localStorage,intent);setPending(intent);
+      const observe=(stage:"approval"|"trade",contract:Addr,hash?:Hex)=>{if(!hash&&!pendingMatches(intent!,currentContext.current.wallet,KOMA.chain.id,currentContext.current.contract,currentContext.current.seriesId,currentContext.current.coin,currentContext.current.pool))throw new Error("Wallet or operation context changed; no further transaction was sent.");boundary.enter();intent={...intent!,approvalHash:stage==="trade"&&intent!.stage==="approval"&&intent!.hash?intent!.hash:intent!.approvalHash,stage,stepContract:contract,hash};setPending(intent);savePendingTrade(localStorage,intent);};
       let tx: Hex;
       if (pool) {
         if (direct || side === "sell") {
-          tx = await directSwap(w, { swapper: s.swapper, seriesId: s.id, coin: s.coin, buyCoin: side === "buy", amountIn: spend, minOut: min });
+          tx = await directSwap(w, { swapper: s.swapper, seriesId: s.id, coin: s.coin, buyCoin: side === "buy", amountIn: spend, minOut: min }, observe);
         } else {
           const body = await signGaslessSwapBuy(w, { swapper: s.swapper, seriesId: s.id, buyer: w.account.address, usdcIn: spend, minCoinOut: min });
           setPhase({ step: "sending" });
+          observe("trade",intent!.tradeContract as Addr);
           tx = await relay(body);
+          observe("trade",intent!.tradeContract as Addr,tx);
         }
       } else if (direct) {
-        tx = side === "buy" ? await directBuy(w, { curve: s.curve, usdcIn: spend, minCoinOut: min }) : await directSell(w, { curve: s.curve, coin: s.coin, coinIn: spend, minUsdcOut: min });
+        tx = side === "buy" ? await directBuy(w, { curve: s.curve, usdcIn: spend, minCoinOut: min }, observe) : await directSell(w, { curve: s.curve, coin: s.coin, coinIn: spend, minUsdcOut: min }, observe);
       } else {
         const body =
           side === "buy"
             ? await signGaslessBuy(w, { curve: s.curve, buyer: w.account.address, usdcIn: spend, minCoinOut: min })
             : await signGaslessSell(w, { curve: s.curve, coin: s.coin, seller: w.account.address, coinIn: spend, minUsdcOut: min });
         setPhase({ step: "sending" });
+        observe("trade",intent!.tradeContract as Addr);
         tx = await relay(body);
+        observe("trade",intent!.tradeContract as Addr,tx);
       }
       setPhase({ step: "confirming", tx });
       await landed(tx);
+      if(await recoverPendingTrade(intent!)!=="trade-confirmed")throw new Error("The trade reverted on-chain");
+      if(!pendingMatches(intent!,currentContext.current.wallet,KOMA.chain.id,currentContext.current.contract,currentContext.current.seriesId,currentContext.current.coin,currentContext.current.pool))throw new Error("The original wallet context changed. Restore it before resolving this receipt.");
+      clearPendingTrade(localStorage,intent!.id);setPending(null);
       setPhase({ step: "done", tx });
       setAmount("");
       setQuote(null);
@@ -198,12 +239,40 @@ export function TradeWidget({ s }: { s: TradeSeries }) {
       // The index follows the chain a beat behind; refresh again once it has caught up.
       setTimeout(() => router.refresh(), 4000);
     } catch (e) {
+      if(intent?.stage==="intent"&&!intent.hash&&!intent.approvalHash){try{boundary.releaseUnsigned(()=>{clearUnsignedTrade(localStorage,intent!);setPending(null);intent=undefined;});}catch(storageError){e=storageError;}}
       const raw = (e as { shortMessage?: string }).shortMessage ?? (e as Error).message ?? "";
-      setPhase((p) => ({ step: "error", tx: p.tx, message: /reject|denied/i.test(raw) ? walletErrorMessage(e) : tradeError(raw) }));
-    }
+      setPhase((p) => ({ step: "error", tx: intent?.hash ?? p.tx, uncertain: Boolean(intent) || e instanceof UnconfirmedTradeError, message: /reject|denied/i.test(raw) ? walletErrorMessage(e) : tradeError(raw) }));
+    } finally { submission.current = false; }
   }
 
-  if (s.complete && !pool) return <Graduation s={s} />;
+  function originalContextMatches(entry: PendingTrade) {
+    const context = currentContext.current;
+    return pendingMatches(entry, context.wallet, KOMA.chain.id, entry.pool ? context.swapper : context.curve, context.seriesId, context.coin, entry.pool);
+  }
+
+  async function recheckReceipt() {
+    try { await withOriginTransactionLock('koma:pending-trade',()=>recheckReceiptLocked()); }
+    catch(error){setPhase({step:"error",tx:pending?.hash,uncertain:true,message:error instanceof Error?error.message:"Browser transaction locking is unavailable."});}
+  }
+
+  async function recheckReceiptLocked() {
+    if(!pending||submission.current)return;
+    if(!originalContextMatches(pending)){setPhase({step:"error",tx:pending.hash,uncertain:true,message:"This unresolved transaction belongs to a different wallet, chain or series. Restore its original context before recovery."});return;}
+    const latest=readPendingTrade(localStorage);
+    if(!latest||JSON.stringify(latest)!==JSON.stringify(pending))throw new Error("The original transaction changed in another tab. Reload its saved receipt before recovery.");
+    submission.current=true;const entry=latest;
+    setPhase({step:"confirming",tx:entry.hash,uncertain:true});
+    try{
+      const outcome=await recoverPendingTrade(entry);
+      if(!originalContextMatches(entry))throw new Error("The wallet context changed during recovery. No journal was cleared.");
+      clearPendingTrade(localStorage,entry.id);setPending(null);
+      setPhase({step:outcome==="trade-confirmed"?"done":"error",tx:entry.hash,message:outcome==="approval-confirmed"?"Approval confirmed. The trade was not sent automatically; review a fresh quote before trading.":outcome==="reverted"?"Transaction finalized and reverted. No successful trade is recorded.":undefined});
+      if(outcome==="trade-confirmed"){setAmount("");setQuote(null);}wallet.refreshBalance();void coinBal.refetch();router.refresh();
+    }catch(error){setPhase({step:"error",tx:entry.hash,uncertain:true,message:error instanceof Error?error.message:"Could not check the existing receipt"});}
+    finally{submission.current=false;}
+  }
+
+  if (s.complete && !pool && !pending && !journalError) return <Graduation s={s} />;
 
   const coinsFmt = (x: bigint) => coinAmount(Number(formatUnits(x, 18)));
   const usdcFmt = (x: bigint) => usdAmount(Number(formatUnits(x, 6)));
@@ -238,14 +307,16 @@ export function TradeWidget({ s }: { s: TradeSeries }) {
             </span>
           )}
         </label>
+        {journalError && <p role="alert">{journalError}</p>}
         <div className="mt-1.5 flex items-stretch border border-rule bg-ink focus-within:border-soft">
           <input
             id={`${ids}-amt`}
             inputMode="decimal"
             autoComplete="off"
             value={amount}
-            disabled={busy}
+            disabled={busy || phase.uncertain}
             onChange={(e) => {
+              if (phase.uncertain || submission.current) return;
               setAmount(e.target.value.replace(/[^0-9.]/g, ""));
               if (phase.step === "done" || phase.step === "error") setPhase({ step: "idle" });
             }}
@@ -256,7 +327,7 @@ export function TradeWidget({ s }: { s: TradeSeries }) {
             <button
               type="button"
               onClick={() => setAmount(formatUnits(coins, 18))}
-              disabled={busy || coins === BigInt(0)}
+              disabled={busy || phase.uncertain || coins === BigInt(0)}
               className="shrink-0 border-l border-rule px-3 font-display text-[14px] uppercase text-soft hover:text-paper disabled:opacity-40"
             >
               Max
@@ -266,7 +337,7 @@ export function TradeWidget({ s }: { s: TradeSeries }) {
         {side === "buy" && (
           <div className="mt-2 flex gap-2">
             {BUY_PICKS.map((v) => (
-              <button key={v} type="button" onClick={() => setAmount(v)} disabled={busy} className="border border-rule px-2.5 py-1 font-mono text-[12px] text-soft hover:border-paper hover:text-paper">
+              <button key={v} type="button" onClick={() => setAmount(v)} disabled={busy || phase.uncertain} className="border border-rule px-2.5 py-1 font-mono text-[12px] text-soft hover:border-paper hover:text-paper">
                 ${v}
               </button>
             ))}
@@ -373,6 +444,8 @@ export function TradeWidget({ s }: { s: TradeSeries }) {
             className={`mt-4 border px-3 py-2.5 text-[12.5px] leading-snug ${phase.step === "error" ? "border-kapow/60 bg-kapow/10 text-paper" : "border-arb/30 bg-[#06111a] text-soft"}`}
           >
             {phase.step === "error" ? phase.message : phase.step === "done" ? "Done. Your balance updates as the page refreshes." : phase.step === "sending" ? "Handing your signature to the relayer…" : "Waiting for the block…"}
+            {phase.uncertain && phase.step === "error" && <button onClick={() => void recheckReceipt()} className="mt-2 underline">Check existing receipt</button>}
+            {pending?.approvalHash && <a href={txUrl(pending.approvalHash)} target="_blank" rel="noreferrer" className="mt-1 block underline">Confirmed approval receipt (the trade remains unresolved)</a>}
             {phase.tx && (
               <a href={txUrl(phase.tx)} target="_blank" rel="noreferrer" className="mt-1 block font-mono text-arb hover:underline">
                 tx {short(phase.tx, 10, 6)}

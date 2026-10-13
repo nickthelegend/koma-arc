@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useWallet } from "./wallet";
 import { ArcMark } from "./icons";
 import { short } from "@/lib/format";
@@ -27,6 +28,8 @@ export function WalletButton({ compact = false }: { compact?: boolean }) {
   }
 
   return (
+    <div className="flex items-center gap-2">
+    {process.env.NEXT_PUBLIC_FEATURE_GATEWAY === "1" && <Link href="/fund" className="text-xs text-arb underline">Fund</Link>}
     <button
       onClick={disconnect}
       title="Disconnect"
@@ -36,5 +39,6 @@ export function WalletButton({ compact = false }: { compact?: boolean }) {
       {!compact && <span className="font-mono text-[12px] text-arb">{usdcLoaded ? usdc.toFixed(2) : "…"} USDC</span>}
       <span className="font-mono text-[12px] text-soft group-hover:text-paper">{short(address, 5, 3)}</span>
     </button>
+    </div>
   );
 }

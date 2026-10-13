@@ -1,4 +1,7 @@
-import { createPublicClient, encodeFunctionData, http, toFunctionSelector, toHex, type Account, type Address, type Chain, type Hex, type Transport, type WalletClient } from "viem";
+import { cctpFeeQuote, type CctpFeeRow } from "./cctp-fees";
+import type {PendingTrade} from "./pending-trade";
+import {UnconfirmedTradeError} from "./trade-guard";
+import { createPublicClient, parseEventLogs, parseAbiItem, erc20Abi, decodeFunctionData, encodeFunctionData, http, toFunctionSelector, toHex, type Account, type Address, type Chain, type Hex, type Transport, type WalletClient } from "viem";
 import { KOMA, RPC_URL, USDC_DOMAIN, CCTP } from "@/lib/network";
 import { coinAbi, curveAbi, erc20ApproveAbi, erc20TransferAbi, tokenMessengerAbi, graduatorAbi, permitTypes, quoterAbi, receiveAuthTypes, sellTypes, swapperAbi, tokenboundAbi, usdcAbi, voteTypes } from "./abi";
 import { buyNonce } from "./intents";
@@ -12,6 +15,15 @@ export const lpClient = createPublicClient({ chain: KOMA.chain, transport: http(
 
 /** Any viem wallet client with an account, e.g. useWallet().walletClient(). */
 export type Signer = WalletClient<Transport, Chain | undefined, Account>;
+
+/** Re-read the provider before each separate signature or broadcast. */
+async function requireSignerContext(wallet: Signer) {
+  const [addresses, chainId] = await Promise.all([wallet.getAddresses(), wallet.getChainId()]);
+  if (chainId !== KOMA.chain.id || !addresses.some(address => address.toLowerCase() === wallet.account.address.toLowerCase())) {
+    throw new Error("The wallet or network changed. No further transaction was requested.");
+  }
+}
+
 
 const chainId = KOMA.chain.id;
 /** How long a signed trade stays valid. */
@@ -40,6 +52,7 @@ export async function signGaslessBuy(
   const salt = randomSalt();
   const nonce = buyNonce({ ...o, deadline, salt });
   const validAfter = BigInt(0);
+  await requireSignerContext(wallet);
   const signature = await wallet.signTypedData({
     account: wallet.account,
     domain: { ...USDC_DOMAIN, chainId, verifyingContract: KOMA.usdc },
@@ -75,6 +88,7 @@ export async function signGaslessSell(
     lpClient.readContract({ address: o.coin, abi: coinAbi, functionName: "name" }),
     lpClient.readContract({ address: o.curve, abi: curveAbi, functionName: "sellNonces", args: [o.seller] }),
   ]);
+  await requireSignerContext(wallet);
   const permit = await wallet.signTypedData({
     account: wallet.account,
     domain: { name, version: "1", chainId, verifyingContract: o.coin },
@@ -82,6 +96,7 @@ export async function signGaslessSell(
     primaryType: "Permit",
     message: { owner: o.seller, spender: o.curve, value: o.coinIn, nonce: permitNonce, deadline },
   });
+  await requireSignerContext(wallet);
   const intentSignature = await wallet.signTypedData({
     account: wallet.account,
     domain: { name: "KOMA Curve", version: "1", chainId, verifyingContract: o.curve },
@@ -149,6 +164,7 @@ export async function signGaslessSwapBuy(
     functionName: "swapNonce",
     args: [o.buyer, BigInt(o.seriesId), o.usdcIn, o.minCoinOut, deadline, salt],
   });
+  await requireSignerContext(wallet);
   const signature = await wallet.signTypedData({
     account: wallet.account,
     domain: { ...USDC_DOMAIN, chainId, verifyingContract: KOMA.usdc },
@@ -171,10 +187,12 @@ export async function signGaslessSwapBuy(
 }
 
 /** Wallet-sent swap through the pool (gas is paid in USDC, like everything else on Arc); the only way to sell after graduation. */
-export async function directSwap(wallet: Signer, o: { swapper: Address; seriesId: number; coin: Address; buyCoin: boolean; amountIn: bigint; minOut: bigint }): Promise<Hex> {
-  if (o.buyCoin) await ensureAllowance(wallet, KOMA.usdc, usdcAbi, o.swapper, o.amountIn);
-  else await ensureAllowance(wallet, o.coin, coinAbi, o.swapper, o.amountIn);
-  return wallet.writeContract({
+export async function directSwap(wallet: Signer, o: { swapper: Address; seriesId: number; coin: Address; buyCoin: boolean; amountIn: bigint; minOut: bigint }, observe?:TradeObserver): Promise<Hex> {
+  if (o.buyCoin) await ensureAllowance(wallet, KOMA.usdc, usdcAbi, o.swapper, o.amountIn, observe);
+  else await ensureAllowance(wallet, o.coin, coinAbi, o.swapper, o.amountIn, observe);
+  await requireSignerContext(wallet);
+  observe?.("trade",o.swapper);
+  const hash=await wallet.writeContract({
     account: wallet.account,
     chain: KOMA.chain,
     address: o.swapper,
@@ -182,6 +200,8 @@ export async function directSwap(wallet: Signer, o: { swapper: Address; seriesId
     functionName: "swapExactIn",
     args: [BigInt(o.seriesId), o.buyCoin, o.amountIn, o.minOut, wallet.account.address],
   });
+  observe?.("trade",o.swapper,hash);
+  return hash;
 }
 
 /** Sends a signed intent to KOMA's relayer; resolves to the transaction hash. */
@@ -219,18 +239,34 @@ export function tradeError(raw: string) {
 
 // ——— "Send it yourself": the wallet submits and pays the gas.
 
-async function ensureAllowance(wallet: Signer, token: Address, abi: typeof usdcAbi | typeof coinAbi, spender: Address, amount: bigint) {
+async function ensureAllowance(wallet: Signer, token: Address, abi: typeof usdcAbi | typeof coinAbi, spender: Address, amount: bigint, observe?:TradeObserver) {
   const owner = wallet.account.address;
   const allowance = await lpClient.readContract({ address: token, abi, functionName: "allowance", args: [owner, spender] });
   if (allowance >= amount) return;
+  await requireSignerContext(wallet);
+  observe?.("approval",token);
   const hash = await wallet.writeContract({ account: wallet.account, chain: KOMA.chain, address: token, abi, functionName: "approve", args: [spender, amount] });
-  const r = await lpClient.waitForTransactionReceipt({ hash });
+  observe?.("approval",token,hash);
+  const r = await lpClient.waitForTransactionReceipt({ hash }).catch(()=>{throw new UnconfirmedTradeError(hash);});
+  if(r.transactionHash.toLowerCase()!==hash.toLowerCase())throw new UnconfirmedTradeError(hash);
   if (r.status !== "success") throw new Error("The approval transaction reverted.");
+  const [tx, code] = await Promise.all([lpClient.getTransaction({hash}), lpClient.getCode({address:token,blockNumber:r.blockNumber})]);
+  if (tx.hash.toLowerCase() !== hash.toLowerCase() || tx.from.toLowerCase() !== owner.toLowerCase() || r.from.toLowerCase() !== owner.toLowerCase()
+    || tx.to?.toLowerCase() !== token.toLowerCase() || r.to?.toLowerCase() !== token.toLowerCase() || tx.blockHash !== r.blockHash
+    || tx.input.toLowerCase() !== encodeFunctionData({abi:erc20Abi,functionName:"approve",args:[spender,amount]}).toLowerCase() || !code || code === "0x") throw new UnconfirmedTradeError(hash);
+
+  const approved=parseEventLogs({abi:erc20Abi,eventName:"Approval",logs:r.logs}).some(log=>!log.removed&&log.address.toLowerCase()===token.toLowerCase()&&log.args.owner.toLowerCase()===owner.toLowerCase()&&log.args.spender.toLowerCase()===spender.toLowerCase()&&log.args.value===amount);
+  if(!approved)throw new UnconfirmedTradeError(hash);
+  if(await lpClient.getChainId()!==KOMA.chain.id)throw new UnconfirmedTradeError(hash);
+  const canonical=await lpClient.getBlock({blockNumber:r.blockNumber});const final=await lpClient.getBlock({blockTag:"finalized"});
+  if(canonical.hash!==r.blockHash||final.number===null||final.number<r.blockNumber)throw new UnconfirmedTradeError(hash);
 }
 
-export async function directBuy(wallet: Signer, o: { curve: Address; usdcIn: bigint; minCoinOut: bigint }): Promise<Hex> {
-  await ensureAllowance(wallet, KOMA.usdc, usdcAbi, o.curve, o.usdcIn);
-  return wallet.writeContract({
+export async function directBuy(wallet: Signer, o: { curve: Address; usdcIn: bigint; minCoinOut: bigint }, observe?:TradeObserver): Promise<Hex> {
+  await ensureAllowance(wallet, KOMA.usdc, usdcAbi, o.curve, o.usdcIn, observe);
+  await requireSignerContext(wallet);
+  observe?.("trade",o.curve);
+  const hash=await wallet.writeContract({
     account: wallet.account,
     chain: KOMA.chain,
     address: o.curve,
@@ -238,11 +274,15 @@ export async function directBuy(wallet: Signer, o: { curve: Address; usdcIn: big
     functionName: "buy",
     args: [o.usdcIn, o.minCoinOut, wallet.account.address],
   });
+  observe?.("trade",o.curve,hash);
+  return hash;
 }
 
-export async function directSell(wallet: Signer, o: { curve: Address; coin: Address; coinIn: bigint; minUsdcOut: bigint }): Promise<Hex> {
-  await ensureAllowance(wallet, o.coin, coinAbi, o.curve, o.coinIn);
-  return wallet.writeContract({
+export async function directSell(wallet: Signer, o: { curve: Address; coin: Address; coinIn: bigint; minUsdcOut: bigint }, observe?:TradeObserver): Promise<Hex> {
+  await ensureAllowance(wallet, o.coin, coinAbi, o.curve, o.coinIn, observe);
+  await requireSignerContext(wallet);
+  observe?.("trade",o.curve);
+  const hash=await wallet.writeContract({
     account: wallet.account,
     chain: KOMA.chain,
     address: o.curve,
@@ -250,11 +290,13 @@ export async function directSell(wallet: Signer, o: { curve: Address; coin: Addr
     functionName: "sell",
     args: [o.coinIn, o.minUsdcOut, wallet.account.address],
   });
+  observe?.("trade",o.curve,hash);
+  return hash;
 }
 
 /** Waits for a trade to land; throws if it reverted. */
 export async function landed(hash: Hex) {
-  const r = await lpClient.waitForTransactionReceipt({ hash, timeout: 120_000 });
+  const r = await lpClient.waitForTransactionReceipt({ hash, timeout: 120_000 }).catch(() => { throw new UnconfirmedTradeError(hash); });
   if (r.status !== "success") throw new Error("The transaction reverted on-chain.");
   return r;
 }
@@ -291,14 +333,8 @@ export type CctpQuote = { forwardFee: bigint; protocolFeeBps: number; maxFee: bi
 export async function cctpQuote(destDomain: number, amount: bigint): Promise<CctpQuote> {
   const res = await fetch(`${KOMA.cctp.iris}/v2/burn/USDC/fees/${CCTP.arcDomain}/${destDomain}?forward=true`);
   if (!res.ok) throw new Error(`Circle's fee API answered ${res.status}.`);
-  const rows = (await res.json()) as { finalityThreshold: number; minimumFee: number; forwardFee?: { med: number } }[];
-  const row = rows.find((r) => r.finalityThreshold === STANDARD_FINALITY) ?? rows[0];
-  if (!row?.forwardFee) throw new Error("Circle doesn't forward to that chain right now.");
-  const forwardFee = BigInt(row.forwardFee.med);
-  const protocolFee = (amount * BigInt(Math.round(row.minimumFee * 100))) / BigInt(1_000_000);
-  // A little headroom over the median: forward fees move with destination gas prices between quote and burn.
-  const maxFee = ((forwardFee + protocolFee) * BigInt(110)) / BigInt(100);
-  return { forwardFee, protocolFeeBps: row.minimumFee, maxFee };
+  const rows = (await res.json()) as CctpFeeRow[];
+  return cctpFeeQuote(rows, amount, STANDARD_FINALITY);
 }
 
 /**
@@ -343,4 +379,42 @@ export async function cctpStatus(burnTx: Hex): Promise<CctpStatus | null> {
   if (!res.ok) throw new Error(`Circle's attestation API answered ${res.status}.`);
   const body = (await res.json()) as { messages?: CctpStatus[] };
   return body.messages?.[0] ?? null;
+}
+
+
+export type TradeObserver=(stage:"approval"|"trade",contract:Address,hash?:Hex)=>void;
+export async function recoverPendingTrade(p:PendingTrade):Promise<"approval-confirmed"|"trade-confirmed"|"reverted"> {
+ if(!p.hash)throw new Error("No transaction hash was returned. Provider or relayer history is required; no automatic resubmission is safe.");
+ if(p.chainId!==5042002 || KOMA.chain.id!==5042002 || await lpClient.getChainId()!==5042002)throw new Error("Recovery RPC is not Arc testnet");
+ const [r,tx]=await Promise.all([lpClient.getTransactionReceipt({hash:p.hash}),lpClient.getTransaction({hash:p.hash})]);
+ if(r.transactionHash.toLowerCase()!==p.hash.toLowerCase()||tx.hash.toLowerCase()!==p.hash.toLowerCase()||tx.to?.toLowerCase()!==p.stepContract.toLowerCase()||r.to?.toLowerCase()!==p.stepContract.toLowerCase()||r.from.toLowerCase()!==tx.from.toLowerCase()||tx.blockHash!==r.blockHash)throw new Error("Receipt identity does not match the pending transaction");
+ const block=await lpClient.getBlock({blockNumber:r.blockNumber});const final=await lpClient.getBlock({blockTag:"finalized"});
+ if(block.hash?.toLowerCase()!==r.blockHash.toLowerCase()||final.number===null||final.number<r.blockNumber)throw new Error("Transaction receipt is not finalized");
+ const same=(a:unknown,b:string)=>typeof a==="string"&&a.toLowerCase()===b.toLowerCase();
+ if(p.stage==="approval"){
+  if(!same(p.stepContract,p.side==="buy"?KOMA.usdc:p.coin))throw new Error("Approval token is outside the frozen operation");
+  const call=decodeFunctionData({abi:usdcAbi,data:tx.input});const args=call.args as readonly unknown[];
+  if(call.functionName!=="approve"||!same(tx.from,p.wallet)||!same(args[0],p.tradeContract)||String(args[1])!==p.amount)throw new Error("Approval does not match its frozen wallet/spender/amount");
+ }else if(p.stage==="trade"){
+  if(!same(p.stepContract,p.tradeContract))throw new Error("Trade contract is outside the frozen operation");
+  const call=decodeFunctionData({abi:p.pool?swapperAbi:curveAbi,data:tx.input});const a=call.args as readonly unknown[];
+  const direct=p.direct||(p.pool&&p.side==="sell");
+  if(direct&&!same(tx.from,p.wallet))throw new Error("Trade sender does not match its frozen wallet");
+  const match=p.pool?(direct?call.functionName==="swapExactIn"&&String(a[0])===String(p.seriesId)&&a[1]===(p.side==="buy")&&String(a[2])===p.amount&&String(a[3])===p.minimum&&same(a[4],p.wallet):call.functionName==="swapWithAuthorization"&&same(a[0],p.wallet)&&String(a[1])===String(p.seriesId)&&String(a[2])===p.amount&&String(a[3])===p.minimum):(direct?call.functionName===p.side&&String(a[0])===p.amount&&String(a[1])===p.minimum&&same(a[2],p.wallet):call.functionName===(p.side==="buy"?"buyWithAuthorization":"sellWithPermit")&&same(a[0],p.wallet)&&String(a[1])===p.amount&&String(a[2])===p.minimum);
+  if(!match)throw new Error("Trade calldata does not match its frozen operation/input");
+ }else throw new Error("The broadcast stage is unknown; provider history is required");
+ if(r.status!=="success")return "reverted";
+ const code=await lpClient.getCode({address:p.stepContract as Address,blockNumber:r.blockNumber});if(!code||code==="0x")throw new Error("No deployed operation contract exists at the receipt block");
+ if(p.stage==="approval"){
+  const approved=parseEventLogs({abi:erc20Abi,eventName:"Approval",logs:r.logs}).some(log=>!log.removed&&same(log.address,p.stepContract)&&same(log.args.owner,p.wallet)&&same(log.args.spender,p.tradeContract)&&String(log.args.value)===p.amount);
+  if(!approved)throw new Error("The receipt has no matching actual approval event");
+ }else if(p.pool){
+  const filled=parseEventLogs({abi:swapperAbi,eventName:"Swapped",logs:r.logs}).some(log=>!log.removed&&same(log.address,p.tradeContract)&&String(log.args.seriesId)===String(p.seriesId)&&same(log.args.payer,p.wallet)&&same(log.args.recipient,p.wallet)&&log.args.buyCoin===(p.side==="buy")&&log.args.amountIn>BigInt(0)&&log.args.amountIn<=BigInt(p.amount)&&log.args.amountOut>=BigInt(p.minimum));
+  if(!filled)throw new Error("The receipt has no matching actual pool fill");
+ }else{
+  const event=parseAbiItem("event Trade(address indexed trader, bool indexed isBuy, uint256 usdcAmount, uint256 coinAmount, uint256 fee, uint256 vU, uint256 vC, uint256 raised)");
+  const filled=parseEventLogs({abi:[event],logs:r.logs}).some(log=>!log.removed&&same(log.address,p.tradeContract)&&same(log.args.trader,p.wallet)&&log.args.isBuy===(p.side==="buy")&&(p.side==="buy"?log.args.usdcAmount>BigInt(0)&&log.args.usdcAmount<=BigInt(p.amount)&&log.args.coinAmount>=BigInt(p.minimum):log.args.coinAmount===BigInt(p.amount)&&log.args.usdcAmount>=BigInt(p.minimum)));
+  if(!filled)throw new Error("The receipt has no matching actual curve fill");
+ }
+ return p.stage==="approval"?"approval-confirmed":"trade-confirmed";
 }

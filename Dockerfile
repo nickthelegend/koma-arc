@@ -11,23 +11,29 @@ WORKDIR /app
 ARG NEXT_PUBLIC_KOMA_NETWORK
 ARG NEXT_PUBLIC_ARC_RPC_URL
 ARG KOMA_PUBLIC_URL
+ARG NEXT_PUBLIC_FEATURE_GATEWAY=0
 ENV NEXT_PUBLIC_KOMA_NETWORK=$NEXT_PUBLIC_KOMA_NETWORK \
     NEXT_PUBLIC_ARC_RPC_URL=$NEXT_PUBLIC_ARC_RPC_URL \
     KOMA_PUBLIC_URL=$KOMA_PUBLIC_URL \
+    NEXT_PUBLIC_FEATURE_GATEWAY=$NEXT_PUBLIC_FEATURE_GATEWAY \
     KOMA_DATA_DIR=/tmp/koma-build \
     NEXT_TELEMETRY_DISABLED=1
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
-RUN npx next build
+RUN npm run build -- --webpack
 
 FROM node:24-slim
+RUN apt-get update && apt-get install -y --no-install-recommends gosu && rm -rf /var/lib/apt/lists/*
 WORKDIR /app
-ENV NODE_ENV=production NEXT_TELEMETRY_DISABLED=1
+ENV NODE_ENV=production NEXT_TELEMETRY_DISABLED=1 KOMA_DATA_DIR=/data
 COPY --from=build /app/package.json /app/next.config.ts ./
 COPY --from=build /app/node_modules ./node_modules
-COPY --from=build /app/.next ./.next
+COPY --from=build --chown=node:node /app/.next ./.next
 COPY --from=build /app/public ./public
 # Launchpad contract addresses per network (deployments/arc-testnet.json, arc-mainnet.json)
 COPY --from=build /app/deployments ./deployments
+RUN mkdir -p /data && chown node:node /data
+COPY --chmod=755 docker/entrypoint.sh /usr/local/bin/arc-entrypoint
+ENTRYPOINT ["arc-entrypoint"]
 EXPOSE 3000
 CMD ["sh", "-c", "npx next start -H 0.0.0.0 -p ${PORT:-3000}"]

@@ -171,3 +171,31 @@ scripts/      deploy / verify / testnet-setup / demo, e2e suites, wallet shim
 
 **Claude Code** (Anthropic) wrote most of the code, tests and docs, under the author's direction and review. At
 runtime KOMA uses **Kimi K2.6** (scripts), **Hunyuan 3** (editor), **Hunyuan Image 3** and **FLUX.2** (art).
+
+
+### Gateway funding (opt-in, not funded end-to-end verified)
+
+Set `NEXT_PUBLIC_FEATURE_GATEWAY=1` and rebuild to enable `/fund`, the wallet's Fund link, and `/api/gateway`. With the flag absent both API methods fail closed with 503. The flow quotes a same-wallet USDC transfer from a pre-existing Circle Gateway deposit to Arc using Circle's current fee and block-height estimate. The user approves the exact EIP-712 intent; the API verifies that signature and fetches Circle's attestation. The user then submits `gatewayMint` from their own Arc wallet; KOMA has no server signing key in this path. Users need existing Arc USDC for mint gas. Amounts are limited to 1,000 USDC and quote maximum fees to 10 USDC.
+
+The original signed intent is saved per chain and wallet before contacting Circle. The server records uncertainty before submission and persists accepted attestations in `KOMA_DATA_DIR/gateway` before replying. Resume recovers a lost browser response without another submission or signature. Submitted mint hashes are saved and checked for an actual successful receipt after reload; rejected mints retain the attestation. One server writer per data directory is required. Circle transfer IDs are retained: recovery uses Circle’s documented `GET /v1/transfer/{id}`, checks the original packed TransferSpec hash and reads its nested attestation. A timeout upstream before any transfer ID is received remains ambiguous; the UI blocks another authorization and preserves an exportable original intent for Circle support. It never claims success or automatically repeats that submission. Do not enable this feature for production until a funded source deposit, signed transfer, interrupted-request recovery and destination mint have been rehearsed. No funded cross-chain transfer was performed during the local takeover checks. CCIP message/receipt integration remains queued; Circle Gateway is not CCIP and Arc's native USDC must not be presented as a CCIP token.
+
+Sources: [Circle contract addresses](https://developers.circle.com/gateway/references/contract-addresses), [estimate API](https://developers.circle.com/api-reference/gateway/all/estimate-transfer), [transfer flow](https://developers.circle.com/gateway/howtos/transfer-unified-usdc-balance).
+
+
+### CCIP canon receipts (message-only, not deployed)
+
+`contracts/src/ccip/KomaCanonSender.sol` publishes the actual finalized `CanonRegistry.slot` winner and that `KomaIssues.issue` content/payment hashes. Its owner configures a supported chain selector and remote receiver; the caller pays the exact native router fee. CCIP token arrays are empty: this does not transfer Arc native USDC or series coins. `KomaCanonReceipt.sol` accepts only its configured CCIP router and owner-allowlisted source selector/sender pairs, rejects token-bearing messages, duplicate message IDs and conflicting canon receipts. Stored receipts are namespaced by source chain, sender, series and episode. These are receipts, not authority to mint NFTs, spend USDC or finalize local votes.
+
+Install the pinned official contracts package with `npm --prefix contracts ci --ignore-scripts`, then `cd contracts && forge test --match-path 'test/ccip/KomaCanonCcip.t.sol' --threads 1`. Five local tests verify finalized onchain reads, exact fee/no tokens, router/source/sender authentication, replay/conflict/version rejection and owner/supported-route configuration. No real CCIP send or deployment was performed. Deploy/configure source and receiver against verified router addresses/selectors, rehearse the lane, before presenting CCIP delivery as live.
+
+Gateway recovery reference: [Circle transfer lookup](https://developers.circle.com/api-reference/gateway/all/get-transfer-by-id); identifier encoding: [Circle TransferSpec source](https://github.com/circlefin/evm-gateway-contracts/blob/master/src/lib/TransferSpec.sol).
+
+
+The public `/receipts` page now includes a read-only CCIP canon section backed by `GET /api/ccip/receipts`. Set `KOMA_CCIP_RECEIPTS_ENABLED=1`, `KOMA_CCIP_RECEIPT_RPC_URL`, `KOMA_CCIP_RECEIPT_CHAIN_ID`, and `KOMA_CCIP_RECEIPT_ADDRESS` only after deploying the receiver on that chain. There are no default addresses, chain substitutions, wallet connections or signing keys in this reader. It verifies RPC chain ID, receiver bytecode, router, accepted-message flags and stored issue/content/payment hashes against actual `CanonReceived` events. It shows at most25 receipts from the most recent1,000 blocks and explicitly labels this window instead of presenting a full index. Missing configuration shows not configured; read failures show unavailable and API502. Configured empty ranges show no receipts found. Receiver deployment, correct allowlists and actual lane delivery remain the external verification gates. Five reader tests pass with mocked RPC; no deployed receipt was claimed. Production builds are capped to two page-generation workers.
+
+
+### Container release preparation
+
+The Docker build accepts `NEXT_PUBLIC_FEATURE_GATEWAY` with default0 and uses the validated webpack build. Source env files and nested contract dependencies are excluded from upload/build context. Runtime runs as the node user and keeps SQLite/art/Gateway recovery state under `/data`; attach a persistent Railway volume there before paid operation. `railway.json` uses `/api/health` for process liveness, not funded/AI/deployment readiness. Set runtime signing/provider credentials separately only after deployment bytecode and funded tests are verified; local fork fixture keys are not production configuration. CI installs the pinned CCIP contracts dependencies before Forge. Existing Arbitrum Railway services must not be reused for this Arc release.
+
+Railway fresh volumes are root-owned. The container entrypoint initializes `/data` ownership and immediately uses `gosu` to run the app as node; it does not keep the web process running as root.

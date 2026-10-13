@@ -1,0 +1,5 @@
+{
+  "name": "@koma/arc-contracts",
+  "private": true,
+  "devDependencies": { "@chainlink/contracts-ccip": "2.0.0" }
+}

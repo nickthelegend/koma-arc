@@ -10,3 +10,10 @@ indexer/node_modules
 indexer/generated
 *.tsbuildinfo
 .git
+
+contracts/node_modules
+contracts/.git
+.claude
+.codex
+.vercel
+*.log

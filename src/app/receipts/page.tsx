@@ -1,3 +1,4 @@
+import { CcipReceipts } from "@/components/ccip-receipts";
 import Link from "next/link";
 import type { Metadata } from "next";
 import { allComics } from "@/lib/catalog";
@@ -95,6 +96,7 @@ export default async function Receipts() {
           ))}
         </tbody>
       </table>
+      <CcipReceipts />
     </div>
   );
 }
