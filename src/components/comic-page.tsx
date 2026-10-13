@@ -1,5 +1,5 @@
 import Image from "next/image";
-import type { Balloon, Page } from "@/lib/types";
+import type { Balloon, Page, Panel } from "@/lib/types";
 
 // Lettering is live text laid over the art, never baked in: it stays sharp at
 // any size, is readable by screen readers, and translates.
@@ -47,35 +47,38 @@ function Lettering({ b }: { b: Balloon }) {
   );
 }
 
+/** One panel with its lettering. `sizes` is the image's rendered width hint. */
+export function ComicPanel({ panel: p, priority = false, sizes, className = "" }: { panel: Panel; priority?: boolean; sizes: string; className?: string }) {
+  return (
+    <figure className={`comic-panel ${className}`}>
+      {p.img ? (
+        <Image src={p.img} alt={p.alt} fill priority={priority} sizes={sizes} className="object-cover" />
+      ) : (
+        <div className="absolute inset-0 grid place-items-center bg-[#e8e4db]" role="img" aria-label="Panel still being drawn">
+          <div className="halftone absolute inset-0 animate-ink text-[#0d0d0d]/25" />
+          <span className="relative font-letter text-[clamp(9px,1.6cqw,13px)] uppercase text-[#0d0d0d]/60">Inking…</span>
+        </div>
+      )}
+      {p.balloons.map((b, j) => (
+        <Lettering key={j} b={b} />
+      ))}
+    </figure>
+  );
+}
+
 /** One printed page: 1-2-1 layout (wide establishing, two beats, wide reveal). */
 export function ComicPage({ page, number, priority = false }: { page: Page; number: number; priority?: boolean }) {
   return (
     <article className="comic-sheet mx-auto w-full [container-type:inline-size]" aria-label={`Page ${number}`}>
       <div className="grid grid-cols-2 gap-[clamp(5px,1.4%,12px)]">
         {page.panels.map((p, i) => (
-          <figure
+          <ComicPanel
             key={i}
-            className={`comic-panel ${p.shape === "wide" ? "col-span-2 aspect-[16/9]" : "aspect-square"}`}
-          >
-            {p.img ? (
-              <Image
-                src={p.img}
-                alt={p.alt}
-                fill
-                priority={priority && i < 2}
-                sizes={p.shape === "wide" ? "(min-width: 900px) 820px, 100vw" : "(min-width: 900px) 410px, 50vw"}
-                className="object-cover"
-              />
-            ) : (
-              <div className="absolute inset-0 grid place-items-center bg-[#e8e4db]" role="img" aria-label="Panel still being drawn">
-                <div className="halftone absolute inset-0 animate-ink text-[#0d0d0d]/25" />
-                <span className="relative font-letter text-[clamp(9px,1.6cqw,13px)] uppercase text-[#0d0d0d]/60">Inking…</span>
-              </div>
-            )}
-            {p.balloons.map((b, j) => (
-              <Lettering key={j} b={b} />
-            ))}
-          </figure>
+            panel={p}
+            priority={priority && i < 2}
+            sizes={p.shape === "wide" ? "(min-width: 900px) 820px, 100vw" : "(min-width: 900px) 410px, 50vw"}
+            className={p.shape === "wide" ? "col-span-2 aspect-[16/9]" : "aspect-square"}
+          />
         ))}
       </div>
       <p className="mt-[clamp(4px,1%,10px)] text-center font-letter text-[11px] text-[#0d0d0d]/60">{number}</p>

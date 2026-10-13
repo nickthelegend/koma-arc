@@ -67,24 +67,23 @@ export function HomeHero({ featured, issues, network }: { featured: Comic | null
               id="hero-title"
               className="masthead text-[16vw] text-paper [text-shadow:4px_4px_0_#000] md:text-[clamp(84px,8.4vw,136px)] md:[text-shadow:5px_5px_0_#000]"
             >
-              Write it.
+              Fans write
               <br />
-              We draw it.
+              the canon.
             </h1>
-            <p className="mt-4 max-w-[46ch] text-[15px] leading-relaxed text-soft md:text-[16px]">
-              Describe a story and KOMA writes, draws and letters it in about a minute. Pay {cents}¢ a page in USDC, and the issue is
-              minted to your wallet on Arc.
+            <p className="mt-4 max-w-[48ch] text-[15px] leading-relaxed text-soft md:text-[16px]">
+              Back a comic character with its coin and vote on what happens next. AI draws every episode, the winning one becomes
+              canon, and the character earns from every trade. On Arc, every vote and trade is one free signature, and it is all USDC.
             </p>
             <div className="mt-6 flex flex-wrap items-center gap-3">
-              <Link href="/create" className="slant h-12 px-7 text-[20px]">
-                <IconPen width={18} height={18} />
-                Make a comic
+              <Link href="/series" className="slant h-12 px-7 text-[20px]">
+                Back a series
               </Link>
               <Link
-                href="/launch"
-                className="flex h-12 items-center border-2 border-paper px-5 font-display text-[18px] uppercase text-paper hover:bg-paper hover:text-ink"
+                href="/create"
+                className="flex h-12 items-center gap-2 border-2 border-paper px-5 font-display text-[18px] uppercase text-paper hover:bg-paper hover:text-ink"
               >
-                Launch a series
+                <IconPen width={16} height={16} /> Make a comic · {cents}¢ a page
               </Link>
             </div>
           </div>

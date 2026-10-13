@@ -3,10 +3,13 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { cache } from "react";
 import { launchpad } from "@/lib/server/launchpad/addresses";
-import { seriesDetail } from "@/lib/server/launchpad/queries";
+import { familyTree, seriesDetail } from "@/lib/server/launchpad/queries";
+import { FamilyTree } from "@/components/launchpad/family-tree";
+import { PreviouslyOn } from "@/components/launchpad/previously-on";
+import { SinceLastVisit } from "@/components/launchpad/since-last-visit";
 import type { SeriesDetail } from "@/lib/launchpad/types";
 import { txUrl, isExternal } from "@/lib/explorer";
-import { agoSec, coinAmount, coinPrice, coinPricePlain, compact, progressLabel, short, usdAmount } from "@/lib/format";
+import { agoSec, coinAmount, coinPrice, coinPricePlain, compact, perMillion, progressLabel, short, usdAmount } from "@/lib/format";
 import { Sheet, RaisedBar, DemoBadge, GraduatedBadge } from "@/components/launchpad/sheet";
 import { BuiltOnArc } from "@/components/launchpad/built-on-arc";
 import { CharacterEarnings } from "@/components/launchpad/character-earnings";
@@ -18,6 +21,9 @@ import { TradeWidget } from "@/components/launchpad/trade-widget";
 import { CanonBoard } from "@/components/launchpad/canon-board";
 import { AddressList } from "@/components/launchpad/address-list";
 import { AutoRefresh } from "@/components/launchpad/auto-refresh";
+import { ShareButton } from "@/components/share-button";
+import { EmbedButton } from "@/components/embed-button";
+import { Chip, Details } from "@/components/ui";
 import { ArcMark, IconBack, IconRemix } from "@/components/icons";
 import { FEE_SPLIT, GRADUATION_FEE_PCT, TRADE_FEE_PCT } from "@/lib/network";
 
@@ -37,7 +43,8 @@ export async function generateMetadata({ params }: PageProps<"/s/[id]">): Promis
   return {
     title: `${s.name} ($${s.symbol.trim()})`,
     description,
-    openGraph: { title: `${s.name} — a KOMA series`, description, images: s.sheetUrl ? [s.sheetUrl] : undefined },
+    // The card image comes from ./opengraph-image.tsx (sheet, coin, curve and canon, rendered live).
+    openGraph: { title: `${s.name} — a KOMA series`, description },
     twitter: { card: "summary_large_image" },
   };
 }
@@ -57,6 +64,7 @@ export default async function SeriesPage({ params }: PageProps<"/s/[id]">) {
   const s = await load((await params).id);
   if (!s) notFound();
   const lp = launchpad()!;
+  const family = familyTree(s.id);
   // Chart runs to the chain's clock (trade times are block times).
   const now = s.chainTime;
   const royaltiesTotal = s.royalties.reduce((t, r) => t + r.amountUsdc, 0);
@@ -89,6 +97,8 @@ export default async function SeriesPage({ params }: PageProps<"/s/[id]">) {
               <span className="font-mono text-kapow">${symbol}</span> · starring <span className="font-semibold text-paper">{s.characterName}</span>
             </p>
             {s.pitch && <p className="mt-4 max-w-[56ch] text-[15.5px] leading-relaxed text-soft">{s.pitch}</p>}
+            {s.episodes > 0 && <PreviouslyOn seriesId={s.id} />}
+            <SinceLastVisit seriesId={s.id} />
             {s.parent && (
               <p className="mt-3 flex items-center gap-1.5 text-[13px] text-soft">
                 <IconRemix width={14} height={14} /> Remix of{" "}
@@ -97,16 +107,18 @@ export default async function SeriesPage({ params }: PageProps<"/s/[id]">) {
                 </Link>
               </p>
             )}
-            <p className="mt-4 border-l-2 border-arb pl-3 text-[13px] leading-relaxed text-soft">
-              {s.characterName} has its own wallet (ERC-6551) and has earned{" "}
-              <a href="#character-wallet" className="font-mono text-paper underline decoration-arb underline-offset-4 hover:text-arb">
-                {usdAmount(s.characterEarnedUsdc)}
-              </a>{" "}
-              in trading fees so far.
-            </p>
+            <a href="#character-wallet" className="mt-4 inline-block hover:opacity-80" title={`${s.characterName} has its own wallet (ERC-6551); this is what it has earned in trading fees`}>
+              <Chip tone="arb">
+                {s.characterName}&rsquo;s wallet earned {usdAmount(s.characterEarnedUsdc)}
+              </Chip>
+            </a>
             <div className="mt-5 flex flex-wrap gap-x-5 gap-y-1.5 text-[12.5px] text-mute">
               <span>
-                Launched by <span className="font-mono text-soft">{short(s.creator)}</span> {agoSec(s.launchedAt, s.chainTime * 1000)}
+                Launched by{" "}
+                <Link href={`/creator/${s.creator}`} className="font-mono text-soft underline decoration-rule underline-offset-2 hover:text-paper">
+                  {short(s.creator)}
+                </Link>{" "}
+                {agoSec(s.launchedAt, s.chainTime * 1000)}
               </span>
               {s.launchTx && (
                 <a href={txUrl(s.launchTx)} target={isExternal ? "_blank" : undefined} rel="noreferrer" className="text-arb hover:underline">
@@ -114,12 +126,20 @@ export default async function SeriesPage({ params }: PageProps<"/s/[id]">) {
                 </a>
               )}
             </div>
+            <div className="mt-4 flex flex-wrap items-center gap-2">
+              <ShareButton
+                title={s.name}
+                path={`/s/${s.id}`}
+                message={`Back ${s.characterName} in “${s.name}” ($${s.symbol.trim()}) on KOMA: fans vote on what happens next.`}
+              />
+              <EmbedButton seriesId={s.id} title={s.name} />
+            </div>
           </div>
         </div>
 
         {/* ——— Numbers ——— */}
         <dl className="mt-9 grid grid-cols-2 gap-px border border-rule bg-rule md:grid-cols-4">
-          <Stat label="Price per coin" value={coinPrice(s.priceUsdc)} title={coinPricePlain(s.priceUsdc)} chain />
+          <Stat label="Price per 1M coins" value={perMillion(s.priceUsdc)} title={`${coinPricePlain(s.priceUsdc)} per coin`} chain />
           <Stat label="Market cap" value={usdAmount(s.marketCapUsdc)} />
           <Stat label="Holders" value={s.holders.toLocaleString("en-US")} />
           <Stat label="Canon episodes" value={String(s.episodes)} />
@@ -137,9 +157,10 @@ export default async function SeriesPage({ params }: PageProps<"/s/[id]">) {
               </p>
               <div className="min-w-0">
                 <RaisedBar raised={s.raisedUsdc} target={s.targetUsdc} size="lg" />
-                <p className="mt-1 text-[12px] text-mute">
-                  At ${s.targetUsdc.toLocaleString("en-US")} raised the curve closes and becomes a Uniswap v4 pool
-                  {s.demo && !MAINNET ? ". Demo series: canon votes run 5 minutes." : "."}
+                <p className="mt-1.5 flex flex-wrap gap-1.5" title={`At $${s.targetUsdc.toLocaleString("en-US")} raised the curve closes and becomes a Uniswap v4 pool`}>
+                  <Chip>{usdAmount(s.raisedUsdc)} of {usdAmount(s.targetUsdc)}</Chip>
+                  <Chip>then Uniswap v4</Chip>
+                  {s.demo && !MAINNET && <Chip tone="kapow">demo · 5-min votes</Chip>}
                 </p>
               </div>
             </>
@@ -150,7 +171,14 @@ export default async function SeriesPage({ params }: PageProps<"/s/[id]">) {
       {/* ——— Trade + story. Phones read: chart, trade, canon, the rest. ——— */}
       <div className="mx-auto mt-10 grid max-w-[1320px] gap-8 px-4 md:grid-cols-[minmax(0,1fr)_380px] md:gap-x-12 md:px-8">
         <div className="min-w-0 md:col-start-1 md:row-start-1">
-          <PriceChart points={s.chart} now={now} />
+          {/* A chart of one or two trades is a flat block; until there are three, say so instead. */}
+          {s.trades.length >= 3 ? (
+            <PriceChart points={s.chart} now={now} />
+          ) : (
+            <p data-chart-placeholder className="border border-dashed border-rule px-4 py-5 text-center font-mono text-[12px] text-mute">
+              price chart appears after 3 trades · {s.trades.length} so far
+            </p>
+          )}
         </div>
 
         <aside id="trade" aria-label={`Trade $${symbol}`} className="scroll-mt-24 md:col-start-2 md:row-span-2 md:row-start-1">
@@ -158,20 +186,33 @@ export default async function SeriesPage({ params }: PageProps<"/s/[id]">) {
             <TradeWidget
               s={{ id: s.id, symbol: symbol, curve: s.curve, coin: s.coin, launchedAt: s.launchedAt, chainTime: s.chainTime, complete: s.complete, graduated: s.graduated, pool: s.pool, swapper: lp.swapper, graduator: lp.graduator, quoter: lp.v4Quoter }}
             />
-            <p className="text-[12px] leading-relaxed text-mute">
+            <div className="flex flex-wrap items-center gap-1.5">
               {s.graduated ? (
-                <>
-                  Since graduation, trades go through the Uniswap v4 pool and pay its 0.3% fee, which stays locked in the pool with the
-                  liquidity.
-                </>
+                <Chip>0.3% pool fee</Chip>
               ) : (
                 <>
-                  Every trade pays a {TRADE_FEE_PCT}% fee: {FEE_SPLIT.character}% to {s.characterName}&rsquo;s wallet, {FEE_SPLIT.remix}% up the
-                  remix tree, {FEE_SPLIT.treasury}% to KOMA.
+                  <Chip>{TRADE_FEE_PCT}% fee</Chip>
+                  {/* With no parent, the character keeps the remix share: chips match "Where the fees went". */}
+                  {s.parent ? (
+                    <>
+                      <Chip tone="arb">{FEE_SPLIT.character}% to {s.characterName}</Chip>
+                      <Chip>{FEE_SPLIT.remix}% up the remix tree</Chip>
+                    </>
+                  ) : (
+                    <Chip tone="arb" title={`${FEE_SPLIT.character}% plus the ${FEE_SPLIT.remix}% remix share, since this series has no parent`}>
+                      {FEE_SPLIT.character + FEE_SPLIT.remix}% to {s.characterName}
+                    </Chip>
+                  )}
+                  <Chip>{FEE_SPLIT.treasury}% KOMA</Chip>
                 </>
-              )}{" "}
+              )}
+            </div>
+            <Details>
+              {s.graduated
+                ? "Since graduation, trades go through the Uniswap v4 pool and pay its 0.3% fee, which stays locked in the pool with the liquidity."
+                : `Every trade pays a ${TRADE_FEE_PCT}% fee: ${FEE_SPLIT.character}% to ${s.characterName}’s wallet, ${FEE_SPLIT.remix}% up the remix tree, ${FEE_SPLIT.treasury}% to KOMA.`}{" "}
               {COIN_DISCLAIMER}
-            </p>
+            </Details>
           </div>
         </aside>
 
@@ -199,55 +240,33 @@ export default async function SeriesPage({ params }: PageProps<"/s/[id]">) {
           {/* ——— Trades ——— */}
           <section aria-labelledby="trades-h">
             <h2 id="trades-h" className="font-display text-[26px] uppercase leading-none text-paper">
-              Trades <span className="text-[18px] text-mute">· latest {Math.min(60, s.trades.length)}</span>
+              Trades
             </h2>
             {s.trades.length === 0 ? (
               <p className="mt-3 border border-dashed border-rule px-4 py-6 text-center text-[13.5px] text-mute">
-                No trades yet. The first buyer gets the launch price.
+                No trades yet.
               </p>
             ) : (
-              <div className="mt-4 border border-rule">
-                <table className="w-full text-left text-[12.5px]">
-                  <thead className="bg-stock text-[11.5px] text-mute">
-                    <tr>
-                      <th scope="col" className="px-3 py-2 font-normal">Side</th>
-                      <th scope="col" className="px-3 py-2 text-right font-normal">USDC</th>
-                      <th scope="col" className="px-3 py-2 text-right font-normal">${symbol}</th>
-                      <th scope="col" className="hidden px-3 py-2 text-right font-normal sm:table-cell">Price</th>
-                      <th scope="col" className="hidden px-3 py-2 font-normal md:table-cell">Trader</th>
-                      <th scope="col" className="px-3 py-2 text-right font-normal">When</th>
-                    </tr>
-                  </thead>
-                  <tbody className="font-mono">
-                    {s.trades.map((t) => (
-                      <tr key={`${t.tx}-${t.at}-${t.coins}`} className="border-t border-rule">
-                        <td className={`px-3 py-2 font-sans font-semibold ${t.isBuy ? "text-arb" : "text-kapow"}`}>{t.isBuy ? "Buy" : "Sell"}</td>
-                        <td className="px-3 py-2 text-right text-paper">{usdAmount(t.usdc)}</td>
-                        <td className="px-3 py-2 text-right text-soft">{coinAmount(t.coins)}</td>
-                        <td className="hidden px-3 py-2 text-right text-soft sm:table-cell" title={coinPricePlain(t.price)}>{coinPrice(t.price)}</td>
-                        <td className="hidden px-3 py-2 text-soft md:table-cell">{short(t.trader)}</td>
-                        <td className="px-3 py-2 text-right">
-                          <a href={txUrl(t.tx)} target={isExternal ? "_blank" : undefined} rel="noreferrer" className="text-mute hover:text-arb">
-                            {agoSec(t.at, s.chainTime * 1000)}
-                          </a>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
+              <>
+                <TradeTable trades={s.trades.slice(0, 8)} symbol={symbol} chainTime={s.chainTime} />
+                {s.trades.length > 8 && (
+                  <Details label={`${s.trades.length - 8} earlier trades`} className="mt-2">
+                    <TradeTable trades={s.trades.slice(8)} symbol={symbol} chainTime={s.chainTime} />
+                  </Details>
+                )}
+              </>
             )}
           </section>
 
           {/* ——— Where the fees went ——— */}
           <section aria-labelledby="royalties-h">
             <h2 id="royalties-h" className="font-display text-[26px] uppercase leading-none text-paper">Where the fees went</h2>
-            <p className="mt-2 max-w-[62ch] text-[13px] leading-relaxed text-mute">
+            <Details className="mt-2">
               The {TRADE_FEE_PCT}% fee is split on-chain as it&rsquo;s paid: {FEE_SPLIT.character}% to this character&rsquo;s wallet,{" "}
               {FEE_SPLIT.remix}% up the remix tree (half to the parent, a quarter to the grandparent, and so on), {FEE_SPLIT.treasury}% to
               KOMA&rsquo;s treasury. With no parent, the character keeps the {FEE_SPLIT.remix}%. At graduation, {GRADUATION_FEE_PCT}% of the USDC
               raised goes to KOMA and the rest seeds the pool.
-            </p>
+            </Details>
             {s.royalties.length === 0 ? (
               <p className="mt-3 text-[13px] text-mute">Nothing routed yet.</p>
             ) : (
@@ -273,8 +292,8 @@ export default async function SeriesPage({ params }: PageProps<"/s/[id]">) {
               </ul>
             )}
             {s.remixRoyaltiesUsdc > 0 && (
-              <p className="mt-2 text-[12.5px] text-mute">
-                Plus <span className="font-mono text-soft">{usdAmount(s.remixRoyaltiesUsdc)}</span> to {s.characterName}&rsquo;s wallet from trades in its remixes.
+              <p className="mt-2">
+                <Chip tone="arb">+{usdAmount(s.remixRoyaltiesUsdc)} from remixes</Chip>
               </p>
             )}
           </section>
@@ -282,9 +301,11 @@ export default async function SeriesPage({ params }: PageProps<"/s/[id]">) {
           {/* ——— Remixes ——— */}
           <section aria-labelledby="remix-h" className="grid gap-6 lg:grid-cols-2">
             <div>
-              <h2 id="remix-h" className="font-display text-[26px] uppercase leading-none text-paper">Remixes</h2>
-              {s.remixes.length === 0 ? (
-                <p className="mt-2 text-[13px] leading-relaxed text-mute">No remixes yet. A remix is a new series in this world; a share of its fees flows back here.</p>
+              <h2 id="remix-h" className="font-display text-[26px] uppercase leading-none text-paper">{family.length > 1 ? "Remix family" : "Remixes"}</h2>
+              {family.length > 1 ? (
+                <FamilyTree nodes={family} current={s.id} />
+              ) : s.remixes.length === 0 ? (
+                <p className="mt-2 text-[13px] leading-relaxed text-mute">No remixes yet.</p>
               ) : (
                 <ul className="mt-3 flex flex-wrap gap-2">
                   {s.remixes.map((r) => (
@@ -299,10 +320,13 @@ export default async function SeriesPage({ params }: PageProps<"/s/[id]">) {
               <Link href={`/launch?parent=${s.id}`} className="mt-4 inline-flex h-11 items-center gap-2 border-2 border-paper/80 px-4 font-display text-[16px] uppercase text-paper hover:bg-paper hover:text-ink">
                 <IconRemix width={16} height={16} /> Remix this series
               </Link>
-              <p className="mt-6 text-[12px] leading-relaxed text-mute">
-                {compact(TOTAL_SUPPLY)} ${symbol} in total: 95% sold on the curve, 5% to the creator vesting over 30 days.
+              <p className="mt-6 flex flex-wrap gap-1.5">
+                <Chip>{compact(TOTAL_SUPPLY)} supply</Chip>
+                <Chip>95% curve</Chip>
+                <Chip>5% creator, 30-day vest</Chip>
               </p>
             </div>
+            <Details label="On-chain addresses">
             <AddressList
               title="This series on-chain"
               rows={[
@@ -313,13 +337,51 @@ export default async function SeriesPage({ params }: PageProps<"/s/[id]">) {
                 { label: "Creator vesting", value: s.vestingContract, note: "5%, linear over 30 days" },
               ]}
             />
+            </Details>
           </section>
         </div>
       </div>
 
       <div className="mx-auto mt-14 max-w-[1320px] px-4 md:px-8">
-        <BuiltOnArc lp={lp} facilitator={config.account?.address ?? null} character={{ name: s.characterName, account: s.characterAccount }} />
+        <Details label="How this series runs on Arc">
+          <BuiltOnArc lp={lp} facilitator={config.account?.address ?? null} character={{ name: s.characterName, account: s.characterAccount }} />
+        </Details>
       </div>
     </>
+  );
+}
+
+function TradeTable({ trades, symbol, chainTime }: { trades: SeriesDetail["trades"]; symbol: string; chainTime: number }) {
+  return (
+  <div className="mt-4 border border-rule">
+    <table className="w-full text-left text-[12.5px]">
+      <thead className="bg-stock text-[11.5px] text-mute">
+        <tr>
+          <th scope="col" className="px-3 py-2 font-normal">Side</th>
+          <th scope="col" className="px-3 py-2 text-right font-normal">USDC</th>
+          <th scope="col" className="px-3 py-2 text-right font-normal">${symbol}</th>
+          <th scope="col" className="hidden px-3 py-2 text-right font-normal sm:table-cell">Price</th>
+          <th scope="col" className="hidden px-3 py-2 font-normal md:table-cell">Trader</th>
+          <th scope="col" className="px-3 py-2 text-right font-normal">When</th>
+        </tr>
+      </thead>
+      <tbody className="font-mono">
+        {trades.map((t) => (
+          <tr key={`${t.tx}-${t.at}-${t.coins}`} className="border-t border-rule">
+            <td className={`px-3 py-2 font-sans font-semibold ${t.isBuy ? "text-arb" : "text-kapow"}`}>{t.isBuy ? "Buy" : "Sell"}</td>
+            <td className="px-3 py-2 text-right text-paper">{usdAmount(t.usdc)}</td>
+            <td className="px-3 py-2 text-right text-soft">{coinAmount(t.coins)}</td>
+            <td className="hidden px-3 py-2 text-right text-soft sm:table-cell" title={coinPricePlain(t.price)}>{coinPrice(t.price)}</td>
+            <td className="hidden px-3 py-2 text-soft md:table-cell">{short(t.trader)}</td>
+            <td className="px-3 py-2 text-right">
+              <a href={txUrl(t.tx)} target={isExternal ? "_blank" : undefined} rel="noreferrer" className="text-mute hover:text-arb">
+                {agoSec(t.at, chainTime * 1000)}
+              </a>
+            </td>
+          </tr>
+        ))}
+      </tbody>
+    </table>
+  </div>
   );
 }

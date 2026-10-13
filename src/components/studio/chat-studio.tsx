@@ -4,6 +4,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 import { HANDOFF_KEY } from "@/lib/room/protocol";
+import { SpeedReceipt } from "../speed-receipt";
 import type { Comic, Genre, Pitch } from "@/lib/types";
 import { ComicPage } from "../comic-page";
 import { ShareButton } from "../share-button";
@@ -16,7 +17,7 @@ import { EpisodeBanner, type EpisodeSeries } from "../launchpad/episode-banner";
 import { priceFor } from "@/lib/order";
 import { AI_DOWN_NOTE, AI_UNCONFIGURED_NOTE, useServerStatus } from "../use-server-status";
 
-type Msg = { role: "user" | "assistant"; content: string; pitched?: string };
+type Msg = { role: "user" | "assistant"; content: string; pitched?: string; by?: string };
 type Saved = { messages: Msg[]; pitch: Pitch | null; jobId?: string; genre?: Genre };
 
 const STARTERS = [
@@ -85,7 +86,7 @@ export function ChatStudio({ remix, job, genre, series }: { remix?: Comic; job?:
   const [draft, setDraft] = useState("");
   const [thinking, setThinking] = useState(false);
   const [chatError, setChatError] = useState<string | null>(null);
-  const { offline, aiDown, aiUnconfigured } = useServerStatus();
+  const { offline, aiDown, aiUnconfigured, editor } = useServerStatus();
   const { state, requestQuote, pay, cancel, resume, retry } = useGeneration();
   const endRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
@@ -138,9 +139,9 @@ export function ChatStudio({ remix, job, genre, series }: { remix?: Comic; job?:
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ messages: next.map(({ role, content }) => ({ role, content })), pitch, remixOf: remix?.id, genre }),
       });
-      const body = (await res.json().catch(() => ({}))) as { reply?: string; pitch?: Pitch | null; error?: string };
+      const body = (await res.json().catch(() => ({}))) as { reply?: string; pitch?: Pitch | null; error?: string; by?: string };
       if (!res.ok || !body.reply) throw new Error(body.error ?? `The editor didn't answer (${res.status}).`);
-      setMessages((m) => [...m, { role: "assistant", content: body.reply!, pitched: body.pitch?.title }]);
+      setMessages((m) => [...m, { role: "assistant", content: body.reply!, pitched: body.pitch?.title, by: body.by }]);
       // An episode is priced as one (the editor doesn't know it's writing for a series).
       if (body.pitch) setPitch(series ? { ...body.pitch, seriesId: series.id, remixOf: undefined, price: priceFor(body.pitch.pages, true) } : body.pitch);
     } catch (e) {
@@ -219,8 +220,11 @@ export function ChatStudio({ remix, job, genre, series }: { remix?: Comic; job?:
                 <li key={i} className="flex max-w-[640px] gap-3">
                   <span className="grid h-8 w-8 shrink-0 place-items-center bg-kapow font-display text-[16px] text-ink" aria-hidden>K</span>
                   <div className="min-w-0">
-                    <p className="text-[11.5px] text-mute">Editor</p>
+                    <p className="text-[11.5px] text-mute">
+                      Editor{editor && <span className="text-soft"> · {editor}</span>}
+                    </p>
                     <p className="mt-0.5 text-[15.5px] leading-relaxed text-paper">{m.content}</p>
+                    {m.by && <p className="mt-1 font-mono text-[10.5px] uppercase tracking-wide text-mute">answered by {m.by}</p>}
                     {m.pitched && (
                       <p className="mt-2 inline-flex items-center gap-1.5 border border-rule px-2 py-1 text-[12px] text-soft">
                         <IconPen width={12} height={12} /> Pitch: {m.pitched}
@@ -241,6 +245,7 @@ export function ChatStudio({ remix, job, genre, series }: { remix?: Comic; job?:
                   {[0, 1, 2].map((d) => (
                     <i key={d} className="h-1.5 w-1.5 animate-pulse rounded-full bg-soft" style={{ animationDelay: `${d * 160}ms` }} />
                   ))}
+                  <ThinkingClock who={editor} />
                 </span>
               </li>
             )}
@@ -280,6 +285,7 @@ export function ChatStudio({ remix, job, genre, series }: { remix?: Comic; job?:
                         : "Paid. The artists are on it, and you'll see each panel the moment it's inked."}
                   </p>
                   <Steps state={state} className="mt-5" />
+                  {state.paymentTx && <SpeedReceipt tx={state.paymentTx} who="KOMA's facilitator" className="mt-3" />}
                   {state.stage === "error" && (
                     <div className="mt-4">
                       <p className="text-[13.5px] text-soft">{state.error}</p>
@@ -371,4 +377,16 @@ export function ChatStudio({ remix, job, genre, series }: { remix?: Comic; job?:
       <PaySheet state={state} onPay={pay} onCancel={cancel} />
     </>
   );
+}
+
+/** The editor reasons before it answers (~20 s): after a few seconds, say so with a running clock. */
+function ThinkingClock({ who }: { who: string | null }) {
+  const [t, setT] = useState(0);
+  useEffect(() => {
+    const start = Date.now();
+    const id = setInterval(() => setT(Math.floor((Date.now() - start) / 1000)), 1000);
+    return () => clearInterval(id);
+  }, []);
+  if (t < 5) return null;
+  return <span className="ml-2 font-mono text-[11px] text-mute">{who ?? "The editor"} is thinking · {t} s{t > 30 ? " · nearly there" : ""}</span>;
 }

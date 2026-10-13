@@ -2,7 +2,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import type { Metadata } from "next";
 import { countRead, findComic } from "@/lib/catalog";
-import { ComicPage } from "@/components/comic-page";
+import { ReaderStage } from "@/components/reader-stage";
 import { ReaderChrome } from "@/components/reader-chrome";
 import { ChainProof } from "@/components/chain-proof";
 import { IconRemix, IconPen } from "@/components/icons";
@@ -23,13 +23,9 @@ export default async function Reader({ params }: PageProps<"/c/[id]/read">) {
     <div className="min-h-dvh bg-[#0a0a0a]">
       <ReaderChrome id={comic.id} title={comic.title} pages={comic.pages.length} />
 
-      <div className="mx-auto flex max-w-[860px] flex-col gap-6 px-2 pb-16 pt-4 md:gap-12 md:px-4 md:pt-10">
-        {comic.pages.map((p, i) => (
-          <div key={i} id={`p${i + 1}`} data-page={i + 1} className="scroll-mt-20">
-            <ComicPage page={p} number={i + 1} priority={i === 0} />
-          </div>
-        ))}
+      <ReaderStage pages={comic.pages} />
 
+      <div className="mx-auto flex max-w-[860px] flex-col px-2 pb-16 md:px-4">
         {/* End card */}
         <section className="mt-6 px-2 text-center md:mt-10">
           <p className="masthead text-[22vw] text-kapow md:text-[150px]">The end</p>

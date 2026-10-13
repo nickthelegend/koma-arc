@@ -25,11 +25,19 @@ export function ReaderChrome({ id, title, pages }: { id: string; title: string; 
     };
     onScroll();
     addEventListener("scroll", onScroll, { passive: true });
+    // Pages and guided modes don't scroll: they announce the page they're showing.
+    const onPage = (e: Event) => {
+      const n = (e as CustomEvent<number>).detail;
+      setPage(n);
+      setProgress(n / pages);
+    };
+    addEventListener("koma:reader-page", onPage);
     return () => {
       io.disconnect();
       removeEventListener("scroll", onScroll);
+      removeEventListener("koma:reader-page", onPage);
     };
-  }, []);
+  }, [pages]);
 
   return (
     <header className="sticky top-0 z-40 bg-ink/85 backdrop-blur-md">

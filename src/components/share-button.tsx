@@ -4,13 +4,13 @@ import { useEffect, useRef, useState } from "react";
 import { IconCheck, IconClose, IconCopy, IconShare, IconX } from "./icons";
 import { copyText } from "@/lib/clipboard";
 
-export function ShareButton({ title, path, variant = "ghost" }: { title: string; path: string; variant?: "ghost" | "icon" }) {
+export function ShareButton({ title, path, variant = "ghost", message }: { title: string; path: string; variant?: "ghost" | "icon"; message?: string }) {
   const [open, setOpen] = useState(false);
   const [copied, setCopied] = useState<"idle" | "done" | "failed">("idle");
   const dialog = useRef<HTMLDialogElement>(null);
   // The sheet only renders its URL after a click, so reading location here never runs on the server.
   const url = open ? new URL(path, window.location.origin).toString() : path;
-  const text = `I'm reading “${title}” on KOMA, an AI comic minted on Arc.`;
+  const text = message ?? `I'm reading “${title}” on KOMA, an AI comic minted on Arc.`;
 
   useEffect(() => {
     const d = dialog.current;
@@ -24,7 +24,10 @@ export function ShareButton({ title, path, variant = "ghost" }: { title: string;
       try {
         await navigator.share({ title, text, url: new URL(path, window.location.origin).toString() });
         return;
-      } catch {
+      } catch (error) {
+        // Closing the native share sheet is a completed cancellation, not a
+        // failure that should open another sheet.
+        if (error instanceof Error && error.name === "AbortError") return;
         /* fall through to the sheet */
       }
     }

@@ -18,6 +18,7 @@ import { GASLESS_MIN_USDC, KOMA, TRADE_FEE_PCT } from "@/lib/network";
 import { ArcMark } from "../icons";
 import { useWallet, walletErrorMessage } from "../wallet";
 import { FaucetHint } from "./faucet-hint";
+import { SpeedReceipt } from "../speed-receipt";
 
 const SLIPPAGE_BPS = 100;
 const SNIPE_WINDOW = 600;
@@ -451,6 +452,7 @@ export function TradeWidget({ s }: { s: TradeSeries }) {
                 tx {short(phase.tx, 10, 6)}
               </a>
             )}
+            {phase.step === "done" && phase.tx && <SpeedReceipt tx={phase.tx} who="KOMA's relayer" className="mt-1.5" />}
           </div>
         )}
       </div>

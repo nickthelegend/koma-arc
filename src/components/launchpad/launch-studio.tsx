@@ -23,6 +23,43 @@ const LAUNCH_COPY = { noun: "launch", after: "the character sheet is drawn once 
 
 type Draft = { name: string; symbol: string; characterName: string; characterPrompt: string; pitch: string; genre: Genre | ""; demo: boolean };
 
+/** One-tap starting points: a complete, valid character and pitch the creator then makes their own. */
+const PRESETS: { label: string; d: Omit<Draft, "demo"> }[] = [
+  {
+    label: "Noir courier",
+    d: {
+      name: "Rain City Couriers",
+      symbol: "RAIN",
+      characterName: "Mika Tanaka",
+      characterPrompt: "a tall courier with a shaved head, round sunglasses, a yellow rain poncho and a battered red messenger bag",
+      pitch: "A courier who only works the night shift delivers packages to people who don't exist yet, and one of them is her.",
+      genre: "Noir",
+    },
+  },
+  {
+    label: "Space salvage",
+    d: {
+      name: "Rust Bucket Riot",
+      symbol: "RUST",
+      characterName: "Juniper Vex",
+      characterPrompt: "a wiry teenage mechanic with a huge orange afro, brass welding goggles, a mustard jumpsuit and a chunky silver prosthetic arm",
+      pitch: "A junkyard mechanic keeps rebuilding the same wrecked racing engine, and every time it wakes up it remembers a little more.",
+      genre: "Sci-fi",
+    },
+  },
+  {
+    label: "Cozy fantasy",
+    d: {
+      name: "The Lantern Inn",
+      symbol: "LANT",
+      characterName: "Bramble",
+      characterPrompt: "a round, cheerful badger innkeeper in a green apron with flour on his paws and a brass lantern on his belt",
+      pitch: "A badger runs the only inn on the road between two warring kingdoms, and tonight both armies want a room.",
+      genre: "Fantasy",
+    },
+  },
+];
+
 /** Same rules as the server's parseLaunch, so problems show before the quote. */
 function problems(d: Draft): Partial<Record<keyof Draft, string>> {
   const p: Partial<Record<keyof Draft, string>> = {};
@@ -164,7 +201,22 @@ export function LaunchStudio({ deployed, parent, job, chainPanel }: { deployed: 
             </div>
           )}
 
-          <form onSubmit={submit} noValidate className="mt-8 flex flex-col gap-6" aria-describedby={`${ids}-note`}>
+          <div className="mt-8 flex flex-wrap items-center gap-2" data-launch-presets>
+            <span className="text-[12.5px] text-mute">Start from:</span>
+            {PRESETS.map((p) => (
+              <button
+                key={p.label}
+                type="button"
+                onClick={() => setD((x) => ({ ...x, ...p.d }))}
+                className="border border-rule px-3 py-1.5 text-[12.5px] text-soft hover:border-paper hover:text-paper"
+              >
+                {p.label}
+              </button>
+            ))}
+            <span className="text-[12px] text-mute">then make it yours.</span>
+          </div>
+
+          <form onSubmit={submit} noValidate className="mt-5 flex flex-col gap-6" aria-describedby={`${ids}-note`}>
             <div className="grid gap-6 sm:grid-cols-[1fr_170px]">
               <Field id={`${ids}-name`} label="Series name" hint={`${d.name.trim().length}/32`} error={show("name")}>
                 <input id={`${ids}-name`} value={d.name} maxLength={32} onChange={(e) => set("name", e.target.value)} placeholder="Rain City Couriers" aria-invalid={Boolean(show("name"))} aria-describedby={show("name") ? `${ids}-name-err` : undefined} className={inputCls} />

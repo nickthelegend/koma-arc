@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import type { SeriesSummary } from "@/lib/launchpad/types";
 import { launchpad } from "@/lib/server/launchpad/addresses";
-import { listSeries, recentActivity, sparklines } from "@/lib/server/launchpad/queries";
+import { listSeries, recentActivity, sparklines, topCreators } from "@/lib/server/launchpad/queries";
 import { board } from "@/lib/server/launchpad/board";
 import { chainNow } from "@/lib/server/launchpad/chain-time";
 import { SeriesCard } from "@/components/launchpad/series-card";
@@ -12,7 +12,7 @@ import { AutoRefresh } from "@/components/launchpad/auto-refresh";
 import { DemoBadge, GraduatedBadge, RaisedBar, RemixBadge, Sheet } from "@/components/launchpad/sheet";
 import { COIN_DISCLAIMER, MAINNET } from "@/components/launchpad/network-note";
 import { IconPlus, IconSearch } from "@/components/icons";
-import { coinPrice, coinPricePlain, plural, progressLabel, usdAmount } from "@/lib/format";
+import { coinPricePlain, perMillion, plural, progressLabel, usdAmount } from "@/lib/format";
 import { KOMA, LAUNCH_PRICE } from "@/lib/network";
 
 export const metadata: Metadata = {
@@ -33,8 +33,13 @@ type Tab = (typeof TABS)[number]["key"];
 const progress = (s: SeriesSummary) => (s.graduated ? -1 : s.complete ? 2 : s.raisedUsdc / Math.max(1e-9, s.targetUsdc));
 const activity = (s: SeriesSummary) => s.lastTradeAt ?? s.launchedAt;
 
+/** Series with character art first: a series launched without a sheet (e.g. straight on chain) shouldn't lead the board. */
+const art = (s: SeriesSummary) => (s.sheetUrl ? 0 : 1);
+const curated = (list: SeriesSummary[]) => [...list].sort((a, b) => art(a) - art(b)); // stable: keeps activity order within each
+
 /** listSeries is already ordered by latest activity (a trade or the launch). */
-function view(list: SeriesSummary[], tab: Tab) {
+function view(all: SeriesSummary[], tab: Tab) {
+  const list = curated(all);
   if (tab === "new") return [...list].sort((a, b) => b.launchedAt - a.launchedAt);
   if (tab === "graduating") return list.filter((s) => !s.graduated && (s.complete || s.raisedUsdc > 0)).sort((a, b) => progress(b) - progress(a) || activity(b) - activity(a));
   if (tab === "graduated") return list.filter((s) => s.graduated);
@@ -43,7 +48,7 @@ function view(list: SeriesSummary[], tab: Tab) {
 
 /** The series closest to graduating; if nothing has raised anything, the most recently active one. */
 function pickFeatured(list: SeriesSummary[]): { s: SeriesSummary; why: string } | null {
-  const live = list.filter((s) => !s.graduated && (s.complete || s.raisedUsdc > 0)).sort((a, b) => progress(b) - progress(a) || activity(b) - activity(a));
+  const live = list.filter((s) => !s.graduated && (s.complete || s.raisedUsdc > 0)).sort((a, b) => art(a) - art(b) || progress(b) - progress(a) || activity(b) - activity(a));
   if (live[0]) return { s: live[0], why: live[0].complete ? "Graduating now" : "Closest to graduation" };
   if (list[0]) return { s: list[0], why: list[0].graduated ? "Latest to graduate" : "Latest launch" };
   return null;
@@ -176,7 +181,7 @@ export default async function SeriesBoard({ searchParams }: PageProps<"/series">
               </ul>
             )}
           </section>
-          {leaders && <Leaderboard b={leaders} />}
+          {leaders && <Leaderboard b={leaders} creators={topCreators()} />}
           <p className="mx-auto max-w-[1320px] px-4 pt-10 text-[12px] text-mute md:px-8">{COIN_DISCLAIMER}</p>
         </>
       )}
@@ -211,8 +216,8 @@ function Featured({ s, why, parentName }: { s: SeriesSummary; why: string; paren
           </p>
           <dl className="mt-auto grid grid-cols-2 gap-x-4 gap-y-3 pt-5">
             <div>
-              <dt className="text-[11.5px] text-mute">Price per coin</dt>
-              <dd className="font-mono text-[20px] text-arb" title={coinPricePlain(s.priceUsdc)}>{coinPrice(s.priceUsdc)}</dd>
+              <dt className="text-[11.5px] text-mute">Price per 1M coins</dt>
+              <dd className="font-mono text-[20px] text-arb" title={`${coinPricePlain(s.priceUsdc)} per coin`}>{perMillion(s.priceUsdc)}</dd>
             </div>
             <div>
               <dt className="text-[11.5px] text-mute">Market cap</dt>
@@ -245,7 +250,9 @@ function Featured({ s, why, parentName }: { s: SeriesSummary; why: string; paren
             </p>
             <div className="min-w-0">
               <RaisedBar raised={s.raisedUsdc} target={s.targetUsdc} size="lg" />
-              <p className="mt-1 text-[12px] text-mute">At ${s.targetUsdc.toLocaleString("en-US")} raised the curve closes and becomes a Uniswap v4 pool.</p>
+              <p className="mt-1 font-mono text-[11px] uppercase tracking-wide text-mute" title={`At $${s.targetUsdc.toLocaleString("en-US")} raised the curve closes and becomes a Uniswap v4 pool.`}>
+                then Uniswap v4
+              </p>
             </div>
           </>
         )}

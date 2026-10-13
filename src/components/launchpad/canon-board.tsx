@@ -8,8 +8,10 @@ import { formatUnits } from "viem";
 import { coinAbi } from "@/lib/launchpad/abi";
 import { signVote } from "@/lib/launchpad/client";
 import type { Addr, CanonView, ProposalView } from "@/lib/launchpad/types";
+import { EpisodeReveal } from "./episode-reveal";
 import { agoSec, coinAmount, countdown, short } from "@/lib/format";
 import { KOMA } from "@/lib/network";
+import { txUrl } from "@/lib/explorer";
 import { IconCheck, IconPen } from "../icons";
 import { useWallet, walletErrorMessage } from "../wallet";
 
@@ -264,47 +266,114 @@ export function CanonBoard({ seriesId, symbol, characterName, coin, canonRegistr
           </>
         )}
 
-        {/* ——— Canon so far ——— */}
-        <h3 className="mt-9 font-display text-[22px] uppercase leading-none text-paper">Canon so far</h3>
-        {view.canon.length === 0 ? (
-          <p className="mt-2 text-[13px] text-mute">No episode is canon yet. When voting on episode 1 closes, the proposal with the most votes becomes canon.</p>
-        ) : (
-          <ol className="mt-3 border-l-2 border-kapow">
-            {view.canon.map((c) => (
-              <li key={c.episode} className="relative pb-4 pl-5 last:pb-0">
-                <span className="absolute -left-[7px] top-1.5 h-3 w-3 bg-kapow" aria-hidden />
-                <p className="text-[12px] text-mute">Episode {c.episode}</p>
-                {c.issue ? (
-                  <Link href={`/c/${c.issue.id}`} className="font-display text-[20px] uppercase leading-tight text-paper hover:text-kapow">
-                    {c.issue.title}
-                  </Link>
-                ) : (
-                  <p className="font-display text-[20px] uppercase text-paper">Issue #{c.issueId}</p>
-                )}
-                <p className="mt-0.5 font-mono text-[11px] text-mute">
-                  {c.totalVotes > 0 ? `${coinAmount(c.winnerVotes)} of ${coinAmount(c.totalVotes)} votes` : "No votes were cast, so the earliest proposal became canon"}{c.votesRoot && ` · votes root ${short(c.votesRoot, 8, 4)}`}
-                </p>
-              </li>
-            ))}
-          </ol>
-        )}
-
-        {view.alternates.length > 0 && (
-          <>
-            <h3 className="mt-9 font-display text-[22px] uppercase leading-none text-paper">Alternate universes</h3>
-            <p className="mt-1 text-[12.5px] text-mute">Proposals that lost their vote. Still minted, still readable.</p>
-            <ul className="mt-3 flex flex-wrap gap-2">
-              {view.alternates.map((a) => (
-                <li key={a.issueId}>
-                  <Link href={a.issue ? `/c/${a.issue.id}` : "#"} className="inline-block border border-rule px-2.5 py-1.5 text-[12.5px] text-soft hover:border-paper hover:text-paper">
-                    Ep {a.episode} · {a.issue?.title ?? `Issue #${a.issueId}`}
-                  </Link>
-                </li>
-              ))}
-            </ul>
-          </>
-        )}
+        {/* ——— Story so far: the canon as a timeline ——— */}
+        <StoryTimeline view={view} now={now} open={open} total={total} top={top} />
       </div>
+      <EpisodeReveal seriesId={seriesId} view={view} characterName={characterName} />
     </section>
   );
 }
+
+const pct = (part: number, whole: number) => (whole > 0 ? Math.round((part / whole) * 100) : 0);
+
+/**
+ * The canon as a story: every episode holders voted in, in order, with its cover, how decisively it won, who
+ * settled it on chain (KOMA's keeper) and the alternates that lost, then the round
+ * that's open now.
+ */
+function StoryTimeline({ view, now, open, total, top }: { view: CanonView; now: number; open: boolean; total: number; top: number }) {
+  const leader = view.proposals.find((p) => p.votes > 0 && p.votes === top) ?? view.proposals[0];
+  return (
+    <section id="story-so-far" aria-labelledby="story-h" className="mt-9 scroll-mt-24">
+      <h3 id="story-h" className="font-display text-[22px] uppercase leading-none text-paper">
+        Story so far
+      </h3>
+      <p className="mt-1 text-[12.5px] text-mute">Every episode holders voted into canon, in order. Proposals that lost stay readable as alternate universes.</p>
+
+      <ol className="relative mt-5 ml-1.5 border-l-2 border-rule">
+        {view.canon.map((c) => {
+          const share = pct(c.winnerVotes, c.totalVotes);
+          const alts = view.alternates.filter((a) => a.episode === c.episode);
+          return (
+            <li key={c.episode} className="relative pb-7 pl-6 last:pb-5" data-canon-episode={c.episode}>
+              <span className="absolute -left-[8px] top-1 h-3.5 w-3.5 bg-kapow" aria-hidden />
+              <div className="flex gap-3.5">
+                {c.issue && (
+                  <Link href={`/c/${c.issue.id}`} className="relative aspect-[3/4] w-[64px] shrink-0 overflow-hidden border border-rule bg-stock-2 md:w-[76px]" aria-hidden tabIndex={-1}>
+                    <Image src={c.issue.cover} alt="" fill sizes="76px" className="object-cover" />
+                  </Link>
+                )}
+                <div className="min-w-0 flex-1">
+                  <p className="font-mono text-[11px] uppercase tracking-wide text-kapow">Episode {c.episode} · canon</p>
+                  {c.issue ? (
+                    <Link href={`/c/${c.issue.id}`} className="font-display text-[20px] uppercase leading-tight text-paper hover:text-kapow">
+                      {c.issue.title}
+                    </Link>
+                  ) : (
+                    <p className="font-display text-[20px] uppercase leading-tight text-paper">Issue #{c.issueId}</p>
+                  )}
+                  {c.issue?.logline && <p className="mt-0.5 line-clamp-2 text-[12.5px] leading-snug text-soft">{c.issue.logline}</p>}
+
+                  {c.totalVotes > 0 ? (
+                    <div className="mt-2 max-w-[360px]">
+                      <div className="h-1.5 bg-rule" aria-hidden>
+                        <div className="h-full bg-kapow" style={{ width: `${share}%` }} />
+                      </div>
+                      <p className="mt-1 font-mono text-[11px] text-mute">
+                        Won with {share}% · {coinAmount(c.winnerVotes)} of {coinAmount(c.totalVotes)} votes · {c.voters} {c.voters === 1 ? "voter" : "voters"}
+                      </p>
+                    </div>
+                  ) : (
+                    <p className="mt-1.5 font-mono text-[11px] text-mute">No votes were cast, so the earliest proposal became canon</p>
+                  )}
+
+                  <p className="mt-1.5 flex flex-wrap items-center gap-x-2 gap-y-1 font-mono text-[10.5px] uppercase tracking-wide">
+                    <span className="border border-rule px-1.5 py-0.5 text-mute" title="KOMA's keeper tallies the signed votes and finalizes the slot on Arc">
+                      Settled by KOMA&rsquo;s keeper
+                    </span>
+                    {c.finalizedTx && (
+                      <a href={txUrl(c.finalizedTx)} className="normal-case tracking-normal text-arb hover:underline">
+                        tx {short(c.finalizedTx, 8, 4)}
+                      </a>
+                    )}
+                    {c.finalizedAt && <span className="normal-case tracking-normal text-mute">{agoSec(c.finalizedAt, now)}</span>}
+                    {c.votesRoot && <span className="normal-case tracking-normal text-mute">votes root {short(c.votesRoot, 6, 4)}</span>}
+                  </p>
+
+                  {alts.length > 0 && (
+                    <p className="mt-2 flex flex-wrap items-center gap-1.5 text-[12px] text-mute">
+                      Alternate {alts.length === 1 ? "universe" : "universes"}:
+                      {alts.map((a) => (
+                        <Link key={a.issueId} href={a.issue ? `/c/${a.issue.id}` : "#"} className="border border-rule px-2 py-0.5 text-soft hover:border-paper hover:text-paper">
+                          {a.issue?.title ?? `Issue #${a.issueId}`}
+                        </Link>
+                      ))}
+                    </p>
+                  )}
+                </div>
+              </div>
+            </li>
+          );
+        })}
+
+        {/* The round that's open now */}
+        <li className="relative pl-6" data-canon-episode="next">
+          <span className={`absolute -left-[8px] top-1 h-3.5 w-3.5 border-2 border-kapow bg-ink ${view.slot && open ? "animate-pulse" : ""}`} aria-hidden />
+          <p className="font-mono text-[11px] uppercase tracking-wide text-soft">
+            Episode {view.episode} · {view.slot ? (open ? `voting · ${countdown(view.slot.endsAt, now)} left` : "voting closed · being settled") : "open for proposals"}
+          </p>
+          {view.slot && leader ? (
+            <p className="mt-0.5 text-[13px] text-soft">
+              {leader.votes > 0 ? "Leading" : "Proposed"}: <span className="text-paper">{leader.issue?.title ?? `Issue #${leader.issueId}`}</span>
+              {leader.votes > 0 && <span className="font-mono text-[11.5px] text-mute"> · {pct(leader.votes, total)}% of votes</span>}
+              {view.proposals.length > 1 && <span className="text-mute"> · {view.proposals.length} proposals</span>}
+            </p>
+          ) : (
+            <p className="mt-0.5 text-[13px] text-mute">{view.canon.length === 0 ? "The story starts with the first proposal." : "The next proposal starts the clock."}</p>
+          )}
+        </li>
+      </ol>
+    </section>
+  );
+}
+

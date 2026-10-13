@@ -70,7 +70,7 @@ export function Footer() {
           </div>
         </div>
         <div className="mx-auto mt-10 max-w-[1320px] px-3 md:mt-14 md:px-6">
-          <p className="masthead select-none whitespace-nowrap text-[44vw] leading-[0.8] text-paper md:text-[min(43vw,585px)]" aria-hidden>
+          <p className="masthead select-none whitespace-nowrap text-[44vw] leading-[0.8] text-paper md:text-[min(24vw,320px)]" aria-hidden>
             KOMA
           </p>
           <div className="mt-4 flex flex-wrap justify-between gap-2 px-1 text-[12px] text-mute">

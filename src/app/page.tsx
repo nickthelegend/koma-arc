@@ -10,6 +10,9 @@ import { chainNow } from "@/lib/server/launchpad/chain-time";
 import { SeriesCard } from "@/components/launchpad/series-card";
 import { HomeHero } from "@/components/home-hero";
 import { KOMA } from "@/lib/network";
+import { HomeProof } from "@/components/home-proof";
+import { board } from "@/lib/server/launchpad/board";
+import { recentSpeeds } from "@/lib/server/speed";
 
 export const dynamic = "force-dynamic";
 
@@ -22,10 +25,12 @@ export default async function Catalog({ searchParams }: PageProps<"/">) {
   const series = launchpad() ? listSeries().slice(0, 6) : [];
   const sparks = series.length ? sparklines() : {};
   const now = series.length ? await chainNow().catch(() => undefined) : undefined;
+  const leaders = launchpad() ? await board().catch(() => null) : null;
 
   return (
     <>
       <HomeHero featured={featured} issues={comics.length} network={KOMA.label} />
+      <HomeProof board={leaders} medianMs={recentSpeeds(200).medianMs} />
 
       {featured && (
         <div className="mt-10 md:mt-14">

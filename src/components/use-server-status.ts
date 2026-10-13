@@ -10,17 +10,20 @@ type Status = { ready: boolean; missing: string[]; launchpad: unknown; ai?: { ok
  * provider can draw right now. Asked once on mount.
  */
 export function useServerStatus() {
-  const [s, setS] = useState<{ offline: string | null; aiDown: boolean; aiUnconfigured: boolean; launchpad: boolean; loaded: boolean }>({
+  const [s, setS] = useState<{ offline: string | null; aiDown: boolean; aiUnconfigured: boolean; launchpad: boolean; loaded: boolean; editor: string | null }>({
     offline: null,
     aiDown: false,
     aiUnconfigured: false,
     launchpad: true,
     loaded: false,
+    editor: null,
   });
   useEffect(() => {
     fetch("/api/status")
       .then((r) => r.json())
-      .then((x: Status) => setS({ offline: x.ready ? null : x.missing.join(", "), aiDown: x.ready && x.ai?.ok === false, aiUnconfigured: x.ai?.configured === false, launchpad: Boolean(x.launchpad), loaded: true }))
+      .then((x: Status) => setS({ offline: x.ready ? null : x.missing.join(", "), aiDown: x.ready && x.ai?.ok === false, aiUnconfigured: x.ai?.configured === false,
+          // Which model is the editor, for the studio's byline ("hunyuan:tencent/hy3 via fal" → "Hunyuan 3").
+          editor: x.ai?.editor?.startsWith("hunyuan") ? "Hunyuan 3" : x.ai?.editor?.startsWith("kimi") ? "Kimi K2.6" : null, launchpad: Boolean(x.launchpad), loaded: true }))
       .catch(() => {});
   }, []);
   return s;

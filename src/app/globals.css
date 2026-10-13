@@ -43,6 +43,10 @@
   --animate-ink: ink 1.6s ease-in-out infinite;
 }
 
+@keyframes pulse-dot {
+  0% { transform: scale(2.2); opacity: 0.4; }
+  100% { transform: scale(1); opacity: 1; }
+}
 @keyframes ticker {
   to { transform: translateX(-50%); }
 }
@@ -193,3 +197,38 @@ body {
     animation-delay: calc(var(--i, 0) * 45ms);
   }
 }
+
+@media (prefers-reduced-motion: reduce) {
+  .animate-\[pulse-dot_0\.6s_ease-out\] { animation: none; }
+}
+
+/* Episode reveal: when a round settles, the winning cover lands like a splash page. Each part animates once;
+   with reduced motion everything is simply there. */
+@keyframes reveal-burst {
+  from { opacity: 0; transform: scale(0.4) rotate(-12deg); }
+  60% { opacity: 1; }
+  to { opacity: 1; transform: scale(1) rotate(0); }
+}
+@keyframes reveal-card {
+  0% { opacity: 0; transform: translateY(28px) scale(0.86) rotate(-4deg); }
+  70% { transform: translateY(-4px) scale(1.02) rotate(1deg); }
+  100% { opacity: 1; transform: none; }
+}
+@keyframes reveal-stamp {
+  0% { opacity: 0; transform: scale(2.6) rotate(-18deg); }
+  65% { opacity: 1; transform: scale(0.92) rotate(-8deg); }
+  100% { opacity: 1; transform: scale(1) rotate(-8deg); }
+}
+@keyframes reveal-bar { from { transform: scaleX(0); } to { transform: scaleX(1); } }
+.reveal-stamp { transform: rotate(-8deg); }
+@media (prefers-reduced-motion: no-preference) {
+  .reveal-burst { animation: reveal-burst 700ms cubic-bezier(0.2, 0.8, 0.2, 1) both; }
+  .reveal-card { animation: reveal-card 620ms cubic-bezier(0.2, 0.8, 0.2, 1) 120ms both; }
+  .reveal-stamp { animation: reveal-stamp 420ms cubic-bezier(0.3, 1.4, 0.5, 1) 640ms both; }
+  .reveal-bar { transform-origin: left; animation: reveal-bar 800ms cubic-bezier(0.2, 0.8, 0.2, 1) 900ms both; }
+}
+
+/* /embed pages render alone inside someone else's iframe: no site chrome around them. */
+body:has([data-embed]) :is(main ~ *, *:has(~ main)) { display: none !important; }
+body:has([data-embed]) main { padding: 0; }
+body:has([data-embed]) { min-height: 0; }

@@ -1,9 +1,9 @@
 "use client";
 
-import { KOMA } from "@/lib/network";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Wordmark } from "./brand";
+import { ChainPulse } from "./chain-pulse";
 import { WalletButton } from "./wallet-button";
 
 const links = [
@@ -44,10 +44,7 @@ export function TopBar() {
           })}
         </nav>
         <div className="ml-auto flex items-center gap-3">
-          <span className="hidden items-center gap-1.5 text-[12px] text-mute lg:flex">
-            <span className="h-1.5 w-1.5 rounded-full bg-arb" />
-            {KOMA.label}
-          </span>
+          <ChainPulse />
           <WalletButton />
         </div>
       </div>

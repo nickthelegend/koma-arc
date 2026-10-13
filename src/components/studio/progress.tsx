@@ -7,6 +7,7 @@ import { ShareButton } from "../share-button";
 import { ArcMark, IconBook, IconCheck, IconPen } from "../icons";
 import { short } from "@/lib/format";
 import { txUrl } from "@/lib/explorer";
+import { SpeedReceipt } from "../speed-receipt";
 
 const STEPS: { key: Stage; label: string }[] = [
   { key: "settling", label: "Payment settled on Arc" },
@@ -85,6 +86,7 @@ export function Progress({ state, onReset, onRetry }: { state: GenState; onReset
         {state.script && <p className="mt-3 text-[15px] leading-relaxed text-soft">{state.script.logline}</p>}
 
         <Steps state={state} className="mt-8" />
+        {state.paymentTx && <SpeedReceipt tx={state.paymentTx} who="KOMA's facilitator" className="mt-4" />}
 
         {done ? (
           <div className="mt-8 flex flex-wrap gap-3">

@@ -1,10 +1,11 @@
 import Link from "next/link";
 import type { Board } from "@/lib/server/launchpad/board";
+import type { TopCreator } from "@/lib/server/launchpad/queries";
 import { addressUrl, isExternal } from "@/lib/explorer";
 import { short, usdAmount } from "@/lib/format";
 
 /** Totals, the series with the most volume and the biggest backers, from the Envio indexer when it's connected. */
-export function Leaderboard({ b }: { b: Board }) {
+export function Leaderboard({ b, creators = [] }: { b: Board; creators?: TopCreator[] }) {
   const totals = [
     { k: "Volume", v: usdAmount(b.stats.volumeUsd) },
     { k: "Trades", v: b.stats.trades.toLocaleString("en-US") },
@@ -29,7 +30,7 @@ export function Leaderboard({ b }: { b: Board }) {
         ))}
       </dl>
 
-      <div className="mt-8 grid gap-8 md:grid-cols-2">
+      <div className="mt-8 grid gap-8 md:grid-cols-2 xl:grid-cols-3">
         <div>
           <h3 className="text-[12px] uppercase tracking-wide text-mute">Most traded series</h3>
           {b.topSeries.length === 0 ? (
@@ -75,6 +76,25 @@ export function Leaderboard({ b }: { b: Board }) {
             </ol>
           )}
         </div>
+        {creators.length > 0 && (
+          <div data-top-creators>
+            <h3 className="text-[12px] uppercase tracking-wide text-mute">Top creators</h3>
+            <ol className="mt-2">
+              {creators.map((c, i) => (
+                <li key={c.address} className="flex items-baseline gap-3 border-b border-rule/60 py-2 text-[13.5px]">
+                  <span className="w-5 shrink-0 font-mono text-[12px] text-mute">{i + 1}</span>
+                  <Link href={`/creator/${c.address}`} className="min-w-0 flex-1 truncate font-mono text-paper hover:text-kapow">
+                    {short(c.address)}
+                  </Link>
+                  <span className="shrink-0 font-mono text-[12px] text-mute">{c.series} series</span>
+                  <span className="w-20 shrink-0 text-right font-mono text-arb" title="What their characters' wallets have earned">
+                    {usdAmount(c.earnedUsdc)}
+                  </span>
+                </li>
+              ))}
+            </ol>
+          </div>
+        )}
       </div>
     </section>
   );
