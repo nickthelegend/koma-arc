@@ -84,11 +84,25 @@ From [`deployments/arc-testnet.json`](deployments/arc-testnet.json) (with proof 
 <https://explorer.testnet.arc.io>.
 
 <!-- addresses:start -->
-_Not deployed yet: the testnet deploy is waiting for the deployer wallet to be funded. `sh scripts/deploy.sh testnet`
-then `node scripts/addresses-md.mjs` fills this table. Canonical contracts KOMA uses on Arc: USDC
-`0x3600000000000000000000000000000000000000`, CCTP TokenMessengerV2 `0x8FE6B999Dc680CcFDD5Bf7EB0974218be2542DAA`
-(testnet) / `0x28b5a0e9C621a5BadaA536219b3a228C8168cf5d` (mainnet), ERC-6551 registry
-`0x000000006551c19487814612e58FE06813775758`, Permit2 `0x000000000022D473030F116dDEE9F6B43aC78BA3`._
+| Contract | Address |
+|---|---|
+| KomaIssues (ERC-721 issues) | [`0x9041D1a0D3d8C03cDcf4e17E0e6cc4a2C69E79b4`](https://explorer.testnet.arc.io/address/0x9041D1a0D3d8C03cDcf4e17E0e6cc4a2C69E79b4) |
+| SeriesFactory | [`0xd0719483Db7EfB8bBFF769C4E4DB2C027528ACFB`](https://explorer.testnet.arc.io/address/0xd0719483Db7EfB8bBFF769C4E4DB2C027528ACFB) |
+| CharacterNFT | [`0x3A1ccCac6a15b1B3242fF6bFBb2c9a9F054a312B`](https://explorer.testnet.arc.io/address/0x3A1ccCac6a15b1B3242fF6bFBb2c9a9F054a312B) |
+| CanonRegistry | [`0xA37bAe663776d692927a94edaaCF085AF406e1FD`](https://explorer.testnet.arc.io/address/0xA37bAe663776d692927a94edaaCF085AF406e1FD) |
+| Graduator (v4 hook) | [`0xD8f73Bebe3c78Fbd698E7a8fabC13bF6c1caE000`](https://explorer.testnet.arc.io/address/0xD8f73Bebe3c78Fbd698E7a8fabC13bF6c1caE000) |
+| KomaSwapper | [`0x1761210F0dD743B207BbF3c8d2aA957D1EeAb607`](https://explorer.testnet.arc.io/address/0x1761210F0dD743B207BbF3c8d2aA957D1EeAb607) |
+| CurveMath | [`0xfbBc5cdaAc256D714D7EAbfDc82277CE13AC691b`](https://explorer.testnet.arc.io/address/0xfbBc5cdaAc256D714D7EAbfDc82277CE13AC691b) |
+| RoyaltyRouter | [`0xa2528cfc86B35f4fa29d182E3DBFC8559bC4d040`](https://explorer.testnet.arc.io/address/0xa2528cfc86B35f4fa29d182E3DBFC8559bC4d040) |
+| Uniswap v4 PoolManager (deployed by KOMA) | [`0xaa4dd8435Faf3AE67224944b90d72964c4481Cc8`](https://explorer.testnet.arc.io/address/0xaa4dd8435Faf3AE67224944b90d72964c4481Cc8) |
+| Uniswap v4 PositionManager | [`0xE599491DF5415fB7F97bA902556862d0395464b7`](https://explorer.testnet.arc.io/address/0xE599491DF5415fB7F97bA902556862d0395464b7) |
+| Uniswap v4 V4Quoter | [`0x6a79Cd52083a502CAeD6a28899b42f88a648BC88`](https://explorer.testnet.arc.io/address/0x6a79Cd52083a502CAeD6a28899b42f88a648BC88) |
+| ERC-6551 registry (canonical) | [`0x000000006551c19487814612e58FE06813775758`](https://explorer.testnet.arc.io/address/0x000000006551c19487814612e58FE06813775758) |
+| Tokenbound AccountProxy / AccountV3 | [`0x55266d75D1a14E4572138116aF39863Ed6596E7F`](https://explorer.testnet.arc.io/address/0x55266d75D1a14E4572138116aF39863Ed6596E7F) |
+| USDC (Arc) | [`0x3600000000000000000000000000000000000000`](https://explorer.testnet.arc.io/address/0x3600000000000000000000000000000000000000) |
+| Relayer / facilitator (server key) | [`0xa5A01F2ac2c4Dc58274e443cc8F9EC5343eA0D09`](https://explorer.testnet.arc.io/address/0xa5A01F2ac2c4Dc58274e443cc8F9EC5343eA0D09) |
+
+Deployed from block 67018095 in 24 transactions, 33,065,114 gas = 0.826628 USDC.
 <!-- addresses:end -->
 
 Arc mainnet (chain 5042): [`deployments/arc-mainnet.json`](deployments/arc-mainnet.json) is written by
