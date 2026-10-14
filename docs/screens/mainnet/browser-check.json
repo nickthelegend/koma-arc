@@ -1,0 +1,7 @@
+{
+  "chainId": 5042,
+  "receiptsChecked": 39,
+  "explorer": "https://explorer.arc.io/tx/0x8416dc577893b93b339a73313ee1fb9c2b3691488f9e95f1c5d765d490a4ec86",
+  "success": true,
+  "scope": "Read-only explorer browser; DApp mainnet browser flow Not run"
+}

@@ -1,0 +1,7 @@
+{
+  "name": "KOMA deployment smoke",
+  "description": "Scripted one-page metadata fixture, not AI-generated content.",
+  "pages": 1,
+  "tokenURI": "https://koma-arc.vercel.app/api/tokens/1",
+  "hostedMainnetMetadata": "Not verified; Vercel hosting configuration is managed separately."
+}

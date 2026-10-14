@@ -219,3 +219,30 @@ The public `/receipts` page now includes a read-only CCIP canon section backed b
 The Docker build accepts `NEXT_PUBLIC_FEATURE_GATEWAY` with default0 and uses the validated webpack build. Source env files and nested contract dependencies are excluded from upload/build context. Runtime runs as the node user and keeps SQLite/art/Gateway recovery state under `/data`; attach a persistent Railway volume there before paid operation. `railway.json` uses `/api/health` for process liveness, not funded/AI/deployment readiness. Set runtime signing/provider credentials separately only after deployment bytecode and funded tests are verified; local fork fixture keys are not production configuration. CI installs the pinned CCIP contracts dependencies before Forge. Existing Arbitrum Railway services must not be reused for this Arc release.
 
 Railway fresh volumes are root-owned. The container entrypoint initializes `/data` ownership and immediately uses `gosu` to run the app as node; it does not keep the web process running as root.
+
+<!-- MAINNET-ADDRESSES -->
+## Addresses — live mainnet and testnet
+
+Mainnet **5042: Live**, deployed 2026-10-14. [All mainnet addresses and transaction receipts](docs/MAINNET-DEPLOYMENT.md).
+Testnet **5042002: Live**; [testnet deployment](deployments/arc-testnet.json) and [testnet evidence](docs/E2E-TESTNET.md).
+
+- accountImpl: [0x41C8f39463A868d3A88af00cd0fe7102F30E44eC](https://explorer.arc.io/address/0x41C8f39463A868d3A88af00cd0fe7102F30E44eC).
+- accountProxy: [0x55266d75D1a14E4572138116aF39863Ed6596E7F](https://explorer.arc.io/address/0x55266d75D1a14E4572138116aF39863Ed6596E7F).
+- canonRegistry: [0xfcf72128e281300b7d68E03C447c36E4db0bf251](https://explorer.arc.io/address/0xfcf72128e281300b7d68E03C447c36E4db0bf251).
+- characterNft: [0xc7Da0136fef62c05e96379FFf6990af4FEFb50F1](https://explorer.arc.io/address/0xc7Da0136fef62c05e96379FFf6990af4FEFb50F1).
+- curveMath: [0xB0653AF8B867C54e31DB2d8C8aA672Ced8D53A06](https://explorer.arc.io/address/0xB0653AF8B867C54e31DB2d8C8aA672Ced8D53A06).
+- erc6551Registry: [0x000000006551c19487814612e58FE06813775758](https://explorer.arc.io/address/0x000000006551c19487814612e58FE06813775758).
+- graduator: [0xb6E2786a8c089F2F39e5252d98D0ACc8dFe76000](https://explorer.arc.io/address/0xb6E2786a8c089F2F39e5252d98D0ACc8dFe76000).
+- komaIssues: [0xe4c8bAc6BA2CbEC951b678851e1f65abb4aa9e4A](https://explorer.arc.io/address/0xe4c8bAc6BA2CbEC951b678851e1f65abb4aa9e4A).
+- permit2: [0x000000000022D473030F116dDEE9F6B43aC78BA3](https://explorer.arc.io/address/0x000000000022D473030F116dDEE9F6B43aC78BA3).
+- poolManager: [0xC41282dE4e924D1813b0b187e4c8c79e822CcB72](https://explorer.arc.io/address/0xC41282dE4e924D1813b0b187e4c8c79e822CcB72).
+- positionManager: [0xd0719483Db7EfB8bBFF769C4E4DB2C027528ACFB](https://explorer.arc.io/address/0xd0719483Db7EfB8bBFF769C4E4DB2C027528ACFB).
+- royaltyRouter: [0x2B9559c5c6103A5Fe4C0f8B67c43840D5708C2aB](https://explorer.arc.io/address/0x2B9559c5c6103A5Fe4C0f8B67c43840D5708C2aB).
+- seriesFactory: [0x8808BF690f5b9265AcAF5Fb7759E73073606d551](https://explorer.arc.io/address/0x8808BF690f5b9265AcAF5Fb7759E73073606d551).
+- swapper: [0x6B2aE35cE75BCFC576496FFcD13898f111f52E71](https://explorer.arc.io/address/0x6B2aE35cE75BCFC576496FFcD13898f111f52E71).
+- v4Quoter: [0x1761210F0dD743B207BbF3c8d2aA957D1EeAb607](https://explorer.arc.io/address/0x1761210F0dD743B207BbF3c8d2aA957D1EeAb607).
+
+Mainnet smoke: [Smoke: 0.01 USDC controlled treasury payment](https://explorer.arc.io/tx/0x8416dc577893b93b339a73313ee1fb9c2b3691488f9e95f1c5d765d490a4ec86).
+
+Mainnet smoke: [Smoke: mint one issue from paid receipt](https://explorer.arc.io/tx/0x94bea20a154aad544c10dd9e2f350d5236acbb316d634a158b1bd58aaab58cc3).
+<!-- /MAINNET-ADDRESSES -->
