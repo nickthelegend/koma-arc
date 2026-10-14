@@ -1,6 +1,6 @@
 # KOMA on Arc
 
-Live: https://koma-arc.vercel.app (Arc testnet)
+Live: https://koma-arc.vercel.app (Arc mainnet, chain 5042)
 
 
 **Comics fans own, and characters whose stories their holders write — paid, traded and settled in USDC on Arc.**
@@ -249,3 +249,7 @@ Mainnet smoke: [Smoke: mint one issue from paid receipt](https://explorer.arc.io
 ### Public judge preview
 
 Open https://koma-arc.vercel.app to read minted testnet comics, inspect series and follow transaction receipts. Generation, trading, voting and private drafts require the local studio; the public preview takes no payments. Run `node scripts/e2e-browser-koma.mjs` for the 1440/390 px route audit, or `KOMA_URL=http://localhost:8610 node scripts/e2e-browser-koma-core.mjs` for a real 0.10-USDC browser mint with a temporary funded wallet and sweep.
+
+## Production network
+
+Live: https://koma-arc.vercel.app (Arc mainnet, chain 5042). [Hosted mainnet checks](docs/HOSTED-MAINNET.md). Hosted mode is a mainnet reader. Generation, minting, trading and voting require the on-demand local studio. Prior-network comics are not mixed into mainnet results. No mainnet transactions were sent during the hosting migration. Historical **Live (testnet)** and **Fork** results below are separate evidence, not production smoke results.

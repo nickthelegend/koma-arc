@@ -1,0 +1,24 @@
+[
+  {
+    "base": "https://koma-arc.vercel.app",
+    "routes": [
+      "/",
+      "/series",
+      "/launch",
+      "/create",
+      "/create/form",
+      "/receipts",
+      "/shelf",
+      "/search",
+      "/how",
+      "/room",
+      "/fund"
+    ],
+    "waitMs": 4000,
+    "name": "koma",
+    "contract": "0x8808BF690f5b9265AcAF5Fb7759E73073606d551",
+    "networkApi": "https://koma-arc.vercel.app/api/status",
+    "requireVisible": false,
+    "requireExplorer": false
+  }
+]

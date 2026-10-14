@@ -183,7 +183,7 @@ export default async function SeriesPage({ params }: PageProps<"/s/[id]">) {
 
         <aside id="trade" aria-label={`Trade $${symbol}`} className="scroll-mt-24 md:col-start-2 md:row-span-2 md:row-start-1">
           <div className="flex flex-col gap-4 md:sticky md:top-24">
-            {process.env.KOMA_HOSTED_READ_ONLY === "1" ? <div className="border border-rule bg-stock p-5"><h2 className="font-display text-2xl uppercase">Trading unavailable here</h2><p className="mt-2 text-sm text-soft">This preview shows real Arc testnet activity. Open the local studio to buy or sell. No signature or payment is requested here.</p></div> : <TradeWidget
+            {process.env.KOMA_HOSTED_READ_ONLY === "1" ? <div className="border border-rule bg-stock p-5"><h2 className="font-display text-2xl uppercase">Trading unavailable here</h2><p className="mt-2 text-sm text-soft">This reader shows activity from the configured Arc network. Open the local studio to buy or sell. No signature or payment is requested here.</p></div> : <TradeWidget
               s={{ id: s.id, symbol: symbol, curve: s.curve, coin: s.coin, launchedAt: s.launchedAt, chainTime: s.chainTime, complete: s.complete, graduated: s.graduated, pool: s.pool, swapper: lp.swapper, graduator: lp.graduator, quoter: lp.v4Quoter }}
             />}
             <div className="flex flex-wrap items-center gap-1.5">

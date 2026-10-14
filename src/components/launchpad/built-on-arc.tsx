@@ -28,7 +28,7 @@ export function BuiltOnArc({
         <>
           Every quote and trade prices through KOMA&rsquo;s curve-math contract, and a royalty router splits each {TRADE_FEE_PCT}% fee in the same
           transaction: {FEE_SPLIT.character}% to the character, {FEE_SPLIT.remix}% up the remix tree, {FEE_SPLIT.treasury}% to KOMA. On Arc a
-          trade is final the moment its block lands (Arc testnet blocks arrive about every half second), with no reorgs to wait out. The receipts page shows the send-to-receipt times KOMA actually measured.
+          trade is final the moment its block lands (Arc provides deterministic finality), with no reorgs to wait out. The receipts page shows the send-to-receipt times KOMA actually measured.
         </>
       ),
       chips: [
@@ -45,7 +45,7 @@ export function BuiltOnArc({
           CCTP: one transaction here, and Circle&rsquo;s Forwarding Service mints on the other side.
         </>
       ),
-      note: "The CCTP burn from a character wallet was verified on a fork of Arc testnet; it was not part of the live testnet run.",
+      note: "The CCTP burn from a character wallet was verified on a local Arc fork; it has not been exercised by this hosted reader.",
       chips: character
         ? [
             { label: `${character.name}’s wallet`, address: character.account },
@@ -101,7 +101,7 @@ export function BuiltOnArc({
           bytecode. The liquidity position goes to a dead address, so it can&rsquo;t be pulled.
         </>
       ),
-      note: "Graduation into v4 was verified on a fork of Arc testnet; it was not part of the live testnet run.",
+      note: "Graduation into v4 was verified on a local Arc fork; it has not been exercised by this hosted reader.",
       chips: [
         { label: "Graduator", address: lp?.graduator },
         { label: "v4 PoolManager", address: lp?.poolManager },

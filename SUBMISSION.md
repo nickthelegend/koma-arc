@@ -1,6 +1,6 @@
 # KOMA — Arc Microgrants submission
 
-Live: https://koma-arc.vercel.app (Arc testnet)
+Live: https://koma-arc.vercel.app (Arc mainnet, chain 5042)
 
 
 | | |
@@ -105,3 +105,7 @@ Mainnet smoke: [Smoke: 0.01 USDC controlled treasury payment](https://explorer.a
 
 Mainnet smoke: [Smoke: mint one issue from paid receipt](https://explorer.arc.io/tx/0x94bea20a154aad544c10dd9e2f350d5236acbb316d634a158b1bd58aaab58cc3).
 <!-- /MAINNET-ADDRESSES -->
+
+## Production network
+
+Live: https://koma-arc.vercel.app (Arc mainnet, chain 5042). [Hosted mainnet checks](docs/HOSTED-MAINNET.md). Hosted mode is a mainnet reader. Generation, minting, trading and voting require the on-demand local studio. Prior-network comics are not mixed into mainnet results. No mainnet transactions were sent during the hosting migration. Historical **Live (testnet)** and **Fork** results below are separate evidence, not production smoke results.
