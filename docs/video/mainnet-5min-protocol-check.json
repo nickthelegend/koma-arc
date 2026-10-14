@@ -1,0 +1,15 @@
+{
+  "checkedAt": "2026-10-14T19:40:01.788Z",
+  "chainId": 5042,
+  "owner": "0xA4837f3d663943EF2dc6B2f03B18b8118cc551c3",
+  "contentHashMatches": true,
+  "paymentMapsToMint": true,
+  "readerCoinBalance": "0",
+  "canon": {
+    "endsAt": "1792006660",
+    "finalized": true,
+    "winner": "2",
+    "signedVotesVerified": 1,
+    "votesRootMatches": true
+  }
+}

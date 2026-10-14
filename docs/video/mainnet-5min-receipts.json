@@ -1,0 +1,96 @@
+{
+  "project": "koma",
+  "chainId": 5042,
+  "url": "https://koma-arc.vercel.app",
+  "renderedAt": "2026-10-14T19:41:30.689Z",
+  "transactions": [
+    {
+      "hash": "0x4135eb6bef5e3861533132efe95643ece0ed466c1f6e1602af69266ec05c86d0",
+      "action": "x402 archived AI issue payment",
+      "status": "success",
+      "feeWei": "1925217000000000",
+      "blockNumber": "25965503",
+      "url": "https://explorer.arc.io/tx/0x4135eb6bef5e3861533132efe95643ece0ed466c1f6e1602af69266ec05c86d0"
+    },
+    {
+      "hash": "0x916ed980981849fd148041e1063ebc208176029a99d6865829c55e6f4537f5ee",
+      "action": "Mint archived AI issue to paying reader",
+      "status": "success",
+      "feeWei": "3660006000000000",
+      "blockNumber": "25965507",
+      "url": "https://explorer.arc.io/tx/0x916ed980981849fd148041e1063ebc208176029a99d6865829c55e6f4537f5ee"
+    },
+    {
+      "hash": "0xded59b892f2335fd61bb63feb30e555ca9a8ceea4d568079cceaab556ec7d81b",
+      "action": "Launch series from archived AI character sheet",
+      "status": "success",
+      "feeWei": "112301763000000000",
+      "blockNumber": "25965659",
+      "url": "https://explorer.arc.io/tx/0xded59b892f2335fd61bb63feb30e555ca9a8ceea4d568079cceaab556ec7d81b"
+    },
+    {
+      "hash": "0x5b324d7d9ada823249acf1396902c64ad81bb555312f597ec980f4004b87b242",
+      "action": "Gasless buy 1.10 USDC; reader signs EIP-3009",
+      "status": "success",
+      "feeWei": "8261526000000000",
+      "blockNumber": "25965728",
+      "url": "https://explorer.arc.io/tx/0x5b324d7d9ada823249acf1396902c64ad81bb555312f597ec980f4004b87b242"
+    },
+    {
+      "hash": "0x0183cc7d90f9c9b9a6170cfb93c19f0dc29a90df79dc11322cb6ece6193f124c",
+      "action": "Propose minted issue to canon",
+      "status": "success",
+      "feeWei": "3693879000000000",
+      "blockNumber": "25965840",
+      "url": "https://explorer.arc.io/tx/0x0183cc7d90f9c9b9a6170cfb93c19f0dc29a90df79dc11322cb6ece6193f124c"
+    },
+    {
+      "hash": "0x5a2392ac1de329d43fb88fcc01c40092a8bdde5acd8f005878946767a9e2affa",
+      "action": "Browser gasless sell; permit + signed intent",
+      "status": "success",
+      "feeWei": "6113480000000000",
+      "blockNumber": "25967411",
+      "url": "https://explorer.arc.io/tx/0x5a2392ac1de329d43fb88fcc01c40092a8bdde5acd8f005878946767a9e2affa"
+    },
+    {
+      "hash": "0x00c1d97660bd81f3e8a3bb0023d0e086e10d690989fab36084173cdaae58f1fe",
+      "action": "Character NFT owner withdraws earned USDC",
+      "status": "success",
+      "feeWei": "1917573000000000",
+      "blockNumber": "25968216",
+      "url": "https://explorer.arc.io/tx/0x00c1d97660bd81f3e8a3bb0023d0e086e10d690989fab36084173cdaae58f1fe"
+    },
+    {
+      "hash": "0x81ed4ed622672d421544244b307318977a4b274f6fc2888612384e89c616a073",
+      "action": "Keeper finalizes episode 1 from signed vote",
+      "status": "success",
+      "feeWei": "1352760070411158",
+      "blockNumber": "25972967",
+      "url": "https://explorer.arc.io/tx/0x81ed4ed622672d421544244b307318977a4b274f6fc2888612384e89c616a073"
+    },
+    {
+      "hash": "0x4384009b3fc16e35fd5d439a81eee459a72222e90f7e15ee94d0d495ced9654b",
+      "action": "Fund rotating demo wallet 0.15 USDC",
+      "status": "success",
+      "feeWei": "441000000000000",
+      "blockNumber": "25965495",
+      "url": "https://explorer.arc.io/tx/0x4384009b3fc16e35fd5d439a81eee459a72222e90f7e15ee94d0d495ced9654b"
+    },
+    {
+      "hash": "0x8951b1048134451a9ec6ac4966f5a115a29e08fc5213be53f4c15e738f244117",
+      "action": "Fund rotating demo wallet 1.1 USDC",
+      "status": "success",
+      "feeWei": "441000000000000",
+      "blockNumber": "25965722",
+      "url": "https://explorer.arc.io/tx/0x8951b1048134451a9ec6ac4966f5a115a29e08fc5213be53f4c15e738f244117"
+    },
+    {
+      "hash": "0xd93cb8dbcc21e83cdf91a59e37779fb2b5d7d2a45b6f9e1df1ea6779098a1965",
+      "action": "Sweep controlled wallet to deployer",
+      "status": "success",
+      "feeWei": "441000000000000",
+      "blockNumber": "25968599",
+      "url": "https://explorer.arc.io/tx/0xd93cb8dbcc21e83cdf91a59e37779fb2b5d7d2a45b6f9e1df1ea6779098a1965"
+    }
+  ]
+}
