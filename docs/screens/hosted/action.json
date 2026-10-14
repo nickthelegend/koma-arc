@@ -1,0 +1,12 @@
+{
+  "network": "Live Arc testnet",
+  "base": "https://app-production-758c.up.railway.app",
+  "amountUSDC": 0.1,
+  "jobId": "faa17aaf5d",
+  "paymentTx": "0x7ebc3f6b28ec100a005e26852f19975696052705ece903487f22692c68cb8379",
+  "stage": "done",
+  "mintTx": "0x975c374b5a5ffb8dc328f3e7295af0d9c3e047f6ccf79a14c6b0e74aa947f4f8",
+  "tokenId": 3,
+  "issue": "https://app-production-758c.up.railway.app/c/faa17aaf5d",
+  "totalTestnetUSDC": 0.1082292012936
+}

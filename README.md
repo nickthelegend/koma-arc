@@ -1,5 +1,8 @@
 # KOMA on Arc
 
+Live: https://app-production-758c.up.railway.app (Arc testnet)
+
+
 **Comics fans own, and characters whose stories their holders write — paid, traded and settled in USDC on Arc.**
 
 Describe a story and KOMA's AI editor (Tencent **Hunyuan 3**) shapes it into a pitch; **Kimi K2.6** writes the

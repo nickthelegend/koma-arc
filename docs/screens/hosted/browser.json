@@ -1,0 +1,89 @@
+{
+  "routes": [
+    {
+      "route": "/series",
+      "headings": [
+        "  - heading \"Series\" [level=1]",
+        "      - heading \"Rust Bucket Riot\" [level=2]:",
+        "      - heading \"Live tape\" [level=2]",
+        "    - heading \"All series\" [level=2]",
+        "    - heading \"Leaderboard\" [level=2]"
+      ]
+    },
+    {
+      "route": "/receipts",
+      "headings": [
+        "  - heading \"Receipts\" [level=1]",
+        "    - heading \"Cross-chain canon receipts\" [level=2]"
+      ]
+    },
+    {
+      "route": "/shelf",
+      "headings": [
+        "  - heading \"Shelf\" [level=1]"
+      ]
+    },
+    {
+      "route": "/create",
+      "headings": []
+    },
+    {
+      "route": "/create/form",
+      "headings": [
+        "  - heading \"New issue\" [level=1]",
+        "  - heading \"Art style\" [level=2]",
+        "  - heading \"Cast\" [level=2]",
+        "  - heading \"Genre\" [level=2]",
+        "  - heading \"Length\" [level=2]"
+      ]
+    },
+    {
+      "route": "/room",
+      "headings": [
+        "  - heading \"Writers’ Room\" [level=1]",
+        "    - heading \"Your room is locked\" [level=2]"
+      ]
+    },
+    {
+      "route": "/launch",
+      "headings": [
+        "  - heading \"Launch\" [level=1]",
+        "    - heading \"What you get, in one transaction\" [level=2]:",
+        "    - heading \"Built on Arc\" [level=2]:"
+      ]
+    },
+    {
+      "route": "/search",
+      "headings": [
+        "  - heading \"Browse by genre\" [level=2]"
+      ]
+    },
+    {
+      "route": "/how",
+      "headings": [
+        "  - heading \"Pay per issue\" [level=1]",
+        "  - heading \"What happens when you press Pay\" [level=2]",
+        "  - heading \"Call it from code\" [level=2]",
+        "  - heading \"Facilitator\" [level=2]:",
+        "  - heading \"Comic contract\" [level=2]:"
+      ]
+    },
+    {
+      "route": "/fund",
+      "headings": [
+        "    - heading \"Fund your wallet\" [level=1]"
+      ]
+    },
+    {
+      "route": "/s/1",
+      "headings": [
+        "  - heading \"Rust Bucket Riot\" [level=1]",
+        "      - heading \"Trade $RUST\" [level=2]",
+        "    - heading \"Rust Bucket Riot’s wallet\" [level=2]",
+        "    - heading \"Trades\" [level=2]",
+        "    - heading \"Where the fees went\" [level=2]"
+      ]
+    }
+  ],
+  "errors": []
+}

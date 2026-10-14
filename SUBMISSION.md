@@ -1,5 +1,8 @@
 # KOMA — Arc Microgrants submission
 
+Live: https://app-production-758c.up.railway.app (Arc testnet)
+
+
 | | |
 |---|---|
 | **Project** | KOMA: comics fans own, and characters whose stories their holders write |
