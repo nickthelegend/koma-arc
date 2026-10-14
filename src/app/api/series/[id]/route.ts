@@ -1,3 +1,4 @@
+import { refreshHostedIndex } from "@/lib/server/launchpad/hosted";
 import { NextResponse, type NextRequest } from "next/server";
 import { launchpad } from "@/lib/server/launchpad/addresses";
 import { seriesDetail } from "@/lib/server/launchpad/queries";
@@ -5,6 +6,7 @@ import { seriesDetail } from "@/lib/server/launchpad/queries";
 export const dynamic = "force-dynamic";
 
 export async function GET(_req: NextRequest, ctx: RouteContext<"/api/series/[id]">) {
+  await refreshHostedIndex();
   const id = Number((await ctx.params).id);
   if (!launchpad() || !Number.isInteger(id) || id < 1) return NextResponse.json({ error: "No such series" }, { status: 404 });
   const s = await seriesDetail(id);

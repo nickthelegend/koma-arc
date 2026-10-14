@@ -1,0 +1,7 @@
+{
+  "status": 503,
+  "body": {
+    "error": "Start the local studio server to generate, mint, trade or vote. No hosted payment is taken."
+  },
+  "ok": true
+}

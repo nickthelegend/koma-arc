@@ -1,3 +1,4 @@
+import { refreshHostedIndex } from "@/lib/server/launchpad/hosted";
 import Link from "next/link";
 import { genres } from "@/lib/studio-config";
 import { allComics, spotlight } from "@/lib/catalog";
@@ -17,6 +18,7 @@ import { recentSpeeds } from "@/lib/server/speed";
 export const dynamic = "force-dynamic";
 
 export default async function Catalog({ searchParams }: PageProps<"/">) {
+  await refreshHostedIndex();
   const sp = await searchParams;
   const comics = await allComics();
   const genre = typeof sp.genre === "string" && genres.includes(sp.genre as never) ? sp.genre : "All";

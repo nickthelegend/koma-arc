@@ -1,6 +1,6 @@
 # KOMA — Arc Microgrants submission
 
-Live: https://app-production-758c.up.railway.app (Arc testnet)
+Live: https://koma-arc.vercel.app (Arc testnet)
 
 
 | | |

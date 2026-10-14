@@ -1,0 +1,25 @@
+{
+  "base": "https://koma-arc.vercel.app",
+  "routes": [
+    "/",
+    "/series",
+    "/launch",
+    "/create",
+    "/create/form",
+    "/receipts",
+    "/shelf",
+    "/search",
+    "/how",
+    "/room",
+    "/fund",
+    "/s/1"
+  ],
+  "api": [
+    "/api/status",
+    "/api/series",
+    "/api/board"
+  ],
+  "contract": "0xd0719483Db7EfB8bBFF769C4E4DB2C027528ACFB",
+  "comicDraft": true,
+  "waitMs": 4000
+}

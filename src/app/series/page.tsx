@@ -1,3 +1,4 @@
+import { refreshHostedIndex } from "@/lib/server/launchpad/hosted";
 import type { Metadata } from "next";
 import Link from "next/link";
 import type { SeriesSummary } from "@/lib/launchpad/types";
@@ -69,6 +70,7 @@ const tabHref = (tab: Tab, q: string) => {
 };
 
 export default async function SeriesBoard({ searchParams }: PageProps<"/series">) {
+  await refreshHostedIndex();
   const sp = await searchParams;
   // ?sort= is the old name of ?tab=.
   const raw = typeof sp.tab === "string" ? sp.tab : sp.sort === "graduating" ? "graduating" : typeof sp.sort === "string" ? sp.sort : "";

@@ -245,7 +245,7 @@ export async function indexOnce(): Promise<bigint | null> {
   const a = launchpad();
   if (!a) return null;
   followDeployment();
-  void backfillFinalizeTx();
+  if (process.env.KOMA_HOSTED_READ_ONLY !== "1") void backfillFinalizeTx();
   const key = cursorKey();
   const head = await logsClient.getBlockNumber();
   let from = BigInt(meta(key) ?? a.deployBlock);

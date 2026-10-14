@@ -32,4 +32,4 @@ export function useServerStatus() {
 export const AI_DOWN_NOTE = "The AI artist is offline right now, so nothing can be drawn and no payment will be taken. Reading and trading still work.";
 
 export const AI_UNCONFIGURED_NOTE =
-  "This server has no AI models configured yet (Kimi, Hunyuan and fal), so the studio can't write or draw and no payment will be taken. Reading, trading and voting still work.";
+  "This server has no AI models configured yet (Kimi, Hunyuan and fal), so the studio can't write or draw and no payment will be taken. Browsing still works. Generation, trading and voting require the local studio server.";

@@ -1,6 +1,6 @@
 # KOMA on Arc
 
-Live: https://app-production-758c.up.railway.app (Arc testnet)
+Live: https://koma-arc.vercel.app (Arc testnet)
 
 
 **Comics fans own, and characters whose stories their holders write — paid, traded and settled in USDC on Arc.**

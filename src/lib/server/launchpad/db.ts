@@ -1,3 +1,4 @@
+import snapshot from "../../../../deployments/hosted-index-testnet.json";
 import type { DatabaseSync } from "node:sqlite";
 import type { LaunchJob } from "@/lib/launchpad/types";
 import { db as base } from "../store";
@@ -123,6 +124,18 @@ export function db(): DatabaseSync {
   const cols = (d.prepare("PRAGMA table_info(lp_slots)").all() as { name: string }[]).map((c) => c.name);
   if (!cols.includes("finalized_tx")) d.exec("ALTER TABLE lp_slots ADD COLUMN finalized_tx TEXT");
   if (!cols.includes("finalized_at")) d.exec("ALTER TABLE lp_slots ADD COLUMN finalized_at INTEGER");
+  if (process.env.KOMA_HOSTED_READ_ONLY === "1" && !d.prepare("SELECT 1 FROM lp_meta LIMIT 1").get()) {
+    const tables = snapshot.tables as Record<string, {columns:string[]; rows:(string|number|null)[][]}>;
+    d.exec("BEGIN");
+    try {
+      for (const [table, data] of Object.entries(tables)) {
+        if (!/^lp_[a-z_]+$/.test(table) || data.columns.some(c => !/^[a-z_]+$/.test(c))) throw Error("Invalid chain snapshot");
+        const insert = d.prepare(`INSERT OR IGNORE INTO ${table} (${data.columns.join(',')}) VALUES (${data.columns.map(()=>'?').join(',')})`);
+        for (const row of data.rows) insert.run(...row);
+      }
+      d.exec("COMMIT");
+    } catch(error) { d.exec("ROLLBACK"); throw error; }
+  }
   ready = true;
   return d;
 }

@@ -13,7 +13,7 @@ export async function GET() {
   const relayerUsdc = config.account ? await publicClient.getBalance({ address: config.account.address }).then((b) => Number(b) / 1e18 /* native USDC, 18 decimals */).catch(() => null) : null;
   return NextResponse.json({
     ready: config.missing.length === 0,
-    missing: config.missing,
+    missing: process.env.KOMA_HOSTED_READ_ONLY === "1" ? ["Local studio server required for generation and settlement"] : config.missing,
     network: config.network.key,
     caip: config.network.caip,
     chainId: config.network.chain.id,

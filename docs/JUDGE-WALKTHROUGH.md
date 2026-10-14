@@ -1,6 +1,6 @@
 # Judge walkthrough
 
-Live: https://app-production-758c.up.railway.app (Arc testnet)
+Live: https://koma-arc.vercel.app (Arc testnet)
 
 1. Browse Catalog and Series to see indexed live Arc testnet contracts.
 2. Open Receipts for measured payment/mint transactions and honest cross-chain status.

@@ -1,5 +1,5 @@
 export async function register() {
-  if (process.env.NEXT_RUNTIME !== "nodejs") return;
+  if (process.env.NEXT_RUNTIME !== "nodejs" || process.env.KOMA_HOSTED_READ_ONLY === "1") return;
   const { recoverJobs } = await import("./lib/server/pipeline");
   await recoverJobs().catch((e) => console.error("[koma] job recovery failed", e));
   const { launchpad } = await import("./lib/server/launchpad/addresses");

@@ -76,12 +76,11 @@ cast call $(get royaltyRouter) "owner()(address)" --rpc-url $R                  
 If `routerWired` is `false` in the JSON (only when `ADMIN` already owned the router), the Safe must send
 `setFactory(<seriesFactory>)` on the router before the first launch.
 
-## 4. Host the app (Vercel or Railway)
+## 4. Host the frontend on Vercel
 
-The app is one Next.js server with SQLite and on-disk art, so it needs **one instance with a persistent volume**
-(Railway service with a volume, or any container host; `Dockerfile` included). A Vercel deployment works for the
-pages but the pipeline, keeper and index need a long-running process: put Vercel in front of the server or host
-the server alone.
+The Vercel frontend supports browsing and preparing a comic. The current hosted build is testnet, read-only; see docs/HOSTED.md. It runs request/response RPC and catalogue APIs. Its public chain cache rebuilds from events and refreshes on demand.
+
+The paid generation pipeline, artwork storage, payment journal, signed votes and keeper remain one local studio process. A cron cannot safely resume the current in-memory payment callbacks or coordinate its SQLite/artwork state across function instances. Enabling serverless generation would require a durable job queue, shared atomic journals and managed artwork storage first. Minimum on-demand demo server: one Node 24 process, about 1 GiB RAM and persistent disk. No hosted resource is provisioned.
 
 | Env var | Mainnet value |
 |---|---|
@@ -98,7 +97,7 @@ the server alone.
 
 `deployments/arc-mainnet.json` must be in the image (the Dockerfile copies `deployments/`).
 
-## 5. Services that must run
+## 5. Services for full local execution
 
 | Service | What | Required |
 |---|---|---|

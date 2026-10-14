@@ -1,3 +1,4 @@
+import { refreshHostedIndex } from "@/lib/server/launchpad/hosted";
 import { randomBytes } from "node:crypto";
 import { NextResponse, type NextRequest } from "next/server";
 import { withX402 } from "@x402/next";
@@ -74,6 +75,7 @@ export async function POST(req: NextRequest) {
 
 /** GET /api/series → every launched series, most recently active first. */
 export async function GET() {
+  await refreshHostedIndex();
   if (!launchpad()) return NextResponse.json({ series: [], deployed: false });
   return NextResponse.json({ series: listSeries(), deployed: true }, { headers: { "Cache-Control": "no-store" } });
 }

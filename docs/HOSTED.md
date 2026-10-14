@@ -1,17 +1,21 @@
-# Hosted Arc testnet
+# KOMA — Vercel / Live testnet
 
-Live: https://app-production-758c.up.railway.app (Arc testnet)
+LEAD: RUN THESE
+```sh
+node scripts/e2e-browser-hosted.mjs
+node scripts/prepare-hosted-index.mjs
+npm run typecheck
+npm run test:unit
+```
 
-Railway project `koma-arc-testnet`, service `app`, one instance with a persistent volume mounted at `/data`. This single Next.js server owns the UI, API, x402 facilitator, trade relayer, canon keeper, SQLite event index and artwork. No separate database or Envio service is needed. API calls are same-origin.
+Frontend and read APIs: https://koma-arc.vercel.app. Next.js deploys from the repo root.
+Addresses are pinned to deployments/arc-testnet.json (5042002). The catalogue cache contains only public chain events, rebuilt from testnet by prepare-hosted-index and refreshed on demand in Vercel functions. SQLite in /tmp is a disposable read cache; no user data is stored there on the hosted build. There is no background indexer or keeper in Vercel.
 
-The image builds with `NEXT_PUBLIC_KOMA_NETWORK=arc-testnet`; runtime reads `/app/deployments/arc-testnet.json`. Server and browser RPCs point at Arc testnet. `SERVER_PRIVATE_KEY` and the existing fal credential are Railway secrets sourced from the gitignored environment. The AI daily cap is $5. Gateway and CCIP remain disabled. Source uploads exclude env files, keys, local state, dependencies and generated output.
+Browse real series, current testnet blocks and receipts; choose a comic prompt/style in the form. Hosted generation, paid minting, relayed trading, voting and encrypted draft persistence are disabled before payment. Historical artwork remains on the operator machine, so an empty comic shelf is not presented as the full chain inventory.
+The live series listing can refresh without a daemon. The full studio pipeline cannot be replaced by cron alone: it uses in-memory x402 settlement callbacks, SQLite journals and local artwork across multi-step AI jobs. A durable queue, atomic shared journal and managed artwork storage are prerequisites for serverless generation. Minimum local demo: one Node 24 process (~1 GiB RAM) with persistent disk and existing AI credentials. Run npm run dev on the existing assigned port 4310. No paid resource was created.
 
-Deploy from the repo root with `railway up --service app`. `/api/health` checks process liveness; `/api/status` separately reports testnet, funded relayer and AI readiness. The SQLite index uses 5,000-block RPC chunks and polls every ten seconds. A fresh deployment indexes existing live events into its own database; source `.data` is never uploaded.
+Env (all nonsecret): NEXT_PUBLIC_KOMA_NETWORK=arc-testnet, KOMA_HOSTED_READ_ONLY=1, KOMA_SERVER_RPC_URL=https://rpc.blockdaemon.testnet.arc.io, KOMA_PUBLIC_URL=https://koma-arc.vercel.app, KOMA_DATA_DIR=/tmp/koma-cache. No signing or AI key is uploaded. Blockdaemon is listed in the official Arc RPC documentation: https://docs.arc.io/arc/references/rpc-endpoints.
+Deploy: vercel link --project koma-arc, then vercel deploy --prod --yes. .vercelignore excludes credentials, local jobs/art, contract artifacts and screenshots. The read cache seed is public chain data only.
+Production screenshots and assertions are under docs/screens/hosted/. No transaction was sent in this hosting pass. Generation, hosted settlement and cross-chain execution: Not run.
 
-Hosted HTTP responses, browser screenshots, console results and any real-action receipt are under `docs/screens/hosted/`. `scripts/hosted-smoke.mjs` caps its single one-page comic payment at 0.10 testnet USDC and saves the job ID before polling, so rerunning it resumes the same job.
-
-Limitations: prior Envio, graduation and cross-chain claims retain their existing Live/Fork/Not run labels. Writers' Room passkey creation requires user interaction and was not exercised with a personal authenticator. AI generation depends on the existing fal account's access and balance; readiness and the real-job result are recorded separately.
-
-The primary Circle RPC throttled the Railway server during initial smoke checks. Server reads, signing submissions and indexing now use the [official Blockdaemon testnet endpoint](https://docs.arc.io/arc/references/rpc-endpoints), verified to return chain 5042002. Browsers use the same-origin RPC proxy. No payment was taken during the initial failed readiness attempt.
-
-Verified 2026-10-14: Railway deployment `52bb69a7-ec5f-4f7f-b966-40e4aec04f43` SUCCESS; all navigation routes and readiness endpoints HTTP 200; browser console clean; existing live series/trades visible. [Moonlight Delivery](https://app-production-758c.up.railway.app/c/faa17aaf5d) completed with real AI art and minted token #3. Payment plus settlement/mint gas totaled 0.10822920 testnet USDC. Payment `0x7ebc3f6b28ec100a005e26852f19975696052705ece903487f22692c68cb8379`; mint `0x975c374b5a5ffb8dc328f3e7295af0d9c3e047f6ccf79a14c6b0e74aa947f4f8`.
+Verified: 12/12 production routes HTTP 200, no console errors/broken images, mobile fits 390 px. Story starter selection, status/series/board APIs, live factory bytecode and pre-payment mutation refusal pass. Typecheck and 32 unit tests pass; seed hydration and live refresh pass locally.

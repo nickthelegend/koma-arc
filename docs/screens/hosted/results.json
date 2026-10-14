@@ -1,0 +1,309 @@
+{
+  "at": "2026-10-14T15:02:14.800Z",
+  "base": "https://koma-arc.vercel.app",
+  "results": [
+    {
+      "route": "/",
+      "status": 200,
+      "consoleErrors": [],
+      "badImages": [],
+      "bodyPresent": true,
+      "ok": true
+    },
+    {
+      "route": "/series",
+      "status": 200,
+      "consoleErrors": [],
+      "badImages": [],
+      "bodyPresent": true,
+      "ok": true
+    },
+    {
+      "route": "/launch",
+      "status": 200,
+      "consoleErrors": [],
+      "badImages": [],
+      "bodyPresent": true,
+      "ok": true
+    },
+    {
+      "route": "/create",
+      "status": 200,
+      "consoleErrors": [],
+      "badImages": [],
+      "bodyPresent": true,
+      "ok": true
+    },
+    {
+      "route": "/create/form",
+      "status": 200,
+      "consoleErrors": [],
+      "badImages": [],
+      "bodyPresent": true,
+      "ok": true
+    },
+    {
+      "route": "/receipts",
+      "status": 200,
+      "consoleErrors": [],
+      "badImages": [],
+      "bodyPresent": true,
+      "ok": true
+    },
+    {
+      "route": "/shelf",
+      "status": 200,
+      "consoleErrors": [],
+      "badImages": [],
+      "bodyPresent": true,
+      "ok": true
+    },
+    {
+      "route": "/search",
+      "status": 200,
+      "consoleErrors": [],
+      "badImages": [],
+      "bodyPresent": true,
+      "ok": true
+    },
+    {
+      "route": "/how",
+      "status": 200,
+      "consoleErrors": [],
+      "badImages": [],
+      "bodyPresent": true,
+      "ok": true
+    },
+    {
+      "route": "/room",
+      "status": 200,
+      "consoleErrors": [],
+      "badImages": [],
+      "bodyPresent": true,
+      "ok": true
+    },
+    {
+      "route": "/fund",
+      "status": 200,
+      "consoleErrors": [],
+      "badImages": [],
+      "bodyPresent": true,
+      "ok": true
+    },
+    {
+      "route": "/s/1",
+      "status": 200,
+      "consoleErrors": [],
+      "badImages": [],
+      "bodyPresent": true,
+      "ok": true
+    },
+    {
+      "comicDraft": true,
+      "ok": true
+    },
+    {
+      "api": "/api/status",
+      "status": 200,
+      "ok": true,
+      "data": {
+        "ready": false,
+        "missing": [
+          "Local studio server required for generation and settlement"
+        ],
+        "network": "arc-testnet",
+        "caip": "eip155:5042002",
+        "chainId": 5042002,
+        "usdc": "0x3600000000000000000000000000000000000000",
+        "faucetUrl": "https://faucet.circle.com",
+        "publicUrl": "https://koma-arc.vercel.app",
+        "payTo": null,
+        "contract": "0x9041D1a0D3d8C03cDcf4e17E0e6cc4a2C69E79b4",
+        "facilitator": null,
+        "relayerUsdc": null,
+        "budget": {
+          "spentUsd": 0,
+          "capUsd": 15,
+          "day": "2026-10-14"
+        },
+        "ai": {
+          "configured": false,
+          "missing": [
+            "a script model (MOONSHOT_API_KEY or FAL_KEY)",
+            "an editor model (HUNYUAN_API_KEY or FAL_KEY)",
+            "FAL_KEY for art"
+          ],
+          "script": "off",
+          "editor": "off",
+          "image": "off",
+          "hunyuanImage": false,
+          "hunyuanCovers": false,
+          "ok": false,
+          "reason": "not configured: a script model (MOONSHOT_API_KEY or FAL_KEY), an editor model (HUNYUAN_API_KEY or FAL_KEY), FAL_KEY for art"
+        },
+        "launchpad": {
+          "engine": "solidity",
+          "addresses": {
+            "accountImpl": "0x41C8f39463A868d3A88af00cd0fe7102F30E44eC",
+            "accountProxy": "0x55266d75D1a14E4572138116aF39863Ed6596E7F",
+            "admin": "0x0648aDF1967692A0c991d7715b0b588452321FBd",
+            "canonRegistry": "0xA37bAe663776d692927a94edaaCF085AF406e1FD",
+            "chainId": 5042002,
+            "characterNft": "0x3A1ccCac6a15b1B3242fF6bFBb2c9a9F054a312B",
+            "curveMath": "0xfbBc5cdaAc256D714D7EAbfDc82277CE13AC691b",
+            "deployBlock": 67018095,
+            "engine": "solidity",
+            "erc6551Registry": "0x000000006551c19487814612e58FE06813775758",
+            "graduator": "0xD8f73Bebe3c78Fbd698E7a8fabC13bF6c1caE000",
+            "komaIssues": "0x9041D1a0D3d8C03cDcf4e17E0e6cc4a2C69E79b4",
+            "minGraduationTarget": 1000000,
+            "minVotingWindow": 60,
+            "network": "arc-testnet",
+            "permit2": "0x000000000022D473030F116dDEE9F6B43aC78BA3",
+            "poolManager": "0xaa4dd8435Faf3AE67224944b90d72964c4481Cc8",
+            "positionManager": "0xE599491DF5415fB7F97bA902556862d0395464b7",
+            "relayer": "0xa5A01F2ac2c4Dc58274e443cc8F9EC5343eA0D09",
+            "routerWired": true,
+            "royaltyRouter": "0xa2528cfc86B35f4fa29d182E3DBFC8559bC4d040",
+            "seriesFactory": "0xd0719483Db7EfB8bBFF769C4E4DB2C027528ACFB",
+            "swapper": "0x1761210F0dD743B207BbF3c8d2aA957D1EeAb607",
+            "treasury": "0x0648aDF1967692A0c991d7715b0b588452321FBd",
+            "usdc": "0x3600000000000000000000000000000000000000",
+            "v4Quoter": "0x6a79Cd52083a502CAeD6a28899b42f88a648BC88",
+            "deployGas": {
+              "transactions": 24,
+              "gasUsed": "33065114",
+              "usdc": "0.826628"
+            },
+            "deployTxs": [
+              "0x50a9b5c5916b0e5ef80a3c0fe95a4a5892654b74cb6d72231168a795ccd115b8",
+              "0x03ade2d46b778417006af9d4d0b5c73ddb5f67960b13049077670f0965181ea6",
+              "0x4a0dfd2e4de08d2cd98c3dfe4ed6dfc783717743eed8944d881d069018a502f2",
+              "0x9fab1986d884d6751182a1097b9f183266d87914cff11483baeb0874b4c37005",
+              "0x7b6de075e2b033bb3bdc032c355974fd2094b331b42bb2ecebb9b5f6e6e54ee1",
+              "0x2cdee45f6905e893903498f92bd3826e14d8df2501280cf5f0c798305ed20e93",
+              "0x76e65f8491b22d25d10febb06585e666003621edadd789b27056dae46cbfe4be",
+              "0x0cd5fa1fab1e79a63fe5dbfff1de41739f461e8f6cdc86788bdb4234326d3991",
+              "0x76c74f0a0ec84b7e44b2af65fe4ab40c6c94f7950298218b661ee4d4b21dea5e",
+              "0x9170dfc6c644262a825eb6a166e2514e4adf172e776b79d627b4ef6c1471fd96",
+              "0x9e818eaaed421a7868c1ed2978d2be551cae59667a8ee168bb0182778a282a47",
+              "0xfed352aef8af666b2876dca40b28d50368552a8b7604685e4618918a21cad691",
+              "0x4e50e8a6293cbfb514544b9df3d3e640d67b6e6cf4f46846bb4424ee567c775f",
+              "0x0f9896a3ff94f5905d8b062a6a155026fe0ce1ae43fc10ad2f7478dc09e9080e",
+              "0xfa5eb72f8fb2e8b17c3ca4900e2fee3575f0006d1af2fc4006fe5ef474b4ead8",
+              "0xa19672c19f6d515131c54453d79c911b6fa31a81126b3127fd6f576aec31a751",
+              "0xe44ee0845768bd2882d8348a95c4454dadb5a097ac2f65a5112f5f43cdb7647a",
+              "0x623ea5d2b4790fba40b300a1ae69a4446504d9d7ad587504bfeb3e3e83c107b3",
+              "0x1b1bcee70ae6504497a3ce21281782a98fb1899f13458165d476307286bdd9a5",
+              "0xb3b38aa0f950230f3ab9df8df74328c1982c992f0f0c0ad139c4100fcc6bd0b6",
+              "0x0f52e463a5a8ee7ef339a51199d68118f1730aabac31ecd2a80c68a28bff9f60",
+              "0xe9eea56dcf759933f0d1778d0782a35897dd4a43aab7f1bea92c229f918625fd",
+              "0xf816559d596ce7a94c73b26dae255b3c8c41cde2b07b0a6fc898dda8b52266fc",
+              "0x17b7b0cccd2a2c48057e7c690d496d2b5f11c2dbe593940dac0abc2f108201b7"
+            ],
+            "proof": {
+              "launchpad": {
+                "launch": {
+                  "seriesId": 1,
+                  "coin": "0x675CdC70450644F16774dF88783Bf857C23Ea634",
+                  "curve": "0x90422F141A58aF1390e93eDEE50dCbeb9cB478f0",
+                  "characterAccount": "0x66c92E89C06e695F5c322cecE143d43489208Dc8",
+                  "launchTx": "0x57f430b3d2aaf19c22f2ab36925327d328ce682ef51b7409b6875a3f0eb6899e"
+                },
+                "gaslessBuy": "0x4acee7bd53187f51d7bc3814d5af61cc7ea80fd42ac1f5946f37c2cfd59020fb",
+                "gaslessSell": "0xce7729a55fe7e6a4f14e57d39d79f2539bd09c26dd62b48bfcf6d286991d19f2",
+                "episode": {
+                  "issueId": 1,
+                  "paymentTx": "0x1680a8fda50f22c00a8ef64ce4ee94574b92f35966105941c663afb7801e7e59",
+                  "mintTx": "0xe905067a9386afc574870d33bfd2acfd70a9e8d76a8e297ea03252ec1cf63fdd"
+                },
+                "at": "2026-10-13T20:19:28.001Z"
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "api": "/api/series",
+      "status": 200,
+      "ok": true,
+      "data": {
+        "series": [
+          {
+            "id": 1,
+            "name": "Rust Bucket Riot",
+            "symbol": "RUST",
+            "characterName": "Rust Bucket Riot",
+            "sheetUrl": "",
+            "coin": "0x675CdC70450644F16774dF88783Bf857C23Ea634",
+            "curve": "0x90422F141A58aF1390e93eDEE50dCbeb9cB478f0",
+            "characterId": 1,
+            "characterAccount": "0x66c92E89C06e695F5c322cecE143d43489208Dc8",
+            "creator": "0x0bdFbd207793db7Fbf8f6D6490087b6736ECF7e2",
+            "parentSeriesId": 0,
+            "priceUsdc": 0.0000010044343769428784,
+            "marketCapUsdc": 1004.4343769428783,
+            "raisedUsdc": 2.214736,
+            "targetUsdc": 5,
+            "complete": false,
+            "graduated": false,
+            "demo": false,
+            "holders": 2,
+            "episodes": 1,
+            "launchedAt": 1791922344,
+            "lastTradeAt": 1791922459
+          }
+        ],
+        "deployed": true
+      }
+    },
+    {
+      "api": "/api/board",
+      "status": 200,
+      "ok": true,
+      "data": {
+        "source": "local",
+        "indexedBlock": null,
+        "stats": {
+          "series": 1,
+          "trades": 3,
+          "volumeUsd": 4.714272,
+          "backers": 2,
+          "canonEpisodes": 1
+        },
+        "topSeries": [
+          {
+            "id": 1,
+            "name": "Rust Bucket Riot",
+            "symbol": "RUST",
+            "volumeUsd": 4.714272,
+            "trades": 3,
+            "holders": 2
+          }
+        ],
+        "topBackers": [
+          {
+            "address": "0xcea1358d2ed44c56e162c0187132837a2eccef8c",
+            "volumeUsd": 3.714272,
+            "trades": 2
+          },
+          {
+            "address": "0x0bdfbd207793db7fbf8f6d6490087b6736ecf7e2",
+            "volumeUsd": 1,
+            "trades": 1
+          }
+        ]
+      }
+    },
+    {
+      "liveTestnetContract": "0xd0719483Db7EfB8bBFF769C4E4DB2C027528ACFB",
+      "codeBytes": 5631,
+      "ok": true
+    },
+    {
+      "mobileOverflow": false,
+      "ok": true
+    }
+  ]
+}
