@@ -1,5 +1,5 @@
 import { cctpFeeQuote, type CctpFeeRow } from "./cctp-fees";
-import type {PendingTrade} from "./pending-trade";
+import {assertTradeNetwork,type PendingTrade} from "./pending-trade";
 import {UnconfirmedTradeError} from "./trade-guard";
 import { createPublicClient, parseEventLogs, parseAbiItem, erc20Abi, decodeFunctionData, encodeFunctionData, http, toFunctionSelector, toHex, type Account, type Address, type Chain, type Hex, type Transport, type WalletClient } from "viem";
 import { KOMA, RPC_URL, USDC_DOMAIN, CCTP } from "@/lib/network";
@@ -385,7 +385,7 @@ export async function cctpStatus(burnTx: Hex): Promise<CctpStatus | null> {
 export type TradeObserver=(stage:"approval"|"trade",contract:Address,hash?:Hex)=>void;
 export async function recoverPendingTrade(p:PendingTrade):Promise<"approval-confirmed"|"trade-confirmed"|"reverted"> {
  if(!p.hash)throw new Error("No transaction hash was returned. Provider or relayer history is required; no automatic resubmission is safe.");
- if(p.chainId!==5042002 || KOMA.chain.id!==5042002 || await lpClient.getChainId()!==5042002)throw new Error("Recovery RPC is not Arc testnet");
+ assertTradeNetwork(p.chainId,KOMA.chain.id,await lpClient.getChainId());
  const [r,tx]=await Promise.all([lpClient.getTransactionReceipt({hash:p.hash}),lpClient.getTransaction({hash:p.hash})]);
  if(r.transactionHash.toLowerCase()!==p.hash.toLowerCase()||tx.hash.toLowerCase()!==p.hash.toLowerCase()||tx.to?.toLowerCase()!==p.stepContract.toLowerCase()||r.to?.toLowerCase()!==p.stepContract.toLowerCase()||r.from.toLowerCase()!==tx.from.toLowerCase()||tx.blockHash!==r.blockHash)throw new Error("Receipt identity does not match the pending transaction");
  const block=await lpClient.getBlock({blockNumber:r.blockNumber});const final=await lpClient.getBlock({blockTag:"finalized"});

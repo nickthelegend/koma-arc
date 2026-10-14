@@ -8,7 +8,7 @@ import { useBalance, useReadContract } from "wagmi";
 import { formatUnits, getAddress, parseUnits, type Hex } from "viem";
 import { coinAbi, curveAbi } from "@/lib/launchpad/abi";
 import { directBuy, directSell, directSwap, recoverPendingTrade, landed, lpClient, quotePool, relay, signGaslessBuy, signGaslessSell, signGaslessSwapBuy, tradeError } from "@/lib/launchpad/client";
-import {readPendingTrade,savePendingTrade,clearPendingTrade,clearUnsignedTrade,pendingMatches,type PendingTrade} from "@/lib/launchpad/pending-trade";
+import {isTradeChain,readPendingTrade,savePendingTrade,clearPendingTrade,clearUnsignedTrade,pendingMatches,type PendingTrade} from "@/lib/launchpad/pending-trade";
 import {UnconfirmedTradeError,requireTradeWallet} from "@/lib/launchpad/trade-guard";
 import { withSlippage } from "@/lib/launchpad/intents";
 import type { Addr } from "@/lib/launchpad/types";
@@ -181,7 +181,8 @@ export function TradeWidget({ s }: { s: TradeSeries }) {
     const boundary=new SubmissionBoundary();
     try {
       if(readPendingTrade(localStorage))throw new Error("An original transaction is unresolved. Check its receipt before any new trade.");
-      if(KOMA.chain.id !== 5042002)throw new Error("Durable trade recovery is available only on Arc testnet 5042002; no signature was requested.");
+      const chainId=KOMA.chain.id;
+      if(!isTradeChain(chainId))throw new Error("Trading is available only on Arc mainnet or testnet; no signature was requested.");
       let w = await wallet.walletClient();
       if (getAddress(w.account.address) !== getAddress(me)) throw new Error("Wallet changed. Request a new quote.");
       if (await w.getChainId() !== KOMA.chain.id) throw new Error("The wallet network changed. Switch to the configured Arc network before signing.");
@@ -200,7 +201,7 @@ export function TradeWidget({ s }: { s: TradeSeries }) {
       if (getAddress(w.account.address) !== getAddress(me)) throw new Error("Wallet changed while refreshing the quote. Request a new quote.");
       requireTradeWallet(currentContext.current.wallet ?? "", me);
       if (await w.getChainId() !== KOMA.chain.id) throw new Error("Wallet network changed while refreshing the quote.");
-      intent={version:1,id:crypto.randomUUID(),chainId:5042002,wallet:me,tradeContract:pool?s.swapper:s.curve,coin:s.coin,side,amount:spend.toString(),minimum:min.toString(),seriesId:s.id,pool:Boolean(pool),direct,stage:"intent",stepContract:pool?s.swapper:s.curve,startedAt:Date.now()};
+      intent={version:1,id:crypto.randomUUID(),chainId,wallet:me,tradeContract:pool?s.swapper:s.curve,coin:s.coin,side,amount:spend.toString(),minimum:min.toString(),seriesId:s.id,pool:Boolean(pool),direct,stage:"intent",stepContract:pool?s.swapper:s.curve,startedAt:Date.now()};
       savePendingTrade(localStorage,intent);setPending(intent);
       const observe=(stage:"approval"|"trade",contract:Addr,hash?:Hex)=>{if(!hash&&!pendingMatches(intent!,currentContext.current.wallet,KOMA.chain.id,currentContext.current.contract,currentContext.current.seriesId,currentContext.current.coin,currentContext.current.pool))throw new Error("Wallet or operation context changed; no further transaction was sent.");boundary.enter();intent={...intent!,approvalHash:stage==="trade"&&intent!.stage==="approval"&&intent!.hash?intent!.hash:intent!.approvalHash,stage,stepContract:contract,hash};setPending(intent);savePendingTrade(localStorage,intent);};
       let tx: Hex;

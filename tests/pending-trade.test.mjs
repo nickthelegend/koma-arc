@@ -1,5 +1,5 @@
 import {test} from 'node:test';import assert from 'node:assert/strict';import fs from 'node:fs';import os from 'node:os';import path from 'node:path';
-import {readPendingTrade,savePendingTrade,clearPendingTrade,pendingMatches} from '../src/lib/launchpad/pending-trade.ts';
+import {readPendingTrade,savePendingTrade,clearPendingTrade,pendingMatches,assertTradeNetwork} from '../src/lib/launchpad/pending-trade.ts';
 // Unsigned storage metadata only: no chain/provider successful result fixture.
 const intent={version:1,id:'storage-only',chainId:5042002,wallet:'0x'+'11'.repeat(20),tradeContract:'0x'+'22'.repeat(20),coin:'0x'+'33'.repeat(20),side:'buy',amount:'1',minimum:'0',seriesId:1,pool:false,direct:true,stage:'intent',stepContract:'0x'+'22'.repeat(20),startedAt:1};
 test('durable unresolved identity survives a new storage reader; foreign context cannot resolve it',()=>{
@@ -27,3 +27,16 @@ test('frozen inputs, receipt identity and series scope cannot silently change',(
 import {clearUnsignedTrade} from '../src/lib/launchpad/pending-trade.ts';
 import {SubmissionBoundary} from '../src/lib/submission-boundary.ts';
 test('only pre-submission unsigned refusal releases exact owned identity',async()=>{let raw=null;const s={getItem(){return raw},setItem(_k,v){raw=v},removeItem(){raw=null}};savePendingTrade(s,intent);const before=new SubmissionBoundary();try{await Promise.reject(Error('local typed data rejected'));}catch{before.releaseUnsigned(()=>clearUnsignedTrade(s,intent));}assert.equal(raw,null);savePendingTrade(s,intent);const after=new SubmissionBoundary();try{after.enter();await Promise.reject(Error('wallet submission response lost'));}catch{after.releaseUnsigned(()=>clearUnsignedTrade(s,intent));}assert.ok(readPendingTrade(s));assert.throws(()=>clearUnsignedTrade(s,{...intent,wallet:intent.coin}),/remains locked/);const sent={...intent,stage:'trade'};savePendingTrade(s,sent);assert.throws(()=>clearUnsignedTrade(s,sent),/remains locked/);assert.ok(raw);});
+
+
+test('mainnet journal preserves its network and cannot be recovered through testnet',()=>{
+ let raw=null;const storage={getItem(){return raw},setItem(_k,v){raw=v},removeItem(){raw=null}};
+ const mainnet={...intent,chainId:5042};savePendingTrade(storage,mainnet);
+ const restored=readPendingTrade(storage);assert.equal(restored.chainId,5042);
+ assert.equal(pendingMatches(restored,intent.wallet,5042,intent.tradeContract),true);
+ assert.equal(pendingMatches(restored,intent.wallet,5042002,intent.tradeContract),false);
+ assert.throws(()=>savePendingTrade(storage,{...mainnet,chainId:5042002}),/frozen/);
+ for(const network of [5042,5042002])assert.doesNotThrow(()=>assertTradeNetwork(network,network,network));
+ for(const context of [[5042,5042002,5042],[5042,5042,5042002],[5042002,5042,5042002],[5042002,5042002,5042],[143,143,143]])assert.throws(()=>assertTradeNetwork(...context),/original Arc network/);
+ raw=JSON.stringify({...mainnet,chainId:143});assert.throws(()=>readPendingTrade(storage),/invalid/);
+});
