@@ -92,19 +92,19 @@ export function LaunchStudio({ deployed, parent, job, chainPanel }: { deployed: 
   const ids = useId();
   const [d, setD] = useState<Draft>({ name: "", symbol: "", characterName: "", characterPrompt: "", pitch: "", genre: "", demo: !MAINNET });
   const [tried, setTried] = useState(false);
-  const [offline, setOffline] = useState<string | null>(null);
+  const [offline, setOffline] = useState<string | null>("Checking studio availability…");
   const [aiDown, setAiDown] = useState(false);
   const { state, requestQuote, pay, cancel, resume } = useLaunch();
 
   useEffect(() => {
     if (job) resume(job);
-    fetch("/api/status")
-      .then((r) => r.json())
+    fetch("/api/status", { signal: AbortSignal.timeout(40_000) })
+      .then((r) => { if (!r.ok) throw new Error("Status unavailable"); return r.json(); })
       .then((s: { ready: boolean; missing: string[]; launchpad: unknown; ai?: { ok: boolean } }) => {
         setOffline(!s.launchpad ? "launchpad" : s.ready ? null : s.missing.join(", "));
         setAiDown(s.ready && s.ai?.ok === false);
       })
-      .catch(() => {});
+      .catch(() => setOffline("Could not reach the studio. Reload to check again; no payment was taken."));
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -183,8 +183,8 @@ export function LaunchStudio({ deployed, parent, job, chainPanel }: { deployed: 
           ) : (
             offline && (
               <p role="status" className="mt-6 border border-kapow/60 bg-kapow/10 px-4 py-3 text-[13.5px] leading-relaxed text-soft">
-                <span className="font-semibold text-paper">Launching is offline.</span> This server hasn&rsquo;t been given {offline} yet,
-                so it can&rsquo;t take payments.
+                <span className="font-semibold text-paper">Generation unavailable.</span> {offline}.
+                No payment will be taken.
               </p>
             )
           )}

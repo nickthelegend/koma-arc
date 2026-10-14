@@ -36,7 +36,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
       <body className="min-h-dvh">
         <WalletProvider>
           <TopBar />
-          <main className="pb-24 md:pb-0">{process.env.KOMA_HOSTED_READ_ONLY === "1" ? <p role="status" className="mx-auto max-w-[1320px] border-b border-soft p-4 text-sm">Live Arc testnet · browse series and prepare a comic. Start the local studio server to generate, mint, trade or vote. The hosted studio takes no payments; artwork and jobs remain on the operator’s machine.</p> : null}{children}</main>
+          <main className="pb-24 md:pb-0">{process.env.KOMA_HOSTED_READ_ONLY === "1" ? <p role="status" className="mx-auto max-w-[1320px] border-b border-soft p-4 text-sm">Arc testnet preview · Read minted comics and explore series. Generation, trading, voting and private drafts are unavailable here; use the local studio for those flows. No hosted payment is taken.</p> : null}{children}</main>
           <Footer />
           <BottomNav />
         </WalletProvider>

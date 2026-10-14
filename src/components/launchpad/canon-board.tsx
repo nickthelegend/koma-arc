@@ -16,6 +16,7 @@ import { IconCheck, IconPen } from "../icons";
 import { useWallet, walletErrorMessage } from "../wallet";
 
 type Props = {
+  readOnly?: boolean;
   seriesId: number;
   symbol: string;
   characterName: string;
@@ -29,7 +30,7 @@ type Props = {
  * owner) proposes an episode; holders vote for free with a signature,
  * weighted by what they held when the episode opened.
  */
-export function CanonBoard({ seriesId, symbol, characterName, coin, canonRegistry, characterOwner }: Props) {
+export function CanonBoard({ seriesId, symbol, characterName, coin, canonRegistry, characterOwner, readOnly = false }: Props) {
   const wallet = useWallet();
   const [view, setView] = useState<CanonView | null>(null);
   const [loadError, setLoadError] = useState<string | null>(null);
@@ -250,10 +251,10 @@ export function CanonBoard({ seriesId, symbol, characterName, coin, canonRegistr
                         ) : open && slot ? (
                           <button
                             onClick={() => (wallet.address ? vote(p) : wallet.connect())}
-                            disabled={(voting?.issueId === p.issueId && !voting.error) || (wallet.address !== null && voteWeight === 0)}
+                            disabled={readOnly || (voting?.issueId === p.issueId && !voting.error) || (wallet.address !== null && voteWeight === 0)}
                             className="h-8 border border-paper/70 px-3 font-display text-[14px] uppercase text-paper hover:bg-paper hover:text-ink disabled:opacity-40"
                           >
-                            {!wallet.address ? "Connect to vote" : voting?.issueId === p.issueId && !voting.error ? "Sign in wallet…" : mine ? "Switch vote" : "Vote"}
+                            {readOnly ? "Voting unavailable here" : !wallet.address ? "Connect to vote" : voting?.issueId === p.issueId && !voting.error ? "Sign in wallet…" : mine ? "Switch vote" : "Vote"}
                           </button>
                         ) : null}
                         {voting?.issueId === p.issueId && voting.error && <p role="alert" className="mt-1.5 text-[12px] leading-snug text-kapow">{voting.error}</p>}

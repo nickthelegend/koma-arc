@@ -32,7 +32,7 @@ export type GenState = {
 };
 
 const IDLE: GenState = { stage: "idle", pages: [], drawn: 0, total: 0 };
-const json = (body: unknown) => ({ method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) });
+const json = (body: unknown) => ({ method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body), signal: AbortSignal.timeout(60_000) });
 
 async function errorText(res: Response) {
   const body = await res.json().catch(() => null);
@@ -53,13 +53,21 @@ export function useGeneration() {
     polling.current?.abort();
     const ctl = new AbortController();
     polling.current = ctl;
+    let failures = 0;
+    const started = Date.now();
     while (!ctl.signal.aborted) {
+      if (Date.now() - started > 12 * 60_000) {
+        set((p) => ({ ...p, stage: "error", error: "This job is taking longer than expected. Keep this page URL and reload to check the existing job; do not pay again." }));
+        return;
+      }
       try {
-        const res = await fetch(`/api/jobs/${jobId}`, { cache: "no-store", signal: ctl.signal });
+        const res = await fetch(`/api/jobs/${jobId}`, { cache: "no-store", signal: AbortSignal.any([ctl.signal, AbortSignal.timeout(15_000)]) });
         if (res.status === 404) {
           set({ ...IDLE, stage: "error", error: "That issue could not be found." });
           return;
         }
+        if (!res.ok) throw new Error("Job status unavailable");
+        failures = 0;
         const job = (await res.json()) as Job;
         set((p) => ({
           ...p,
@@ -81,6 +89,10 @@ export function useGeneration() {
         }
       } catch {
         if (ctl.signal.aborted) return;
+        if (++failures >= 3) {
+          set((p) => ({ ...p, stage: "error", error: "Connection to the studio was lost. Reload this URL to check your existing paid job; do not pay again." }));
+          return;
+        }
       }
       await new Promise((r) => setTimeout(r, 1200));
     }
@@ -147,8 +159,9 @@ export function useGeneration() {
       const series = new URLSearchParams(window.location.search).get("series");
       window.history.replaceState(null, "", `${window.location.pathname}?job=${jobId}${series ? `&series=${encodeURIComponent(series)}` : ""}`);
       void follow(jobId);
-    } catch (e) {
-      set((st) => ({ ...st, stage: "quote", quoteError: (e as Error).message }));
+    } catch {
+      pending.current = null;
+      set((st) => ({ ...st, stage: "error", error: "The payment response was lost. Check your wallet and shelf for the existing job before starting anything new; do not pay again." }));
     }
   }, [wallet, follow]);
 

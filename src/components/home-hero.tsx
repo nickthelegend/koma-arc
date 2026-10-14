@@ -9,7 +9,7 @@ import { IconPen } from "./icons";
 // so the cover is the pitch. The art is the most-read issue's opening panel.
 
 const COVER_LINES = [
-  { href: "/launch", text: "Launch a character. It gets its own wallet and earns from every trade of its coin." },
+  { href: "/launch", text: "Launch a character. It gets its own wallet and earns from trades on its bonding curve." },
   { href: "/series", text: "Hold the coin and vote on what happens next. The winning episode becomes canon." },
   { href: "/series", text: "Remix any series. Part of every fee flows back to the original." },
 ];
@@ -73,7 +73,7 @@ export function HomeHero({ featured, issues, network }: { featured: Comic | null
             </h1>
             <p className="mt-4 max-w-[48ch] text-[15px] leading-relaxed text-soft md:text-[16px]">
               Back a comic character with its coin and vote on what happens next. AI draws every episode, the winning one becomes
-              canon, and the character earns from every trade. On Arc, every vote and trade is one free signature, and it is all USDC.
+              canon, and the character earns from bonding-curve fees. On Arc, votes are free to sign and eligible trades use gasless signatures, and it is all USDC.
             </p>
             <div className="mt-6 flex flex-wrap items-center gap-3">
               <Link href="/series" className="slant h-12 px-7 text-[20px]">

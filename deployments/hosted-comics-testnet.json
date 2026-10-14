@@ -1,0 +1,369 @@
+{
+  "chainId": 5042002,
+  "verifiedAt": "2026-10-14T15:25:24.741Z",
+  "comics": [
+    {
+      "id": "803de0cd20",
+      "title": "Beacon & Boat",
+      "logline": "A rusted pocket robot risks its last glow to rescue a paper boat from a neon typhoon.",
+      "genre": "Manga",
+      "style": "Neon anime",
+      "cover": "/api/art/803de0cd20/cover.jpg",
+      "tone": "#ff2e88",
+      "creator": {
+        "name": "0x2520…C49d",
+        "address": "0x25209CEE8dd5d60ac4F2B3495397e1950dc9C49d"
+      },
+      "pageCount": 1,
+      "priceUsdc": "0.10",
+      "reads": 1,
+      "remixes": 0,
+      "createdAt": "2026-10-14T15:21:52.747Z",
+      "credits": {
+        "writer": "moonshotai/kimi-k2.6 (via fal)",
+        "toolCalls": [],
+        "art": [
+          "Hunyuan Image 3 (cover)",
+          "FLUX.2 (panels)"
+        ]
+      },
+      "chain": {
+        "network": "arc-testnet",
+        "tokenId": 4,
+        "contract": "0x9041D1a0D3d8C03cDcf4e17E0e6cc4a2C69E79b4",
+        "mintTx": "0xd67955b398ec7b362db1102b7894e30caa9344d5aad03773a76d5e2e94dc5a93",
+        "paymentTx": "0x568987798808f4f4d7e5c19bbaae74056f549e1b89e5f53aa3e3fd176510ecce",
+        "contentHash": "0xd55f6e30306f3f74e3104e05b6c152dfefe524df7fdf84b7c0c718e092b03235",
+        "paidUsdc": "0.10"
+      },
+      "pages": [
+        {
+          "panels": [
+            {
+              "img": "/api/art/803de0cd20/p1-1.jpg",
+              "alt": "A battered lighthouse struggles against a violent neon storm at midnight.",
+              "shape": "wide",
+              "balloons": [
+                {
+                  "kind": "caption",
+                  "text": "Midnight. The great light has gone dark.",
+                  "x": 3,
+                  "y": 5,
+                  "w": 40
+                }
+              ]
+            },
+            {
+              "img": "/api/art/803de0cd20/p1-2.jpg",
+              "alt": "The robot lighthouse keeper spots something alarming in the storm.",
+              "shape": "square",
+              "balloons": [
+                {
+                  "kind": "thought",
+                  "text": "A boat? But... no one sails paper.",
+                  "x": 3,
+                  "y": 5,
+                  "w": 60
+                },
+                {
+                  "kind": "sfx",
+                  "text": "FZZZT...",
+                  "x": 50,
+                  "y": 64,
+                  "tilt": -8
+                }
+              ]
+            },
+            {
+              "img": "/api/art/803de0cd20/p1-3.jpg",
+              "alt": "A paper boat with a candle inside fights for survival on towering waves.",
+              "shape": "square",
+              "balloons": [
+                {
+                  "kind": "speech",
+                  "text": "Hold on! I'm coming down!",
+                  "x": 36,
+                  "y": 5,
+                  "w": 60,
+                  "tail": "left"
+                }
+              ]
+            },
+            {
+              "img": "/api/art/803de0cd20/p1-4.jpg",
+              "alt": "The robot cradles the rescued paper boat as the storm clears and the lighthouse shines true.",
+              "shape": "wide",
+              "balloons": [
+                {
+                  "kind": "caption",
+                  "text": "Some lights don't need to be great. Just stubborn.",
+                  "x": 3,
+                  "y": 5,
+                  "w": 40
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "51c948de0e",
+      "title": "The Special",
+      "logline": "A retired superhero's noodle stand faces its final customer: the villain who ended her career.",
+      "genre": "Superhero",
+      "style": "Modern superhero",
+      "cover": "/api/art/51c948de0e/cover.jpg",
+      "tone": "#2ea3f2",
+      "creator": {
+        "name": "0xCEa1…Ef8c",
+        "address": "0xCEa1358d2ed44c56e162C0187132837A2ECcEf8c"
+      },
+      "pageCount": 1,
+      "priceUsdc": "0.10",
+      "reads": 5,
+      "remixes": 0,
+      "createdAt": "2026-10-13T20:22:29.083Z",
+      "cast": [
+        "Madame Wok"
+      ],
+      "credits": {
+        "writer": "moonshotai/kimi-k2.6 (via fal)",
+        "toolCalls": [],
+        "art": [
+          "Hunyuan Image 3 (cover)",
+          "FLUX.2 (panels)"
+        ]
+      },
+      "chain": {
+        "network": "arc-testnet",
+        "tokenId": 2,
+        "contract": "0x9041D1a0D3d8C03cDcf4e17E0e6cc4a2C69E79b4",
+        "mintTx": "0x1262848d664717926a007ec08fb639a7dcc5151cb0f91e79998844ca97c73eb7",
+        "paymentTx": "0xe2e1399ec830cd0d598fa91c617e7beff5b1a53bfc0c9620b6e3126cb94d2d14",
+        "contentHash": "0xd96e09247b1448aadff5f9d673b9447279544bef1d2624e8c4db15c814b258cc",
+        "paidUsdc": "0.10"
+      },
+      "pages": [
+        {
+          "panels": [
+            {
+              "img": "/api/art/51c948de0e/p1-1.jpg",
+              "alt": "Madame Wok serves noodles alone at her alley stand late at night.",
+              "shape": "wide",
+              "balloons": [
+                {
+                  "kind": "caption",
+                  "text": "Two years since the collapse of Meridian Tower.",
+                  "x": 3,
+                  "y": 5,
+                  "w": 40
+                },
+                {
+                  "kind": "caption",
+                  "text": "Two years since anyone called my name.",
+                  "x": 56,
+                  "y": 68,
+                  "w": 40
+                }
+              ]
+            },
+            {
+              "img": "/api/art/51c948de0e/p1-2.jpg",
+              "alt": "Madame Wok stops serving, suddenly alert.",
+              "shape": "square",
+              "balloons": [
+                {
+                  "kind": "speech",
+                  "text": "The special. You remember my order.",
+                  "x": 36,
+                  "y": 5,
+                  "w": 60,
+                  "tail": "left"
+                }
+              ]
+            },
+            {
+              "img": "/api/art/51c948de0e/p1-3.jpg",
+              "alt": "Madame Wok grips her ladle defensively, recognizing the voice.",
+              "shape": "square",
+              "balloons": [
+                {
+                  "kind": "thought",
+                  "text": "That voice. The seismic charges. My spine.",
+                  "x": 3,
+                  "y": 5,
+                  "w": 60
+                },
+                {
+                  "kind": "speech",
+                  "text": "I remember everything, Aftershock.",
+                  "x": 36,
+                  "y": 68,
+                  "w": 60,
+                  "tail": "left"
+                }
+              ]
+            },
+            {
+              "img": "/api/art/51c948de0e/p1-4.jpg",
+              "alt": "Madame Wok confronts her old nemesis Aftershock as their powers reawaken.",
+              "shape": "wide",
+              "balloons": [
+                {
+                  "kind": "sfx",
+                  "text": "RRUMMBLE",
+                  "x": 6,
+                  "y": 12,
+                  "tilt": 8
+                },
+                {
+                  "kind": "speech",
+                  "text": "Good. Because I'm not hungry anymore.",
+                  "x": 64,
+                  "y": 68,
+                  "w": 32,
+                  "tail": "left"
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "115e62953c",
+      "title": "Ghost in the Gears",
+      "logline": "Juniper Vex sneaks into a junkyard at night to steal a racing engine and discovers it's alive.",
+      "genre": "Sci-fi",
+      "style": "Retro sci-fi",
+      "cover": "/api/art/115e62953c/cover.jpg",
+      "tone": "#1aa39a",
+      "creator": {
+        "name": "0xCEa1…Ef8c",
+        "address": "0xCEa1358d2ed44c56e162C0187132837A2ECcEf8c"
+      },
+      "pageCount": 1,
+      "priceUsdc": "0.30",
+      "reads": 1,
+      "remixes": 0,
+      "createdAt": "2026-10-13T20:12:46.452Z",
+      "cast": [
+        "Juniper Vex"
+      ],
+      "series": {
+        "id": 1,
+        "name": "Rust Bucket Riot",
+        "symbol": "RUST"
+      },
+      "credits": {
+        "writer": "moonshotai/kimi-k2.6 (via fal)",
+        "toolCalls": [
+          "get_series_canon"
+        ],
+        "art": [
+          "Hunyuan Image 3 (cover)",
+          "FLUX.2 edit (on-model panels)"
+        ]
+      },
+      "chain": {
+        "network": "arc-testnet",
+        "tokenId": 1,
+        "contract": "0x9041D1a0D3d8C03cDcf4e17E0e6cc4a2C69E79b4",
+        "mintTx": "0xe905067a9386afc574870d33bfd2acfd70a9e8d76a8e297ea03252ec1cf63fdd",
+        "paymentTx": "0x1680a8fda50f22c00a8ef64ce4ee94574b92f35966105941c663afb7801e7e59",
+        "contentHash": "0x690cea31b7b79079495e7e77429b439f20db1614a518792ce62e0183572d56ee",
+        "paidUsdc": "0.30"
+      },
+      "pages": [
+        {
+          "panels": [
+            {
+              "img": "/api/art/115e62953c/p1-1.jpg",
+              "alt": "Juniper Vex crouches behind wreckage in a dark junkyard at night.",
+              "shape": "wide",
+              "balloons": [
+                {
+                  "kind": "caption",
+                  "text": "Junkyard. 2 AM. Security drones patrol above.",
+                  "x": 3,
+                  "y": 5,
+                  "w": 40
+                },
+                {
+                  "kind": "thought",
+                  "text": "That engine's my ticket to the races.",
+                  "x": 64,
+                  "y": 68,
+                  "w": 32
+                }
+              ]
+            },
+            {
+              "img": "/api/art/115e62953c/p1-2.jpg",
+              "alt": "Juniper strains to pull a glowing engine free from a pile of scrap metal.",
+              "shape": "square",
+              "balloons": [
+                {
+                  "kind": "sfx",
+                  "text": "GRRNNK",
+                  "x": 6,
+                  "y": 12,
+                  "tilt": 8
+                }
+              ]
+            },
+            {
+              "img": "/api/art/115e62953c/p1-3.jpg",
+              "alt": "Juniper stares in shock as the engine glows brightly in her hands.",
+              "shape": "square",
+              "balloons": [
+                {
+                  "kind": "speech",
+                  "text": "It's... warm?",
+                  "x": 36,
+                  "y": 5,
+                  "w": 60,
+                  "tail": "left"
+                }
+              ]
+            },
+            {
+              "img": "/api/art/115e62953c/p1-4.jpg",
+              "alt": "The engine sprouts limbs and a glowing eye, floating before a stunned Juniper.",
+              "shape": "wide",
+              "balloons": [
+                {
+                  "kind": "speech",
+                  "text": "Nice try, thief. Now drop me.",
+                  "x": 3,
+                  "y": 5,
+                  "w": 32,
+                  "tail": "right"
+                },
+                {
+                  "kind": "sfx",
+                  "text": "WHIRRR",
+                  "x": 62,
+                  "y": 64,
+                  "tilt": -8
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "seriesMeta": [
+    {
+      "id": 1,
+      "character_name": "Juniper Vex",
+      "character_prompt": "wiry teenage mechanic with a huge orange afro, brass welding goggles, mustard jumpsuit and a chunky silver prosthetic left arm",
+      "pitch": "A scrapyard mechanic builds a robot out of junk to win the city's illegal mech races and free her brother.",
+      "genre": "Sci-fi",
+      "sheet": "/api/art/s-577dc34434/sheet.jpg",
+      "demo": 1
+    }
+  ]
+}

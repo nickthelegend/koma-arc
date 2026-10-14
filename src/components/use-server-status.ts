@@ -11,7 +11,7 @@ type Status = { ready: boolean; missing: string[]; launchpad: unknown; ai?: { ok
  */
 export function useServerStatus() {
   const [s, setS] = useState<{ offline: string | null; aiDown: boolean; aiUnconfigured: boolean; launchpad: boolean; loaded: boolean; editor: string | null }>({
-    offline: null,
+    offline: "Checking studio availability…",
     aiDown: false,
     aiUnconfigured: false,
     launchpad: true,
@@ -19,12 +19,12 @@ export function useServerStatus() {
     editor: null,
   });
   useEffect(() => {
-    fetch("/api/status")
-      .then((r) => r.json())
-      .then((x: Status) => setS({ offline: x.ready ? null : x.missing.join(", "), aiDown: x.ready && x.ai?.ok === false, aiUnconfigured: x.ai?.configured === false,
+    fetch("/api/status", { signal: AbortSignal.timeout(40_000) })
+      .then((r) => { if (!r.ok) throw new Error("Status unavailable"); return r.json(); })
+      .then((x: Status) => setS({ offline: x.ready ? null : x.missing.join(", "), aiDown: x.ai?.ok === false, aiUnconfigured: x.ai?.configured === false,
           // Which model is the editor, for the studio's byline ("hunyuan:tencent/hy3 via fal" → "Hunyuan 3").
           editor: x.ai?.editor?.startsWith("hunyuan") ? "Hunyuan 3" : x.ai?.editor?.startsWith("kimi") ? "Kimi K2.6" : null, launchpad: Boolean(x.launchpad), loaded: true }))
-      .catch(() => {});
+      .catch(() => setS({ offline: "Could not reach the studio. Reload to check again; no payment was taken.", aiDown: true, aiUnconfigured: false, launchpad: false, loaded: true, editor: null }));
   }, []);
   return s;
 }

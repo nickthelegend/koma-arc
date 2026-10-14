@@ -86,15 +86,15 @@ export function Studio({ remix, job, genre: initialGenre, series }: { remix?: Co
 
           {series && <EpisodeBanner series={series} />}
 
-          {aiDown && (
+          {aiDown && !offline && (
             <p role="status" className="mt-5 border border-kapow/60 bg-kapow/10 px-4 py-3 text-[13.5px] leading-relaxed text-soft">
               {aiUnconfigured ? AI_UNCONFIGURED_NOTE : AI_DOWN_NOTE}
             </p>
           )}
           {offline && (
             <p role="status" className="mt-6 border border-kapow/60 bg-kapow/10 px-4 py-3 text-[13.5px] leading-relaxed text-soft">
-              <span className="font-semibold text-paper">The studio is offline.</span> This server hasn&rsquo;t been given {offline} yet,
-              so it can&rsquo;t take payments. Reading is unaffected.
+              <span className="font-semibold text-paper">Generation unavailable.</span> {offline}.
+              No payment will be taken. Reading is unaffected.
             </p>
           )}
 

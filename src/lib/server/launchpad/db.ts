@@ -1,3 +1,5 @@
+import archive from "../../../../deployments/hosted-comics-testnet.json";
+import { KOMA } from "@/lib/network";
 import snapshot from "../../../../deployments/hosted-index-testnet.json";
 import type { DatabaseSync } from "node:sqlite";
 import type { LaunchJob } from "@/lib/launchpad/types";
@@ -124,7 +126,7 @@ export function db(): DatabaseSync {
   const cols = (d.prepare("PRAGMA table_info(lp_slots)").all() as { name: string }[]).map((c) => c.name);
   if (!cols.includes("finalized_tx")) d.exec("ALTER TABLE lp_slots ADD COLUMN finalized_tx TEXT");
   if (!cols.includes("finalized_at")) d.exec("ALTER TABLE lp_slots ADD COLUMN finalized_at INTEGER");
-  if (process.env.KOMA_HOSTED_READ_ONLY === "1" && !d.prepare("SELECT 1 FROM lp_meta LIMIT 1").get()) {
+  if (process.env.KOMA_HOSTED_READ_ONLY === "1" && KOMA.testnet && !d.prepare("SELECT 1 FROM lp_meta LIMIT 1").get()) {
     const tables = snapshot.tables as Record<string, {columns:string[]; rows:(string|number|null)[][]}>;
     d.exec("BEGIN");
     try {
@@ -135,6 +137,12 @@ export function db(): DatabaseSync {
       }
       d.exec("COMMIT");
     } catch(error) { d.exec("ROLLBACK"); throw error; }
+  }
+  if (process.env.KOMA_HOSTED_READ_ONLY === "1" && KOMA.testnet) {
+    for (const row of archive.seriesMeta) {
+      const columns = Object.keys(row);
+      d.prepare(`INSERT OR IGNORE INTO lp_series_meta (${columns.join(',')}) VALUES (${columns.map(() => '?').join(',')})`).run(...Object.values(row));
+    }
   }
   ready = true;
   return d;

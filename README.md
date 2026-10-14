@@ -181,7 +181,7 @@ scripts/      deploy / verify / testnet-setup / demo, e2e suites, wallet shim
 
 ## Known limits
 
-- The testnet contracts' `tokenURI` points at `http://localhost:4310` (the base URL the deploy script was given), so explorers can't show NFT metadata until the app is hosted and the admin calls `setBaseURI`. See [docs/E2E-TESTNET.md](docs/E2E-TESTNET.md).
+- The public preview serves verified testnet comic/character metadata and artwork from a deployment archive. New local issues require `node scripts/export-testnet-archive.mjs` and redeployment. Configure `KOMA_PUBLIC_URL` and run `node scripts/set-testnet-base-uri.mjs` to update both testnet NFT base URIs after verifying the hosted metadata. See [docs/E2E-TESTNET.md](docs/E2E-TESTNET.md).
 - SQLite and on-disk art mean one server instance on a persistent volume, with the pipeline in-process.
 - The canon tally runs on KOMA's server; the published votes root makes a wrong tally detectable, not impossible.
 - The Uniswap v4 contracts on Arc are deployed by KOMA (Uniswap's bytecode, unmodified), not by Uniswap Labs.
@@ -245,3 +245,7 @@ Mainnet smoke: [Smoke: 0.01 USDC controlled treasury payment](https://explorer.a
 
 Mainnet smoke: [Smoke: mint one issue from paid receipt](https://explorer.arc.io/tx/0x94bea20a154aad544c10dd9e2f350d5236acbb316d634a158b1bd58aaab58cc3).
 <!-- /MAINNET-ADDRESSES -->
+
+### Public judge preview
+
+Open https://koma-arc.vercel.app to read minted testnet comics, inspect series and follow transaction receipts. Generation, trading, voting and private drafts require the local studio; the public preview takes no payments. Run `node scripts/e2e-browser-koma.mjs` for the 1440/390 px route audit, or `KOMA_URL=http://localhost:8610 node scripts/e2e-browser-koma-core.mjs` for a real 0.10-USDC browser mint with a temporary funded wallet and sweep.

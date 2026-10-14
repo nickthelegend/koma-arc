@@ -18,17 +18,19 @@ export async function falHealth(): Promise<{ ok: true } | { ok: false; reason: s
       method: "POST",
       headers: { Authorization: `Key ${config.falKey}`, "Content-Type": "application/json" },
       body: "{}",
-      signal: AbortSignal.timeout(8000),
+      signal: AbortSignal.timeout(30_000),
     });
     if (res.status === 401 || res.status === 403) {
       const detail = ((await res.json().catch(() => null)) as { detail?: string } | null)?.detail ?? `HTTP ${res.status}`;
       cached = { at: Date.now(), ok: false, reason: detail };
+    } else if (res.status === 429 || res.status >= 500) {
+      cached = { at: Date.now(), ok: false, reason: "AI provider temporarily unavailable. Try again shortly." };
     } else {
       cached = { at: Date.now(), ok: true };
     }
   } catch {
-    // Network trouble reaching fal: don't block payments on a probe timeout; jobs retry.
-    cached = { at: Date.now(), ok: true };
+    // Refuse payment when provider availability cannot be confirmed.
+    cached = { at: Date.now(), ok: false, reason: "Could not reach the AI provider. Try again shortly." };
   }
   return cached.ok ? { ok: true } : { ok: false, reason: cached.reason! };
 }

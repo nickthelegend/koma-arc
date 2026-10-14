@@ -125,7 +125,7 @@ export function ChatStudio({ remix, job, genre, series }: { remix?: Comic; job?:
   const running = RUNNING.includes(state.stage);
 
   async function send(text: string) {
-    if (aiDown) return;
+    if (aiDown || offline) return;
     const content = text.trim();
     if (!content || thinking || running) return;
     const next: Msg[] = [...messages, { role: "user", content }];
@@ -137,6 +137,7 @@ export function ChatStudio({ remix, job, genre, series }: { remix?: Comic; job?:
       const res = await fetch("/api/chat", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
+        signal: AbortSignal.timeout(130_000),
         body: JSON.stringify({ messages: next.map(({ role, content }) => ({ role, content })), pitch, remixOf: remix?.id, genre }),
       });
       const body = (await res.json().catch(() => ({}))) as { reply?: string; pitch?: Pitch | null; error?: string; by?: string };
@@ -185,15 +186,15 @@ export function ChatStudio({ remix, job, genre, series }: { remix?: Comic; job?:
             </div>
           </div>
 
-          {aiDown && (
+          {aiDown && !offline && (
             <p role="status" className="mt-5 border border-kapow/60 bg-kapow/10 px-4 py-3 text-[13.5px] leading-relaxed text-soft">
               {aiUnconfigured ? AI_UNCONFIGURED_NOTE : AI_DOWN_NOTE}
             </p>
           )}
           {offline && (
             <p role="status" className="mt-5 border border-kapow/60 bg-kapow/10 px-4 py-3 text-[13.5px] leading-relaxed text-soft">
-              <span className="font-semibold text-paper">The studio is offline.</span> This server hasn&rsquo;t been given {offline} yet,
-              so it can&rsquo;t take payments. Reading is unaffected.
+              <span className="font-semibold text-paper">Generation unavailable.</span> {offline}.
+              No payment will be taken. Reading is unaffected.
             </p>
           )}
 
@@ -260,7 +261,7 @@ export function ChatStudio({ remix, job, genre, series }: { remix?: Comic; job?:
           {messages.length === 1 && !running && (
             <div className="mt-5 flex flex-wrap gap-2">
               {STARTERS.map((s) => (
-                <button key={s} onClick={() => send(s)} disabled={aiDown} className="border border-rule px-3 py-1.5 text-[13px] text-soft hover:border-paper hover:text-paper disabled:opacity-40">
+                <button key={s} onClick={() => send(s)} disabled={aiDown || !!offline} className="border border-rule px-3 py-1.5 text-[13px] text-soft hover:border-paper hover:text-paper disabled:opacity-40">
                   {s}
                 </button>
               ))}
@@ -357,17 +358,17 @@ export function ChatStudio({ remix, job, genre, series }: { remix?: Comic; job?:
               rows={1}
               maxLength={1000}
               onChange={(e) => setDraft(e.target.value)}
-              disabled={aiDown}
+              disabled={aiDown || !!offline}
               onKeyDown={(e) => {
-                if (e.key === "Enter" && !e.shiftKey && !aiDown) {
+                if (e.key === "Enter" && !e.shiftKey && !aiDown && !offline) {
                   e.preventDefault();
                   void send(draft);
                 }
               }}
-              placeholder={aiDown ? "The editor is offline right now" : pitch ? "Ask for changes…" : "Tell the editor your idea…"}
+              placeholder={aiDown || offline ? "The editor is offline right now" : pitch ? "Ask for changes…" : "Tell the editor your idea…"}
               className="max-h-40 min-h-12 flex-1 resize-none border border-rule bg-stock px-4 py-3 text-[15.5px] text-paper placeholder:text-mute focus:border-soft focus:outline-none md:max-w-[calc(100%-420px)]"
             />
-            <button type="submit" disabled={!draft.trim() || thinking || aiDown} aria-label="Send" className="slant h-12 w-14 shrink-0">
+            <button type="submit" disabled={!draft.trim() || thinking || aiDown || !!offline} aria-label="Send" className="slant h-12 w-14 shrink-0">
               <IconArrow width={20} height={20} />
             </button>
           </div>

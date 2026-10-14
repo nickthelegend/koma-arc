@@ -38,7 +38,7 @@ function read() {
     contract: contract as `0x${string}` | undefined,
     falKey: process.env.FAL_KEY,
     dataDir: process.env.KOMA_DATA_DIR || (process.env.VERCEL ? "/tmp/koma-cache" : path.join(process.cwd(), ".data")),
-    publicUrl: process.env.KOMA_PUBLIC_URL || "http://localhost:4310",
+    publicUrl: (process.env.KOMA_PUBLIC_URL || (process.env.VERCEL_PROJECT_PRODUCTION_URL ? `https://${process.env.VERCEL_PROJECT_PRODUCTION_URL}` : "http://localhost:4310")).replace(/\/$/, ""),
     missing,
   };
 }

@@ -13,11 +13,11 @@ export default function RoomPage() {
         <h1 className="masthead text-[18vw] text-kapow sm:text-[clamp(72px,8vw,112px)]">Writers&rsquo; Room</h1>
         <p className="max-w-[440px] text-[14px] leading-relaxed text-soft md:pb-2">
           Where next week&rsquo;s twist waits before it&rsquo;s a proposal. Drafts are encrypted in your browser with a key only your passkey can
-          make, so KOMA stores ciphertext it can&rsquo;t read, and nobody can front-run your canon pitch.
+          make, so KOMA stores ciphertext it can&rsquo;t read, keeping unpublished drafts private.
         </p>
       </div>
       <div className="mt-8">
-        <WritersRoom />
+        {process.env.KOMA_HOSTED_READ_ONLY === "1" ? <p role="status" className="border border-rule p-5 text-soft">Draft storage is unavailable on this hosted preview. Open the local studio to use the Writers’ Room. No passkey is requested here.</p> : <WritersRoom />}
       </div>
       <details className="mt-8 max-w-[760px] text-[13px] leading-relaxed text-soft">
         <summary className="cursor-pointer font-display text-[15px] uppercase text-paper">How the room works</summary>

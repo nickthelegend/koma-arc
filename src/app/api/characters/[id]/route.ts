@@ -2,12 +2,14 @@ import { NextResponse, type NextRequest } from "next/server";
 import { config } from "@/lib/server/config";
 import { launchpad } from "@/lib/server/launchpad/addresses";
 import { db } from "@/lib/server/launchpad/db";
+import { refreshHostedIndex } from "@/lib/server/launchpad/hosted";
 import { seriesRow } from "@/lib/server/launchpad/queries";
 
 export const dynamic = "force-dynamic";
 
 /** ERC-721 metadata for CharacterNFT.tokenURI(id): the character sheet and its series. */
 export async function GET(_req: NextRequest, ctx: RouteContext<"/api/characters/[id]">) {
+  await refreshHostedIndex();
   const id = Number((await ctx.params).id);
   const row = launchpad() && Number.isInteger(id) ? (db().prepare("SELECT id FROM lp_series WHERE character_id = ?").get(id) as { id: number } | undefined) : undefined;
   const s = row ? seriesRow(row.id) : null;
