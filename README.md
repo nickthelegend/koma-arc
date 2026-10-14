@@ -252,4 +252,4 @@ Open https://koma-arc.vercel.app to read minted testnet comics, inspect series a
 
 ## Production network
 
-Live: https://koma-arc.vercel.app (Arc mainnet, chain 5042). [Hosted mainnet checks](docs/HOSTED-MAINNET.md). Hosted mode is a mainnet reader. Generation, minting, trading and voting require the on-demand local studio. Prior-network comics are not mixed into mainnet results. No mainnet transactions were sent during the hosting migration. Historical **Live (testnet)** and **Fork** results below are separate evidence, not production smoke results.
+Live: https://koma-arc.vercel.app (Arc mainnet, chain 5042). [Hosted mainnet checks](docs/HOSTED-MAINNET.md). Hosted mode is a mainnet reader. Generation, minting, trading and voting require the on-demand local studio. Prior-network comics are not mixed into mainnet results. No mainnet transactions were sent during the hosting migration. Historical **Live (testnet)** and **Fork** results elsewhere in this document are separate evidence, not production smoke results.

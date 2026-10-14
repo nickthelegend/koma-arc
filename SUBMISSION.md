@@ -6,7 +6,7 @@ Live: https://koma-arc.vercel.app (Arc mainnet, chain 5042)
 | | |
 |---|---|
 | **Project** | KOMA: comics fans own, and characters whose stories their holders write |
-| **Network** | Arc testnet (5042002), contracts in [`deployments/arc-testnet.json`](deployments/arc-testnet.json); mainnet is one command ([MAINNET.md](MAINNET.md)) |
+| **Network** | Arc mainnet (5042), contracts in [`deployments/arc-mainnet.json`](deployments/arc-mainnet.json); hosted read-only checks in [HOSTED-MAINNET.md](docs/HOSTED-MAINNET.md). |
 | **Repo** | `koma-arc` (MIT) |
 
 ## Description (DoraHacks, ≤150 words)
@@ -108,4 +108,4 @@ Mainnet smoke: [Smoke: mint one issue from paid receipt](https://explorer.arc.io
 
 ## Production network
 
-Live: https://koma-arc.vercel.app (Arc mainnet, chain 5042). [Hosted mainnet checks](docs/HOSTED-MAINNET.md). Hosted mode is a mainnet reader. Generation, minting, trading and voting require the on-demand local studio. Prior-network comics are not mixed into mainnet results. No mainnet transactions were sent during the hosting migration. Historical **Live (testnet)** and **Fork** results below are separate evidence, not production smoke results.
+Live: https://koma-arc.vercel.app (Arc mainnet, chain 5042). [Hosted mainnet checks](docs/HOSTED-MAINNET.md). Hosted mode is a mainnet reader. Generation, minting, trading and voting require the on-demand local studio. Prior-network comics are not mixed into mainnet results. No mainnet transactions were sent during the hosting migration. Historical **Live (testnet)** and **Fork** results elsewhere in this document are separate evidence, not production smoke results.
