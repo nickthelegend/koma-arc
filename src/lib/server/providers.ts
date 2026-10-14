@@ -62,7 +62,7 @@ export const hunyuanImage = () => imageProvider() === "fal" && env("HUNYUAN_IMAG
  */
 export const hunyuanCovers = () => hunyuanImage() && env("HUNYUAN_COVERS") !== "0";
 
-/** Whether a model reasons before answering on the fal route (see openaiChat). */
+/** Whether a model reasons before answering (see openaiChat). */
 const thinks = (f: TextFamily) => (f === "kimi" ? env("KIMI_REASONING") === "on" : env("HUNYUAN_REASONING") !== "off");
 
 const describe = (r: TextRoute | null) => (r ? `${r.family}:${r.model}${r.via === "fal" ? " via fal" : ""}` : "off");
@@ -102,13 +102,14 @@ export async function openaiChat(
       model: r.model,
       messages: o.messages,
       max_tokens: o.maxTokens ?? 2_000,
-      temperature: 0.8,
+      // Kimi fixes sampling by thinking mode; let the provider choose its supported default.
+      ...(r.family === "kimi" ? {} : { temperature: 0.8 }),
       ...(o.json ? { response_format: { type: "json_object" } } : {}),
       ...(o.tools ? { tools: o.tools, tool_choice: "auto" } : {}),
-      // On OpenRouter (via fal) both models think before answering by default. Kimi's think is ~5× the tokens and
-      // can use up max_tokens before the script, so it's off for Kimi (KIMI_REASONING=on to keep it). Hunyuan 3 keeps
-      // it: without it the editor's JSON drifts (HUNYUAN_REASONING=off to drop it).
+      // Kimi thinking can exhaust max_tokens before returning content, so it is opt-in on both routes.
+      // Hunyuan keeps reasoning on fal unless explicitly disabled, to preserve the editor's JSON quality.
       ...(r.via === "fal" && !thinks(r.family) ? { reasoning: { enabled: false } } : {}),
+      ...(r.via === "direct" && r.family === "kimi" ? { thinking: { type: thinks(r.family) ? "enabled" : "disabled" } } : {}),
     }),
     signal: AbortSignal.timeout(o.timeoutMs ?? 120_000),
   });
