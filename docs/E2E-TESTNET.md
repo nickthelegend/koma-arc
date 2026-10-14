@@ -58,3 +58,47 @@ character wallet `0x66c92E89C06e695F5c322cecE143d43489208Dc8`.
 
 2.5 USDC sent from the deployer; 3.32 USDC swept back from the test wallets and server at the end (they also earned x402
 payments and fees), leaving 0.02-0.3 USDC in each for local demos. Keys remain in `.env.local` (git-ignored).
+
+## Round 2 — real browser generation and public metadata (2026-10-14)
+
+LEAD: RUN THESE
+```sh
+node scripts/e2e-browser-koma.mjs
+# With the local studio on :8610, using the testnet deployment and .data.t8610:
+KOMA_URL=http://localhost:8610 node scripts/e2e-browser-koma-core.mjs
+KOMA_DATA_DIR=.data.t8610 node scripts/export-testnet-archive.mjs
+KOMA_PUBLIC_URL=https://koma-arc.vercel.app node scripts/set-testnet-base-uri.mjs
+```
+
+The core script installed a real EIP-1193 wallet in Chromium (automated approval, real signatures), connected through the UI,
+entered a story in `/create/form`, chose one page, accepted the 0.10 USDC quote, signed the x402 payment, waited for real
+Kimi/FLUX/Hunyuan artwork and the mint, then clicked **Read it**. NFT #4 ownership and payment/mint receipts were verified
+against Arc testnet. The server restarted during a config edit and resumed the same paid job; no second payment was requested.
+
+| Step | Live testnet evidence |
+|---|---|
+| Fund temporary browser wallet with 0.25 USDC | [fund](https://explorer.testnet.arc.io/tx/0x1e20bcd4d0295f47468ac1684301781095125bc8f490c4e4d787b77156b8cb00) |
+| Browser-authorized 0.10 USDC x402 payment | [payment](https://explorer.testnet.arc.io/tx/0x568987798808f4f4d7e5c19bbaae74056f549e1b89e5f53aa3e3fd176510ecce) |
+| Mint NFT #4, issue `803de0cd20` | [mint](https://explorer.testnet.arc.io/tx/0xd67955b398ec7b362db1102b7894e30caa9344d5aad03773a76d5e2e94dc5a93) |
+| Sweep unused USDC to deployer; wallet balance now exactly zero | [sweep](https://explorer.testnet.arc.io/tx/0x11002f957fb3124146a53d082b3e4bda115f9329cd6c53a965e3c7bdca010912) |
+
+Private test key remains in ignored `.env.round2` (mode 0600). Screenshots and receipt/fee details:
+[`core-results.json`](screens/testnet/core-results.json), `core-paid.png`, `core-minted.png`, `core-reader.png`.
+The public archive contains three verified comics (#1, #2, #4) and the character sheet for series #1; token #3 has no local
+artwork, so its metadata reads the real on-chain hash/payment and explicitly says the artwork has not been published here.
+Hosted AI generation remains **unavailable**, visible before payment; the browser generation proof used the local studio.
+
+Both testnet NFT base URIs were updated to the deployed origin after HTTP 200 metadata/image checks:
+- KomaIssues: [setBaseURI](https://explorer.testnet.arc.io/tx/0x815fc7541ba07b8911bcf32d1a035a4969140e0ac3c3a11ba2e1dc142689fd6f).
+- CharacterNFT: [setBaseURI](https://explorer.testnet.arc.io/tx/0xbf07a696a620024eedd510ccaedc7d53a057bf7d2a507358b38482fa35471d4b).
+
+All four issue metadata endpoints and character #1 return HTTP 200 at https://koma-arc.vercel.app.
+Issues #1/#2/#4 and character #1 return real image URLs; #3 explicitly reports unpublished artwork.
+Total round-2 spend: **0.10971625 USDC**, comprising the 0.10 payment and 0.00971625 in six transaction fees,
+well below the 1 USDC cap. 0.149475 USDC returned from the temporary wallet. No mainnet transaction or paid hosting resource.
+
+The Vercel route audit passed **36/36** route/viewport combinations at 1440 and 390 px with no console errors,
+failed same-origin requests, overflow or broken images. An initial interaction assertion had a desktop-only button label;
+this was a test locator error, corrected to include mobile “Pay & draw”. Full page results (including that initial harness
+failure) remain in `screens/testnet/round2/results.json`; focused interaction rerun is in `round2-interactions/results.json`.
+Focused interaction rerun: **9/9 passed**, including disabled payment on an intentionally failed status request.

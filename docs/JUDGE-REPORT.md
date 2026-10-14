@@ -59,3 +59,42 @@ trade widget); it type-checks and builds, and its API output was checked.
 * Graduation, the CCTP withdrawal to Base and the remix flow have fork evidence only.
 * Gateway funding and CCIP canon are code-and-mock only.
 * Canon tally runs on KOMA's server (a votes root makes errors detectable, not impossible).
+
+## Round 2 — public product review (2026-10-14)
+
+This section supersedes the earlier hosting/localhost limitations above. Judged the actual Vercel preview and the local studio against **Live (testnet)**, never mainnet. No invented comics, balances or successful transactions.
+
+| Criterion | Before | After | Reason |
+|---|---|---|---|
+| Arc relevance | 8 | 8 | Real USDC x402 payment and NFT ownership remain the central proof; no new cross-chain claim. |
+| Technical credibility | 8 | 8 | Browser payment/mint evidence, verified public metadata and bounded failures; full studio still depends on one local process. |
+| Build quality | 6 | 8 | Hosted catalog was empty and several controls promised unsupported actions. Public artwork/archive, disabled actions and explicit recovery states address those defects. |
+| Worth taking further | 8 | 8 | Strong readable artifact and character economics; durable serverless generation remains engineering work. |
+| Cold judge experience | 4 | 7 | Judges can read actual comics and verify ownership without setup. New generation requires an operator-run local studio, clearly stated before payment. |
+
+### Defects and disposition
+
+- **NFTs pointed at localhost; hosted issue metadata was 404, character metadata lacked art.** Added a receipt-verified testnet archive of public comics/series metadata and artwork. Base URI updater accepts HTTPS, verifies both metadata/image endpoints, pins chain 5042002, caps gas and uses the shared deployer lock.
+- **Hosted catalog looked empty despite minted issues.** Archive populates the catalog, comic detail, reader, search, canon covers and token metadata; mainnet never receives the testnet archive.
+- **Hosted chat, trade, vote and room controls invited unsupported actions.** Chat/payment controls wait for readiness, hosted trades have an explanatory state, voting is disabled and the room requests no passkey.
+- **Status errors were swallowed; generation controls could stay enabled.** Status calls now time out, explain the connection failure and disable payment. `ready` also respects hosted read-only mode even if credentials happen to exist.
+- **AI probe treated network/provider errors as healthy.** Timeouts, 429 and 5xx now block payment. Increased probe deadline from 8 to 30 seconds after observing a valid provider response in 22 seconds.
+- **Job polling could spin indefinitely or interpret HTTP errors as jobs.** Requests time out, three consecutive failures stop the spinner, and a 12-minute upper bound preserves the job URL with a reload/no-second-payment instruction. Lost payment responses no longer return to a fresh payment prompt.
+- **Homepage promised every trade was one free signature and earned character royalties.** Copy now says eligible trades use gasless signatures and characters earn bonding-curve fees. Removed the absolute front-running claim from private drafts.
+- **Initial hosted series visit hit one 429.** Recorded as an intermittent provider failure; final audit records every failed same-origin request without filtering it away.
+- **Mobile/desktop:** existing comic typography, spacing and responsive composition preserved; screenshots cover every page route, including `/fund`, dynamic comic/reader/tx/creator/embed pages and the graduated empty state. Story starters are editable suggestions, style/cast images are reference choices, not minted items. No mock activity or fabricated examples were added.
+
+### Remaining limits
+
+Hosted generation/trading/voting/private drafts are unavailable. A local Node studio with persistent disk runs the multi-step AI jobs, payment callbacks and keeper; a durable queue/shared journal/art store is required before safe serverless execution. No paid resource was created. The public art archive must be refreshed after new local mints. External AI latency and RPC availability still affect local generation; no live CCIP, Gateway, CCTP destination mint or graduation is claimed in this round. Canon tally remains server-operated and the contracts are not independently audited.
+
+### Round-2 verification
+
+- Typecheck and ESLint: pass. Application unit tests: **32/32**. Arc Foundry contracts: **166/166**.
+- Optimized local and Vercel production builds: pass. Existing dynamic-file-tracing warning remains; the Vercel upload excludes env/private data.
+- Browser core: **7/7** real-flow assertions; one 0.10 USDC payment, NFT #4, working reader, sweep to zero.
+- Initial local desktop route checks: **18/18**; the subsequent interaction wait hit the old 30-second harness deadline while checking AI readiness. Harness deadline corrected to 90 seconds. Local mobile routes/interactions: **22/22**.
+- Public metadata: all issue IDs 1–4 and character #1 return HTTP 200. Two successful `setBaseURI` transactions remove localhost from both deployed NFT contracts.
+- Evidence: [E2E-TESTNET.md](E2E-TESTNET.md), [core receipts](screens/testnet/core-results.json), [URI receipts](screens/testnet/base-uri-results.json). Total testnet spend including payment and fees: **0.10971625 USDC**.
+- Final Vercel page audit: **36/36 route/viewport combinations passed** (18 routes at both 1440 and 390 px), with zero console errors, failed same-origin requests, broken images, stale-chain copy or overflow. The first interaction run used the desktop payment label on mobile; corrected the harness to match the mobile “Pay & draw” button and reran the interaction checks separately. Original observations remain in `screens/testnet/round2/results.json`.
+- Focused Vercel interaction rerun: **9/9 passed** — story starters, unavailable-before-payment at both widths, series navigation, comic-reader navigation, and blocked payment after an intentionally failed status request. This last failure injection tests UI recovery only; all chain evidence above is real.

@@ -1,0 +1,22 @@
+{
+  "at": "2026-10-14T15:27:40.694Z",
+  "chainId": 5042002,
+  "results": [
+    {
+      "address": "0x9041D1a0D3d8C03cDcf4e17E0e6cc4a2C69E79b4",
+      "before": "http://localhost:4310/api/tokens/1",
+      "uri": "https://koma-arc.vercel.app/api/tokens/",
+      "hash": "0x815fc7541ba07b8911bcf32d1a035a4969140e0ac3c3a11ba2e1dc142689fd6f",
+      "gasUsed": "42517",
+      "feeUsdc": 0.001062925
+    },
+    {
+      "address": "0x3A1ccCac6a15b1B3242fF6bFBb2c9a9F054a312B",
+      "before": "http://localhost:4310/api/characters/1",
+      "uri": "https://koma-arc.vercel.app/api/characters/",
+      "hash": "0xbf07a696a620024eedd510ccaedc7d53a057bf7d2a507358b38482fa35471d4b",
+      "gasUsed": "42670",
+      "feeUsdc": 0.00106675
+    }
+  ]
+}

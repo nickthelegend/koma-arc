@@ -1,0 +1,51 @@
+{
+  "at": "2026-10-14T15:21:47.400Z",
+  "network": "Live (testnet)",
+  "wallet": "0x25209CEE8dd5d60ac4F2B3495397e1950dc9C49d",
+  "transactions": {
+    "fund": "0x1e20bcd4d0295f47468ac1684301781095125bc8f490c4e4d787b77156b8cb00",
+    "payment": "0x568987798808f4f4d7e5c19bbaae74056f549e1b89e5f53aa3e3fd176510ecce",
+    "mint": "0xd67955b398ec7b362db1102b7894e30caa9344d5aad03773a76d5e2e94dc5a93",
+    "sweep": "0x11002f957fb3124146a53d082b3e4bda115f9329cd6c53a965e3c7bdca010912"
+  },
+  "checks": [
+    "UI wallet connection",
+    "one-page 0.10 USDC quote",
+    "real EIP-3009 browser signature",
+    "confirmed x402 payment",
+    "real AI script and art",
+    "confirmed NFT mint and ownership",
+    "reader images loaded"
+  ],
+  "jobId": "803de0cd20",
+  "issueUrl": "/c/803de0cd20/read",
+  "tokenId": 4,
+  "ok": true,
+  "remainingUsdc": "0",
+  "receipts": {
+    "fund": {
+      "status": "success",
+      "gasUsed": "21000",
+      "feeUsdc": "0.000525",
+      "nativeValueUsdc": "0.25"
+    },
+    "payment": {
+      "status": "success",
+      "gasUsed": "87177",
+      "feeUsdc": "0.002179425",
+      "nativeValueUsdc": "0"
+    },
+    "mint": {
+      "status": "success",
+      "gasUsed": "174286",
+      "feeUsdc": "0.00435715",
+      "nativeValueUsdc": "0"
+    },
+    "sweep": {
+      "status": "success",
+      "gasUsed": "21000",
+      "feeUsdc": "0.000525",
+      "nativeValueUsdc": "0.149475"
+    }
+  }
+}

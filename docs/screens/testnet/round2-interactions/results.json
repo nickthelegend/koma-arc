@@ -1,0 +1,51 @@
+{
+  "at": "2026-10-14T15:31:03.491Z",
+  "base": "https://koma-arc.vercel.app",
+  "chainId": 5042002,
+  "results": [
+    {
+      "width": 1440,
+      "interaction": "story starter",
+      "ok": true
+    },
+    {
+      "width": 1440,
+      "interaction": "unavailable before payment",
+      "ok": true
+    },
+    {
+      "width": 1440,
+      "interaction": "open series from catalog",
+      "ok": true
+    },
+    {
+      "width": 1440,
+      "interaction": "open comic reader",
+      "ok": true
+    },
+    {
+      "width": 390,
+      "interaction": "story starter",
+      "ok": true
+    },
+    {
+      "width": 390,
+      "interaction": "unavailable before payment",
+      "ok": true
+    },
+    {
+      "width": 390,
+      "interaction": "open series from catalog",
+      "ok": true
+    },
+    {
+      "width": 390,
+      "interaction": "open comic reader",
+      "ok": true
+    },
+    {
+      "interaction": "status network failure blocks payment",
+      "ok": true
+    }
+  ]
+}
