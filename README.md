@@ -218,7 +218,6 @@ The public `/receipts` page now includes a read-only CCIP canon section backed b
 
 The frontend and read APIs deploy to Vercel; see [HOSTED.md](docs/HOSTED.md). The local studio Docker build keeps SQLite, artwork and Gateway recovery state on persistent disk. Paid generation requires that single local process and its separate signing/provider credentials. Hosted browsing takes no payment. CI installs pinned contract dependencies before Forge.
 
-Railway fresh volumes are root-owned. The container entrypoint initializes `/data` ownership and immediately uses `gosu` to run the app as node; it does not keep the web process running as root.
 
 <!-- MAINNET-ADDRESSES -->
 ## Addresses — live mainnet and testnet
