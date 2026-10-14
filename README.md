@@ -216,7 +216,7 @@ The public `/receipts` page now includes a read-only CCIP canon section backed b
 
 ### Container release preparation
 
-The Docker build accepts `NEXT_PUBLIC_FEATURE_GATEWAY` with default0 and uses the validated webpack build. Source env files and nested contract dependencies are excluded from upload/build context. Runtime runs as the node user and keeps SQLite/art/Gateway recovery state under `/data`; attach a persistent Railway volume there before paid operation. `railway.json` uses `/api/health` for process liveness, not funded/AI/deployment readiness. Set runtime signing/provider credentials separately only after deployment bytecode and funded tests are verified; local fork fixture keys are not production configuration. CI installs the pinned CCIP contracts dependencies before Forge. Existing Arbitrum Railway services must not be reused for this Arc release.
+The frontend and read APIs deploy to Vercel; see [HOSTED.md](docs/HOSTED.md). The local studio Docker build keeps SQLite, artwork and Gateway recovery state on persistent disk. Paid generation requires that single local process and its separate signing/provider credentials. Hosted browsing takes no payment. CI installs pinned contract dependencies before Forge.
 
 Railway fresh volumes are root-owned. The container entrypoint initializes `/data` ownership and immediately uses `gosu` to run the app as node; it does not keep the web process running as root.
 
