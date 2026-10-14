@@ -1,4 +1,5 @@
-import archive from "../../../deployments/hosted-comics-testnet.json";
+import testnetArchive from "../../../deployments/hosted-comics-testnet.json";
+import mainnetArchive from "../../../deployments/hosted-comics-mainnet.json";
 import { mkdirSync } from "node:fs";
 import { mkdir, writeFile } from "node:fs/promises";
 import path from "node:path";
@@ -39,7 +40,8 @@ function open() {
     );
     CREATE INDEX IF NOT EXISTS faucet_at ON faucet_claims (at);
   `);
-  if (process.env.KOMA_HOSTED_READ_ONLY === "1" && config.network.testnet) {
+  const archive = config.network.testnet ? testnetArchive : mainnetArchive;
+  if (process.env.KOMA_HOSTED_READ_ONLY === "1" && archive.chainId === config.network.chain.id) {
     const insert = db.prepare("INSERT OR IGNORE INTO issues (id,created_at,creator,token_id,payment_tx,data) VALUES (?,?,?,?,?,?)");
     for (const comic of archive.comics) insert.run(comic.id, comic.createdAt, comic.creator.address.toLowerCase(), comic.chain.tokenId, comic.chain.paymentTx, JSON.stringify(comic));
   }

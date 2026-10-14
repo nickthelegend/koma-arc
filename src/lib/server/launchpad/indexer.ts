@@ -3,7 +3,7 @@ import { canonAbi, coinAbi, curveAbi, factoryAbi, graduatorAbi, routerAbi, swapp
 import type { Addr } from "@/lib/launchpad/types";
 import { logsClient, publicClient } from "../config";
 import { launchpad } from "./addresses";
-import { db, meta, setMeta } from "./db";
+import { db, meta, setMeta, restoreHostedSeriesMeta } from "./db";
 
 // Follows the launchpad's events into SQLite so pages load without a dozen RPC
 // reads each. Everything here can be rebuilt by clearing lp_* and re-indexing.
@@ -213,6 +213,7 @@ function followDeployment() {
     DELETE FROM lp_meta WHERE key LIKE 'cursor:%';
   `);
   setMeta("deployment", current);
+  restoreHostedSeriesMeta(d);
   console.log(`[koma] indexer: following launchpad ${current}`);
 }
 

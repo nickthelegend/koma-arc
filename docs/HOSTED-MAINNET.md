@@ -18,3 +18,11 @@ The previous production artifacts were retained at `https://koma-arc-testnet.ver
 This migration performs reads only: no wallet connection, signature, deposit, payment, withdrawal or chain broadcast. Mainnet contract/deployment transaction evidence is recorded separately in the repository. Local executors remain an on-demand demo requirement, not an always-on hosting service provisioned here.
 
 Verified: 11 routes returned HTTP 200 with no rendered testnet wording, wrong Arc explorer link or uncaught page exception. Network APIs and RPC reported chain 5042; expected mainnet contract bytecode was present. Screenshots and machine-readable results are saved beside this report.
+
+## Final hosted polish — 2026-10-15
+
+Original mainnet video comic and series artwork are archived after mint/payment/ownership verification. The hosted read cache restores this archive on cold starts, including after deployment-index reset; series/episodes continue to come from mainnet. This is a durable deployed archive, not a mutable Vercel SQLite database. Paid generation remains an on-demand local studio requirement.
+
+Re-run: `node scripts/e2e-browser-hosted-mainnet.mjs`. Also run `node scripts/e2e-browser-hosted-proof.mjs` for artifact visibility and applicable sign-in checks.
+
+No mainnet broadcasts or paid API calls. Live mainnet reads and DB writes only; fork transactions and complete wallet sign-ins: Not run.

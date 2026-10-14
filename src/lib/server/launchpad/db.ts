@@ -1,4 +1,5 @@
-import archive from "../../../../deployments/hosted-comics-testnet.json";
+import testnetArchive from "../../../../deployments/hosted-comics-testnet.json";
+import mainnetArchive from "../../../../deployments/hosted-comics-mainnet.json";
 import { KOMA } from "@/lib/network";
 import snapshot from "../../../../deployments/hosted-index-testnet.json";
 import type { DatabaseSync } from "node:sqlite";
@@ -138,12 +139,7 @@ export function db(): DatabaseSync {
       d.exec("COMMIT");
     } catch(error) { d.exec("ROLLBACK"); throw error; }
   }
-  if (process.env.KOMA_HOSTED_READ_ONLY === "1" && KOMA.testnet) {
-    for (const row of archive.seriesMeta) {
-      const columns = Object.keys(row);
-      d.prepare(`INSERT OR IGNORE INTO lp_series_meta (${columns.join(',')}) VALUES (${columns.map(() => '?').join(',')})`).run(...Object.values(row));
-    }
-  }
+  restoreHostedSeriesMeta(d);
   ready = true;
   return d;
 }
@@ -172,4 +168,15 @@ export function getLaunchJob(id: string): LaunchJob | null {
 
 export function unfinishedLaunchJobs(): LaunchJob[] {
   return (db().prepare("SELECT data FROM lp_launch_jobs WHERE stage NOT IN ('done', 'error')").all() as { data: string }[]).map((r) => JSON.parse(r.data) as LaunchJob);
+}
+
+/** Restore immutable artwork metadata after the chain cache changes deployment. */
+export function restoreHostedSeriesMeta(d: DatabaseSync): void {
+  const archive = KOMA.testnet ? testnetArchive : mainnetArchive;
+  if (process.env.KOMA_HOSTED_READ_ONLY === "1" && archive.chainId === KOMA.chain.id) {
+    for (const row of archive.seriesMeta) {
+      const columns = Object.keys(row);
+      d.prepare(`INSERT OR IGNORE INTO lp_series_meta (${columns.join(',')}) VALUES (${columns.map(() => '?').join(',')})`).run(...Object.values(row));
+    }
+  }
 }

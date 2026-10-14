@@ -1,0 +1,124 @@
+{
+  "chainId": 5042,
+  "verifiedAt": "2026-10-14T20:26:15.399Z",
+  "provenance": "Original video artifacts; existing AI artwork reused. Mint/payment receipts and ownership verified; no paid API calls.",
+  "comics": [
+    {
+      "id": "arc-beacon-2",
+      "title": "Beacon & Boat",
+      "logline": "A rusted pocket robot risks its last glow to rescue a paper boat from a neon typhoon.",
+      "genre": "Manga",
+      "style": "Neon anime",
+      "cover": "/archive/mainnet/art/803de0cd20/cover.jpg",
+      "tone": "#ff2e88",
+      "creator": {
+        "name": "Arc reader",
+        "address": "0xA4837f3d663943EF2dc6B2f03B18b8118cc551c3"
+      },
+      "pageCount": 1,
+      "priceUsdc": "0.10",
+      "reads": 2,
+      "remixes": 0,
+      "createdAt": "2026-10-14T18:34:53.172Z",
+      "credits": {
+        "writer": "moonshotai/kimi-k2.6 (via fal)",
+        "toolCalls": [],
+        "art": [
+          "Hunyuan Image 3 (cover)",
+          "FLUX.2 (panels)"
+        ]
+      },
+      "chain": {
+        "network": "arc",
+        "tokenId": 2,
+        "contentHash": "0x829dc086a28f2a430903c8e27266bb9e85be6ba1a7eff12a6c51ab21d40cab11",
+        "paymentTx": "0x4135eb6bef5e3861533132efe95643ece0ed466c1f6e1602af69266ec05c86d0",
+        "mintTx": "0x916ed980981849fd148041e1063ebc208176029a99d6865829c55e6f4537f5ee",
+        "contract": "0xe4c8bAc6BA2CbEC951b678851e1f65abb4aa9e4A",
+        "amountUsdc": "0.10",
+        "paidUsdc": "0.10"
+      },
+      "pages": [
+        {
+          "panels": [
+            {
+              "img": "/archive/mainnet/art/803de0cd20/p1-1.jpg",
+              "alt": "A battered lighthouse struggles against a violent neon storm at midnight.",
+              "shape": "wide",
+              "balloons": [
+                {
+                  "kind": "caption",
+                  "text": "Midnight. The great light has gone dark.",
+                  "x": 3,
+                  "y": 5,
+                  "w": 40
+                }
+              ]
+            },
+            {
+              "img": "/archive/mainnet/art/803de0cd20/p1-2.jpg",
+              "alt": "The robot lighthouse keeper spots something alarming in the storm.",
+              "shape": "square",
+              "balloons": [
+                {
+                  "kind": "thought",
+                  "text": "A boat? But... no one sails paper.",
+                  "x": 3,
+                  "y": 5,
+                  "w": 60
+                },
+                {
+                  "kind": "sfx",
+                  "text": "FZZZT...",
+                  "x": 50,
+                  "y": 64,
+                  "tilt": -8
+                }
+              ]
+            },
+            {
+              "img": "/archive/mainnet/art/803de0cd20/p1-3.jpg",
+              "alt": "A paper boat with a candle inside fights for survival on towering waves.",
+              "shape": "square",
+              "balloons": [
+                {
+                  "kind": "speech",
+                  "text": "Hold on! I'm coming down!",
+                  "x": 36,
+                  "y": 5,
+                  "w": 60,
+                  "tail": "left"
+                }
+              ]
+            },
+            {
+              "img": "/archive/mainnet/art/803de0cd20/p1-4.jpg",
+              "alt": "The robot cradles the rescued paper boat as the storm clears and the lighthouse shines true.",
+              "shape": "wide",
+              "balloons": [
+                {
+                  "kind": "caption",
+                  "text": "Some lights don't need to be great. Just stubborn.",
+                  "x": 3,
+                  "y": 5,
+                  "w": 40
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "seriesMeta": [
+    {
+      "id": 1,
+      "character_name": "Beacon",
+      "character_prompt": "Previously AI-generated character sheet",
+      "pitch": "A lighthouse robot guides a lost paper boat. Existing AI art; mainnet ownership.",
+      "genre": "Sci-fi",
+      "sheet": "/archive/mainnet/art/s-577dc34434/sheet.jpg",
+      "demo": 0
+    }
+  ]
+}
