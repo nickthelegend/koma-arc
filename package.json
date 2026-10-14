@@ -21,7 +21,8 @@
     "test:browser": "node scripts/e2e-browser.mjs",
     "setup:testnet": "sh scripts/testnet-setup.sh",
     "demo": "sh scripts/demo.sh",
-    "demo:stop": "sh scripts/demo-stop.sh"
+    "demo:stop": "sh scripts/demo-stop.sh",
+    "dryrun:mainnet": "node --import ./scripts/dryrun-loader.mjs scripts/dryrun-mainnet.mjs"
   },
   "dependencies": {
     "@noble/curves": "^1.9.1",
